@@ -1,78 +1,44 @@
-// src/pages/TutorStudentsPage.tsx
-import React, { useState, useEffect } from 'react';
+// src/pages/TutorStudentsPage.tsx - Zaktualizowana wersja z kontekstem
+import React, { useState } from 'react';
 import { Search, Filter, Users, BookOpen, Clock, Mail, UserPlus, RefreshCw, AlertCircle } from 'lucide-react';
 import { StudentCard } from '../components/StudentCard';
 import { InviteStudentForm } from '../components/InviteStudentForm';
-import { 
-  getTutorStudents, 
-  getTutorInvitations, 
-  TutorStudent, 
-  RelationshipInvitation 
-} from '../lib/supabase';
+import { useTutorStudents } from '../contexts/StudentsContext';
 
 export function TutorStudentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [levelFilter, setLevelFilter] = useState('all');
   const [activeTab, setActiveTab] = useState<'students' | 'invitations' | 'invite'>('students');
   
-  // Real data from Supabase
-  const [students, setStudents] = useState<TutorStudent[]>([]);
-  const [invitations, setInvitations] = useState<RelationshipInvitation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  // Load data on component mount
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      const [studentsData, invitationsData] = await Promise.all([
-        getTutorStudents(),
-        getTutorInvitations()
-      ]);
-      
-      setStudents(studentsData);
-      setInvitations(invitationsData);
-    } catch (err: any) {
-      console.error('Error loading data:', err);
-      setError('Failed to load students data. Please try refreshing the page.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Use global students context
+  const {
+    students,
+    invitations,
+    isLoading,
+    error,
+    totalStudents,
+    activeStudents,
+    pendingInvitations,
+    refreshAll,
+    searchStudents
+  } = useTutorStudents();
 
   // Convert TutorStudent to Student format for StudentCard component
-  const convertToStudentFormat = (tutorStudent: TutorStudent) => ({
+  const convertToStudentFormat = (tutorStudent: any) => ({
     id: tutorStudent.student_id,
     name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
     email: tutorStudent.student_email,
     level: 'Intermediate', // TODO: Add level to database
     progress: Math.floor(Math.random() * 100), // TODO: Calculate real progress
     lessonsCompleted: Math.floor(Math.random() * 20), // TODO: Get from database
-    totalHours: Math.floor(Math.random() * 50) // TODO: Get from database
+    totalHours: Math.floor(Math.random() * 50), // TODO: Get from database
+    joinedDate: tutorStudent.relationship_created
   });
 
-  // Filter students based on search and level
-  const filteredStudents = students.filter(student => {
-    const studentName = `${student.student_first_name} ${student.student_last_name}`;
-    const matchesSearch = studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         student.student_email.toLowerCase().includes(searchTerm.toLowerCase());
-    // Note: Level filtering disabled until we add level to database
-    return matchesSearch;
-  });
-
-  // Calculate stats
-  const pendingInvitations = invitations.filter(inv => inv.status === 'pending').length;
-  const totalStudents = students.length;
-  const activeStudents = students.filter(s => s.is_active).length;
+  // Filter students based on search
+  const filteredStudents = searchStudents(searchTerm);
 
   const handleInviteSent = () => {
-    loadData(); // Refresh data after invitation is sent
+    refreshAll(); // Refresh data after invitation is sent
     setActiveTab('invitations'); // Switch to invitations tab
   };
 
@@ -119,7 +85,7 @@ export function TutorStudentsPage() {
             <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mr-2" />
             <p className="text-red-600 dark:text-red-400">{error}</p>
             <button
-              onClick={loadData}
+              onClick={refreshAll}
               className="ml-auto text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 underline"
             >
               Retry
@@ -240,7 +206,7 @@ export function TutorStudentsPage() {
             </div>
             
             <button
-              onClick={loadData}
+              onClick={refreshAll}
               className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
               <RefreshCw className="h-4 w-4" />
