@@ -1,8 +1,7 @@
+// src/contexts/AuthContext.tsx - Zabezpieczona wersja
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, AuthSession } from '../types';
 import { supabase, getCurrentUser as getSupabaseUser, signOut } from '../lib/supabase';
-import { BookOpen } from "lucide-react";
-
 
 interface AuthContextType {
   session: AuthSession;
@@ -20,21 +19,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+    let timeoutId: NodeJS.Timeout;
+
+    // Timeout protection - jeśli ładowanie trwa więcej niż 10 sekund
+    const timeoutProtection = setTimeout(() => {
+      if (mounted) {
+        console.warn('Auth loading timeout - proceeding without authentication');
+        setLoading(false);
+      }
+    }, 10000); // 10 sekund
+
     // Get initial session
     const getInitialSession = async () => {
       try {
-        const { data: { session: authSession } } = await supabase.auth.getSession();
+        console.log('🔄 Getting initial session...');
         
-        if (authSession?.user) {
+        const { data: { session: authSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('❌ Auth session error:', error);
+          throw error;
+        }
+
+        if (authSession?.user && mounted) {
+          console.log('✅ Auth session found, getting user data...');
           const user = await getSupabaseUser();
-          if (user) {
+          if (user && mounted) {
+            console.log('✅ User data loaded:', user.email, user.role);
             setSession({ user, isAuthenticated: true });
           }
+        } else {
+          console.log('ℹ️ No auth session found');
         }
       } catch (error) {
-        console.error('Error getting initial session:', error);
+        console.error('❌ Error getting initial session:', error);
+        if (mounted) {
+          setSession({ user: null, isAuthenticated: false });
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          clearTimeout(timeoutProtection);
+        }
       }
     };
 
@@ -43,33 +70,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, authSession) => {
-        console.log('Auth state changed:', event, authSession?.user?.email);
+        if (!mounted) return;
+        
+        console.log('🔄 Auth state changed:', event, authSession?.user?.email);
         
         if (event === 'SIGNED_IN' && authSession?.user) {
           try {
             const user = await getSupabaseUser();
-            if (user) {
+            if (user && mounted) {
+              console.log('✅ User signed in:', user.email, user.role);
               setSession({ user, isAuthenticated: true });
             }
           } catch (error) {
-            console.error('Error getting user after sign in:', error);
-            setSession({ user: null, isAuthenticated: false });
+            console.error('❌ Error getting user after sign in:', error);
+            if (mounted) {
+              setSession({ user: null, isAuthenticated: false });
+            }
           }
         } else if (event === 'SIGNED_OUT') {
-          setSession({ user: null, isAuthenticated: false });
+          console.log('ℹ️ User signed out');
+          if (mounted) {
+            setSession({ user: null, isAuthenticated: false });
+          }
         }
         
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     );
 
+    // Cleanup
     return () => {
+      mounted = false;
+      clearTimeout(timeoutProtection);
       subscription.unsubscribe();
     };
   }, []);
 
   const handleLogin = async (email: string, password: string): Promise<boolean> => {
     try {
+      console.log('🔄 Attempting login for:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -77,41 +118,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
-      // Session will be updated automatically via onAuthStateChange
+      console.log('✅ Login successful');
       return true;
     } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+      console.error('❌ Login failed:', error);
+      return false;
     }
   };
 
-  const handleLogout = () => {
-    signOut().catch(console.error);
-    // Session will be updated automatically via onAuthStateChange
+  const handleLogout = async () => {
+    try {
+      console.log('🔄 Logging out...');
+      await signOut();
+      setSession({ user: null, isAuthenticated: false });
+      console.log('✅ Logout successful');
+    } catch (error) {
+      console.error('❌ Logout failed:', error);
+    }
   };
 
-  // Show loading state while checking authentication
+  // Show loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <BookOpen className="h-8 w-8 text-white" />
-          </div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Initializing application...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+            If this takes too long, check your internet connection
+          </p>
         </div>
       </div>
     );
   }
 
+  const value: AuthContextType = {
+    session,
+    login: handleLogin,
+    logout: handleLogout,
+  };
+
   return (
-    <AuthContext.Provider value={{ session, login: handleLogin, logout: handleLogout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
