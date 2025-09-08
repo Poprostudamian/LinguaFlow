@@ -1,4 +1,4 @@
-// src/contexts/AuthContext.tsx - Zabezpieczona wersja
+// src/contexts/AuthContext.tsx - UPROSZCZONA WERSJA
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, AuthSession } from '../types';
 import { supabase, getCurrentUser as getSupabaseUser, signOut } from '../lib/supabase';
@@ -20,133 +20,105 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    let timeoutId: NodeJS.Timeout;
 
-    // Timeout protection - jeśli ładowanie trwa więcej niż 10 sekund
-    const timeoutProtection = setTimeout(() => {
-      if (mounted) {
-        console.warn('Auth loading timeout - proceeding without authentication');
-        setLoading(false);
-      }
-    }, 10000); // 10 sekund
-
-    // Get initial session
-    const getInitialSession = async () => {
+    const initAuth = async () => {
       try {
-        console.log('🔄 Getting initial session...');
+        console.log('🔄 Checking auth...');
         
-        const { data: { session: authSession }, error } = await supabase.auth.getSession();
+        // Sprawdź czy mamy sesję
+        const { data: { session: authSession } } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error('❌ Auth session error:', error);
-          throw error;
-        }
-
         if (authSession?.user && mounted) {
-          console.log('✅ Auth session found, getting user data...');
-          const user = await getSupabaseUser();
-          if (user && mounted) {
-            console.log('✅ User data loaded:', user.email, user.role);
-            setSession({ user, isAuthenticated: true });
-          }
-        } else {
-          console.log('ℹ️ No auth session found');
+          console.log('✅ Found session for:', authSession.user.email);
+          
+          // UPROSZCZONE - użyj danych z auth session
+          const user = {
+            id: authSession.user.id,
+            email: authSession.user.email || '',
+            role: (authSession.user.user_metadata?.role as 'student' | 'tutor') || 'student',
+            first_name: authSession.user.user_metadata?.first_name || 'User',
+            last_name: authSession.user.user_metadata?.last_name || '',
+          };
+          
+          setSession({ user, isAuthenticated: true });
         }
       } catch (error) {
-        console.error('❌ Error getting initial session:', error);
-        if (mounted) {
-          setSession({ user: null, isAuthenticated: false });
-        }
+        console.error('❌ Auth init error:', error);
       } finally {
         if (mounted) {
           setLoading(false);
-          clearTimeout(timeoutProtection);
         }
       }
     };
 
-    getInitialSession();
+    initAuth();
 
-    // Listen for auth state changes
+    // UPROSZCZONY listener - bez dodatkowych zapytań
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, authSession) => {
+      (event, authSession) => {
         if (!mounted) return;
         
-        console.log('🔄 Auth state changed:', event, authSession?.user?.email);
+        console.log('Auth event:', event);
         
         if (event === 'SIGNED_IN' && authSession?.user) {
-          try {
-            const user = await getSupabaseUser();
-            if (user && mounted) {
-              console.log('✅ User signed in:', user.email, user.role);
-              setSession({ user, isAuthenticated: true });
-            }
-          } catch (error) {
-            console.error('❌ Error getting user after sign in:', error);
-            if (mounted) {
-              setSession({ user: null, isAuthenticated: false });
-            }
+          const user = {
+            id: authSession.user.id,
+            email: authSession.user.email || '',
+            role: (authSession.user.user_metadata?.role as 'student' | 'tutor') || 'student',
+            first_name: authSession.user.user_metadata?.first_name || 'User',
+            last_name: authSession.user.user_metadata?.last_name || '',
+          };
+          
+          if (mounted) {
+            setSession({ user, isAuthenticated: true });
+            setLoading(false);
           }
         } else if (event === 'SIGNED_OUT') {
-          console.log('ℹ️ User signed out');
           if (mounted) {
             setSession({ user: null, isAuthenticated: false });
+            setLoading(false);
           }
-        }
-        
-        if (mounted) {
-          setLoading(false);
         }
       }
     );
 
-    // Cleanup
     return () => {
       mounted = false;
-      clearTimeout(timeoutProtection);
       subscription.unsubscribe();
     };
   }, []);
 
   const handleLogin = async (email: string, password: string): Promise<boolean> => {
     try {
-      console.log('🔄 Attempting login for:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
-
-      console.log('✅ Login successful');
       return true;
     } catch (error) {
-      console.error('❌ Login failed:', error);
+      console.error('Login error:', error);
       return false;
     }
   };
 
   const handleLogout = async () => {
     try {
-      console.log('🔄 Logging out...');
       await signOut();
       setSession({ user: null, isAuthenticated: false });
-      console.log('✅ Logout successful');
     } catch (error) {
-      console.error('❌ Logout failed:', error);
+      console.error('Logout error:', error);
     }
   };
 
-  // Show loading state
+  // Krótszy loading screen
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Initializing application...</p>
-          <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-            If this takes too long, check your internet connection
-          </p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
     );
