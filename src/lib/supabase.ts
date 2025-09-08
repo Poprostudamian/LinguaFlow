@@ -34,6 +34,9 @@ export interface SignInData {
 
 // Authentication helper functions
 export const signUp = async (data: SignUpData) => {
+  console.log('🔄 Starting signup process for:', data.email);
+  
+  // Krok 1: Rejestracja w Supabase Auth
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email: data.email,
     password: data.password,
@@ -44,11 +47,63 @@ export const signUp = async (data: SignUpData) => {
         role: data.role,
       }
     }
-  })
+  });
 
-  if (authError) throw authError
+  if (authError) {
+    console.error('❌ Auth signup failed:', authError);
+    throw authError;
+  }
 
-  return authData
+  console.log('✅ Auth signup successful:', authData.user?.email);
+
+  // Krok 2: BACKUP - Jeśli trigger nie zadziałał, dodaj ręcznie do public.users
+  if (authData.user) {
+    try {
+      console.log('🔄 Checking if user exists in public.users...');
+      
+      // Sprawdź czy użytkownik już istnieje w public.users
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', authData.user.id)
+        .maybeSingle();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('❌ Error checking existing user:', checkError);
+        // Nie przerywaj - auth się udał
+      }
+
+      if (!existingUser) {
+        console.log('⚠️ User not found in public.users, adding manually...');
+        
+        // Dodaj użytkownika do public.users (backup jeśli trigger nie zadziałał)
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert({
+            id: authData.user.id,
+            email: data.email,
+            password_hash: 'managed_by_supabase_auth',
+            first_name: data.first_name,
+            last_name: data.last_name,
+            role: data.role
+          });
+
+        if (insertError) {
+          console.error('❌ Manual insert failed:', insertError);
+          // Nie rzucaj błędu - auth się udał, może trigger jednak zadziałał
+        } else {
+          console.log('✅ Manual insert successful');
+        }
+      } else {
+        console.log('✅ User already exists in public.users (trigger worked)');
+      }
+    } catch (backupError) {
+      console.error('❌ Backup insert failed:', backupError);
+      // Nie przerywaj - główna rejestracja się udała
+    }
+  }
+
+  return authData;
 }
 
 export const signIn = async (data: SignInData) => {
