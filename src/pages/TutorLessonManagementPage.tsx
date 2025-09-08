@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Filter, BookOpen, Calendar, Clock, Users } from 'lucide-react';
 import { LessonCard } from '../components/LessonCard';
+import { useTutorStudents } from '../contexts/StudentsContext';
 import { tutorMockData } from '../data/mockData';
 
 export function TutorLessonManagementPage() {
