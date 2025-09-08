@@ -1,19 +1,16 @@
-// src/pages/TutorDashboard.tsx - Zaktualizowana wersja z kontekstem
+// src/pages/TutorDashboard.tsx - ORYGINALNA WERSJA Z MOCK DATA
 import React, { useState } from 'react';
 import { 
   Users, 
   BookOpen, 
   Clock, 
   PlusCircle, 
-  Send,
-  UserPlus,
-  MessageCircle,
-  Calendar,
-  TrendingUp
+  Send 
 } from 'lucide-react';
 import { KPICard } from '../components/KPICard';
 import { StudentCard } from '../components/StudentCard';
-import { useTutorStudents } from '../contexts/StudentsContext';
+import { tutorMockData } from '../data/mockData';
+import { Student } from '../types';
 
 export function TutorDashboard() {
   const [newLesson, setNewLesson] = useState({
@@ -23,29 +20,6 @@ export function TutorDashboard() {
     level: 'beginner',
     lessonType: 'multiple-choice' as 'multiple-choice' | 'text' | 'audio' | 'flashcard',
     assignedStudentIds: [] as string[]
-  });
-
-  // Use global students context
-  const {
-    students,
-    invitations,
-    totalStudents,
-    activeStudents,
-    pendingInvitations,
-    isLoading,
-    getStudentsByIds
-  } = useTutorStudents();
-
-  // Convert TutorStudent to Student format for StudentCard component
-  const convertToStudentFormat = (tutorStudent: any) => ({
-    id: tutorStudent.student_id,
-    name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
-    email: tutorStudent.student_email,
-    level: 'Intermediate', // TODO: Add level to database
-    progress: Math.floor(Math.random() * 100), // TODO: Calculate real progress
-    lessonsCompleted: Math.floor(Math.random() * 20), // TODO: Get from database
-    totalHours: Math.floor(Math.random() * 50), // TODO: Get from database
-    joinedDate: tutorStudent.relationship_created
   });
 
   const handleStudentToggle = (studentId: string) => {
@@ -59,9 +33,9 @@ export function TutorDashboard() {
 
   const handleCreateLesson = (e: React.FormEvent) => {
     e.preventDefault();
-    const assignedStudents = getStudentsByIds(newLesson.assignedStudentIds);
-    const assignedStudentNames = assignedStudents
-      .map(s => `${s.student_first_name} ${s.student_last_name}`)
+    const assignedStudentNames = newLesson.assignedStudentIds
+      .map(id => tutorMockData.students.find(s => s.id === id)?.name)
+      .filter(Boolean)
       .join(', ');
     
     alert(`Lesson created successfully!\nType: ${newLesson.lessonType}\nTitle: ${newLesson.title}\nAssigned to: ${assignedStudentNames || 'No students assigned'}\n(This is a demo)`);
@@ -75,21 +49,6 @@ export function TutorDashboard() {
     });
   };
 
-  // Show recent students (limit to 6)
-  const recentStudents = students.slice(0, 6);
-  
-  // Calculate mock teaching hours
-  const teachingHours = totalStudents * 5; // Mock calculation
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-        <span className="ml-2 text-gray-600 dark:text-gray-400">Loading dashboard...</span>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-8">
       <div>
@@ -102,116 +61,42 @@ export function TutorDashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <KPICard
           title="Total Students"
-          value={totalStudents}
+          value={tutorMockData.kpis.totalStudents}
           icon={Users}
           color="purple"
         />
         <KPICard
-          title="Active Students"
-          value={activeStudents}
-          icon={TrendingUp}
+          title="Active Lessons"
+          value={tutorMockData.kpis.activeLessons}
+          icon={BookOpen}
           color="blue"
         />
         <KPICard
           title="Teaching Hours"
-          value={`${teachingHours}h`}
+          value={`${tutorMockData.kpis.teachingHours}h`}
           icon={Clock}
           color="green"
-        />
-        <KPICard
-          title="Pending Invites"
-          value={pendingInvitations}
-          icon={Send}
-          color="orange"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Students */}
+        {/* Student Roster */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Recent Students
-            </h2>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {totalStudents} total
-            </span>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Student Roster
+          </h2>
+          <div className="space-y-4">
+            {tutorMockData.students.map((student) => (
+              <StudentCard key={student.id} student={student} />
+            ))}
           </div>
-          
-          {totalStudents === 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
-              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                No students yet
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-4">
-                Start building your student base by sending invitations!
-              </p>
-              <button className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-200">
-                <UserPlus className="h-4 w-4" />
-                <span>Invite Students</span>
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {recentStudents.map((student) => (
-                <StudentCard 
-                  key={student.student_id} 
-                  student={convertToStudentFormat(student)}
-                  showActions={true}
-                  onSendMessage={(id) => console.log('Send message to:', id)}
-                  onViewProfile={(id) => console.log('View profile:', id)}
-                />
-              ))}
-              {totalStudents > 6 && (
-                <div className="text-center pt-2">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    And {totalStudents - 6} more students...
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
-        {/* Quick Actions & Lesson Creation */}
+        {/* Lesson Creation Form */}
         <div className="space-y-6">
-          {/* Quick Actions */}
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Quick Actions
-            </h2>
-            <div className="grid grid-cols-1 gap-3">
-              <button className="flex items-center space-x-3 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                <MessageCircle className="h-5 w-5 text-blue-600" />
-                <div className="text-left">
-                  <div className="font-medium text-gray-900 dark:text-white">Messages</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Chat with students</div>
-                </div>
-              </button>
-              
-              <button className="flex items-center space-x-3 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                <Calendar className="h-5 w-5 text-green-600" />
-                <div className="text-left">
-                  <div className="font-medium text-gray-900 dark:text-white">Schedule Meeting</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Plan group sessions</div>
-                </div>
-              </button>
-              
-              <button className="flex items-center space-x-3 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                <UserPlus className="h-5 w-5 text-purple-600" />
-                <div className="text-left">
-                  <div className="font-medium text-gray-900 dark:text-white">Invite Students</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Grow your student base</div>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Lesson Creation Form */}
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
               Create New Lesson
@@ -294,29 +179,26 @@ export function TutorDashboard() {
                   </select>
                 </div>
                 
-                {/* Student Assignment */}
-                {totalStudents > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Assign to Students
-                    </label>
-                    <div className="max-h-32 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-2">
-                      {students.map((student) => (
-                        <label key={student.student_id} className="flex items-center space-x-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded">
-                          <input
-                            type="checkbox"
-                            checked={newLesson.assignedStudentIds.includes(student.student_id)}
-                            onChange={() => handleStudentToggle(student.student_id)}
-                            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                          />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">
-                            {student.student_first_name} {student.student_last_name}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Assign to Students
+                  </label>
+                  <div className="max-h-32 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-2">
+                    {tutorMockData.students.map((student) => (
+                      <label key={student.id} className="flex items-center space-x-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded">
+                        <input
+                          type="checkbox"
+                          checked={newLesson.assignedStudentIds.includes(student.id)}
+                          onChange={() => handleStudentToggle(student.id)}
+                          className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                          {student.name}
+                        </span>
+                      </label>
+                    ))}
                   </div>
-                )}
+                </div>
                 
                 <button
                   type="submit"
