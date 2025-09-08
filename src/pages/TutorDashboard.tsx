@@ -1,15 +1,19 @@
+// src/pages/TutorDashboard.tsx - Zaktualizowana wersja z kontekstem
 import React, { useState } from 'react';
 import { 
   Users, 
   BookOpen, 
   Clock, 
   PlusCircle, 
-  Send 
+  Send,
+  UserPlus,
+  MessageCircle,
+  Calendar,
+  TrendingUp
 } from 'lucide-react';
 import { KPICard } from '../components/KPICard';
 import { StudentCard } from '../components/StudentCard';
-import { tutorMockData } from '../data/mockData';
-import { Student } from '../types';
+import { useTutorStudents } from '../contexts/StudentsContext';
 
 export function TutorDashboard() {
   const [newLesson, setNewLesson] = useState({
@@ -19,6 +23,29 @@ export function TutorDashboard() {
     level: 'beginner',
     lessonType: 'multiple-choice' as 'multiple-choice' | 'text' | 'audio' | 'flashcard',
     assignedStudentIds: [] as string[]
+  });
+
+  // Use global students context
+  const {
+    students,
+    invitations,
+    totalStudents,
+    activeStudents,
+    pendingInvitations,
+    isLoading,
+    getStudentsByIds
+  } = useTutorStudents();
+
+  // Convert TutorStudent to Student format for StudentCard component
+  const convertToStudentFormat = (tutorStudent: any) => ({
+    id: tutorStudent.student_id,
+    name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
+    email: tutorStudent.student_email,
+    level: 'Intermediate', // TODO: Add level to database
+    progress: Math.floor(Math.random() * 100), // TODO: Calculate real progress
+    lessonsCompleted: Math.floor(Math.random() * 20), // TODO: Get from database
+    totalHours: Math.floor(Math.random() * 50), // TODO: Get from database
+    joinedDate: tutorStudent.relationship_created
   });
 
   const handleStudentToggle = (studentId: string) => {
@@ -32,9 +59,9 @@ export function TutorDashboard() {
 
   const handleCreateLesson = (e: React.FormEvent) => {
     e.preventDefault();
-    const assignedStudentNames = newLesson.assignedStudentIds
-      .map(id => tutorMockData.students.find(s => s.id === id)?.name)
-      .filter(Boolean)
+    const assignedStudents = getStudentsByIds(newLesson.assignedStudentIds);
+    const assignedStudentNames = assignedStudents
+      .map(s => `${s.student_first_name} ${s.student_last_name}`)
       .join(', ');
     
     alert(`Lesson created successfully!\nType: ${newLesson.lessonType}\nTitle: ${newLesson.title}\nAssigned to: ${assignedStudentNames || 'No students assigned'}\n(This is a demo)`);
@@ -48,6 +75,21 @@ export function TutorDashboard() {
     });
   };
 
+  // Show recent students (limit to 6)
+  const recentStudents = students.slice(0, 6);
+  
+  // Calculate mock teaching hours
+  const teachingHours = totalStudents * 5; // Mock calculation
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        <span className="ml-2 text-gray-600 dark:text-gray-400">Loading dashboard...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -60,42 +102,116 @@ export function TutorDashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <KPICard
           title="Total Students"
-          value={tutorMockData.kpis.totalStudents}
+          value={totalStudents}
           icon={Users}
           color="purple"
         />
         <KPICard
-          title="Active Lessons"
-          value={tutorMockData.kpis.activeLessons}
-          icon={BookOpen}
+          title="Active Students"
+          value={activeStudents}
+          icon={TrendingUp}
           color="blue"
         />
         <KPICard
           title="Teaching Hours"
-          value={`${tutorMockData.kpis.teachingHours}h`}
+          value={`${teachingHours}h`}
           icon={Clock}
           color="green"
+        />
+        <KPICard
+          title="Pending Invites"
+          value={pendingInvitations}
+          icon={Send}
+          color="orange"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Student Roster */}
+        {/* Recent Students */}
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Student Roster
-          </h2>
-          <div className="space-y-4">
-            {tutorMockData.students.map((student) => (
-              <StudentCard key={student.id} student={student} />
-            ))}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Recent Students
+            </h2>
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {totalStudents} total
+            </span>
           </div>
+          
+          {totalStudents === 0 ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No students yet
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
+                Start building your student base by sending invitations!
+              </p>
+              <button className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-200">
+                <UserPlus className="h-4 w-4" />
+                <span>Invite Students</span>
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {recentStudents.map((student) => (
+                <StudentCard 
+                  key={student.student_id} 
+                  student={convertToStudentFormat(student)}
+                  showActions={true}
+                  onSendMessage={(id) => console.log('Send message to:', id)}
+                  onViewProfile={(id) => console.log('View profile:', id)}
+                />
+              ))}
+              {totalStudents > 6 && (
+                <div className="text-center pt-2">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    And {totalStudents - 6} more students...
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Lesson Creation Form */}
+        {/* Quick Actions & Lesson Creation */}
         <div className="space-y-6">
+          {/* Quick Actions */}
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              Quick Actions
+            </h2>
+            <div className="grid grid-cols-1 gap-3">
+              <button className="flex items-center space-x-3 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <MessageCircle className="h-5 w-5 text-blue-600" />
+                <div className="text-left">
+                  <div className="font-medium text-gray-900 dark:text-white">Messages</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Chat with students</div>
+                </div>
+              </button>
+              
+              <button className="flex items-center space-x-3 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <Calendar className="h-5 w-5 text-green-600" />
+                <div className="text-left">
+                  <div className="font-medium text-gray-900 dark:text-white">Schedule Meeting</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Plan group sessions</div>
+                </div>
+              </button>
+              
+              <button className="flex items-center space-x-3 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <UserPlus className="h-5 w-5 text-purple-600" />
+                <div className="text-left">
+                  <div className="font-medium text-gray-900 dark:text-white">Invite Students</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Grow your student base</div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Lesson Creation Form */}
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
               Create New Lesson
@@ -125,14 +241,14 @@ export function TutorDashboard() {
                     onChange={(e) => setNewLesson({...newLesson, description: e.target.value})}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    placeholder="Describe the lesson objectives..."
+                    placeholder="Brief description of the lesson content..."
                   />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Duration
+                      Duration (minutes)
                     </label>
                     <select
                       value={newLesson.duration}
@@ -140,6 +256,7 @@ export function TutorDashboard() {
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
                     >
                       <option value="30">30 minutes</option>
+                      <option value="45">45 minutes</option>
                       <option value="60">60 minutes</option>
                       <option value="90">90 minutes</option>
                     </select>
@@ -167,103 +284,49 @@ export function TutorDashboard() {
                   </label>
                   <select
                     value={newLesson.lessonType}
-                    onChange={(e) => setNewLesson({...newLesson, lessonType: e.target.value as 'multiple-choice' | 'text' | 'audio' | 'flashcard'})}
+                    onChange={(e) => setNewLesson({...newLesson, lessonType: e.target.value as any})}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   >
                     <option value="multiple-choice">Multiple Choice</option>
-                    <option value="text">Text Exercise</option>
+                    <option value="text">Text Response</option>
                     <option value="audio">Audio Practice</option>
-                    <option value="flashcard">Flashcard Review</option>
+                    <option value="flashcard">Flashcards</option>
                   </select>
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Assign Students
-                  </label>
-                  <div className="max-h-32 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-3 space-y-2">
-                    {tutorMockData.students.map((student) => (
-                      <label key={student.id} className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={newLesson.assignedStudentIds.includes(student.id)}
-                          onChange={() => handleStudentToggle(student.id)}
-                          className="rounded border-gray-300 dark:border-gray-600 text-purple-600 focus:ring-purple-500 dark:focus:ring-purple-400"
-                        />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">{student.name}</span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">({student.level})</span>
-                      </label>
-                    ))}
+                {/* Student Assignment */}
+                {totalStudents > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Assign to Students
+                    </label>
+                    <div className="max-h-32 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-2">
+                      {students.map((student) => (
+                        <label key={student.student_id} className="flex items-center space-x-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded">
+                          <input
+                            type="checkbox"
+                            checked={newLesson.assignedStudentIds.includes(student.student_id)}
+                            onChange={() => handleStudentToggle(student.student_id)}
+                            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                            {student.student_first_name} {student.student_last_name}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                  {newLesson.assignedStudentIds.length > 0 && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {newLesson.assignedStudentIds.length} student(s) selected
-                    </p>
-                  )}
-                </div>
+                )}
                 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-2 px-4 rounded-md font-medium transition-all duration-200 hover:transform hover:scale-105 flex items-center justify-center space-x-2"
+                  className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-200"
                 >
                   <PlusCircle className="h-4 w-4" />
                   <span>Create Lesson</span>
                 </button>
               </div>
             </form>
-          </div>
-
-          {/* Messages Preview */}
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Recent Messages
-            </h2>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-              <div className="space-y-4">
-                {tutorMockData.messages.map((message) => (
-                  <div key={message.id} className={`flex items-start space-x-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors ${
-                    !message.read ? 'bg-blue-50 dark:bg-blue-900/10' : ''
-                  }`}>
-                    <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-medium text-white">
-                        {message.sender.charAt(0)}
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {message.sender}
-                        </p>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {message.timestamp}
-                          </span>
-                          {!message.read && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {message.content}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    placeholder="Type your message..."
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
-                  />
-                  <button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors">
-                    <Send className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
