@@ -323,8 +323,14 @@ export function TutorLessonManagementPage() {
                       </div>
                       <div className="flex items-center space-x-1">
                         <Calendar className="h-4 w-4" />
-                        <span>Updated {lesson.updatedAt}</span>
+                        <span>Created {formattedCreatedDate}</span>
                       </div>
+                      {formattedUpdatedDate !== formattedCreatedDate && (
+                        <div className="flex items-center space-x-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>Updated {formattedUpdatedDate}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Assigned Students */}
