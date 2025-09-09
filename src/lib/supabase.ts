@@ -197,18 +197,56 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
 export const getTutorStudents = async () => {
   console.log('🔍 Getting tutor students...');
   
+  // TYMCZASOWO - użyj surowego zapytania zamiast view
   const { data, error } = await supabase
-    .from('tutor_students')
-    .select('*')
-    .order('relationship_created', { ascending: false });
+    .from('user_relationships')
+    .select(`
+      id,
+      tutor_id,
+      student_id,
+      created_at,
+      status,
+      is_active,
+      notes,
+      students:users!student_id(
+        id,
+        first_name,
+        last_name,
+        email
+      ),
+      tutors:users!tutor_id(
+        id,
+        first_name,
+        last_name
+      )
+    `)
+    .eq('status', 'accepted')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
 
   if (error) {
     console.error('❌ Error getting tutor students:', error);
     throw error;
   }
   
-  console.log('✅ Found', data?.length || 0, 'students');
-  return data as TutorStudent[];
+  // Transform to match expected format
+  const transformedData = (data || []).map(rel => ({
+    relationship_id: rel.id,
+    tutor_id: rel.tutor_id,
+    tutor_first_name: (rel.tutors as any)?.first_name || '',
+    tutor_last_name: (rel.tutors as any)?.last_name || '',
+    student_id: rel.student_id,
+    student_first_name: (rel.students as any)?.first_name || '',
+    student_last_name: (rel.students as any)?.last_name || '',
+    student_email: (rel.students as any)?.email || '',
+    relationship_created: rel.created_at,
+    status: rel.status,
+    notes: rel.notes,
+    is_active: rel.is_active
+  }));
+  
+  console.log('✅ Found', transformedData?.length || 0, 'students');
+  return transformedData as TutorStudent[];
 }
 
 // Get all invitations sent by tutor
