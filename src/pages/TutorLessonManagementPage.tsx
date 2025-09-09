@@ -36,6 +36,8 @@ interface NewLesson {
 export function TutorLessonManagementPage() {
   const { session } = useAuth();
   const { students, totalStudents, getStudentsByIds } = useTutorStudents();
+  console.log('DEBUG - Raw students data:', students);
+console.log('DEBUG - First student:', students[0]);
   
   // Real state management for lessons
   const [lessons, setLessons] = useState<LessonWithAssignments[]>([]);
