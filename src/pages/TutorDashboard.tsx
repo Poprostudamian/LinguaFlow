@@ -40,7 +40,6 @@ export function TutorDashboard() {
     getStudentsByIds
   } = useTutorStudents();
 
-  // Convert TutorStudent to Student format for StudentCard component
   const convertToStudentFormat = (tutorStudent: any) => {
   // Stałe dane bazowane na ID studenta (zamiast losowych)
   const studentIdHash = tutorStudent.student_id.split('-')[0] || '0';
