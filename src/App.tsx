@@ -22,7 +22,7 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <StudentsProvider> {/* ← WŁĄCZONE Z POWROTEM */}
+        <StudentsProvider>
           <Router>
             <div className="App">
               <Routes>
