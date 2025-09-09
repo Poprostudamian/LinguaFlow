@@ -10,49 +10,19 @@ import {
   Eye,
   Search,
   Filter,
-  MoreVertical,
   CheckCircle,
   Clock,
   AlertCircle
 } from 'lucide-react';
 import { useTutorStudents } from '../contexts/StudentsContext';
-
-// Mock data for lessons - replace with real API calls
-const mockLessons = [
-  {
-    id: '1',
-    title: 'Spanish Grammar Basics',
-    description: 'Introduction to Spanish grammar fundamentals',
-    status: 'published',
-    assignedCount: 3,
-    completedCount: 1,
-    createdAt: '2024-03-15',
-    updatedAt: '2024-03-20',
-    assignedStudents: ['550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440003']
-  },
-  {
-    id: '2',
-    title: 'English Conversation Practice',
-    description: 'Daily conversation scenarios and vocabulary',
-    status: 'draft',
-    assignedCount: 0,
-    completedCount: 0,
-    createdAt: '2024-03-18',
-    updatedAt: '2024-03-18',
-    assignedStudents: []
-  },
-  {
-    id: '3',
-    title: 'French Pronunciation Guide',
-    description: 'Master French sounds and pronunciation rules',
-    status: 'published',
-    assignedCount: 2,
-    completedCount: 2,
-    createdAt: '2024-03-10',
-    updatedAt: '2024-03-22',
-    assignedStudents: ['550e8400-e29b-41d4-a716-446655440003', '550e8400-e29b-41d4-a716-446655440004']
-  }
-];
+import { useAuth } from '../contexts/AuthContext';
+import { 
+  getTutorLessons, 
+  createLesson, 
+  deleteLesson,
+  LessonWithAssignments,
+  CreateLessonData
+} from '../lib/supabase';
 
 type LessonStatus = 'all' | 'published' | 'draft';
 
@@ -64,14 +34,18 @@ interface NewLesson {
 }
 
 export function TutorLessonManagementPage() {
-  const { students, totalStudents, isLoading: studentsLoading, getStudentsByIds } = useTutorStudents();
-  const [lessons] = useState(mockLessons); // Replace with real state management
-  const [filteredLessons, setFilteredLessons] = useState(mockLessons);
+  const { session } = useAuth();
+  const { students, totalStudents, getStudentsByIds } = useTutorStudents();
+  
+  // Real state management for lessons
+  const [lessons, setLessons] = useState<LessonWithAssignments[]>([]);
+  const [filteredLessons, setFilteredLessons] = useState<LessonWithAssignments[]>([]);
+  const [isLoadingLessons, setIsLoadingLessons] = useState(false);
+  const [lessonsError, setLessonsError] = useState<string | null>(null);
+  
   const [statusFilter, setStatusFilter] = useState<LessonStatus>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedLesson, setSelectedLesson] = useState<any>(null);
   const [isCreating, setIsCreating] = useState(false);
 
   const [newLesson, setNewLesson] = useState<NewLesson>({
@@ -80,6 +54,31 @@ export function TutorLessonManagementPage() {
     content: '',
     assignedStudentIds: []
   });
+
+  // Load lessons when component mounts or user changes
+  useEffect(() => {
+    if (session.isAuthenticated && session.user?.role === 'tutor') {
+      loadLessons();
+    }
+  }, [session.isAuthenticated, session.user?.id]);
+
+  // Load tutor's lessons from database
+  const loadLessons = async () => {
+    if (!session.user?.id) return;
+    
+    setIsLoadingLessons(true);
+    setLessonsError(null);
+    
+    try {
+      const lessonsData = await getTutorLessons(session.user.id);
+      setLessons(lessonsData);
+    } catch (error: any) {
+      console.error('Error loading lessons:', error);
+      setLessonsError(error.message || 'Failed to load lessons');
+    } finally {
+      setIsLoadingLessons(false);
+    }
+  };
 
   // Filter lessons based on status and search
   useEffect(() => {
@@ -94,7 +93,7 @@ export function TutorLessonManagementPage() {
     if (searchQuery) {
       filtered = filtered.filter(lesson => 
         lesson.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lesson.description.toLowerCase().includes(searchQuery.toLowerCase())
+        (lesson.description && lesson.description.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
 
@@ -103,14 +102,23 @@ export function TutorLessonManagementPage() {
 
   const handleCreateLesson = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!session.user?.id) return;
+    
     setIsCreating(true);
 
     try {
-      // TODO: Implement actual lesson creation API call
-      console.log('Creating lesson:', newLesson);
+      const lessonData: CreateLessonData = {
+        title: newLesson.title.trim(),
+        description: newLesson.description.trim() || undefined,
+        content: newLesson.content.trim(),
+        assignedStudentIds: newLesson.assignedStudentIds,
+        status: 'published'
+      };
+
+      await createLesson(session.user.id, lessonData);
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Reload lessons to show the new one
+      await loadLessons();
       
       // Reset form and close modal
       setNewLesson({
@@ -120,8 +128,9 @@ export function TutorLessonManagementPage() {
         assignedStudentIds: []
       });
       setShowCreateModal(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating lesson:', error);
+      setLessonsError(error.message || 'Failed to create lesson');
     } finally {
       setIsCreating(false);
     }
@@ -136,18 +145,15 @@ export function TutorLessonManagementPage() {
     }));
   };
 
-  const handleEditLesson = (lesson: any) => {
-    setSelectedLesson(lesson);
-    setShowEditModal(true);
-  };
-
   const handleDeleteLesson = async (lessonId: string) => {
-    if (window.confirm('Are you sure you want to delete this lesson?')) {
+    if (window.confirm('Are you sure you want to delete this lesson? This will also remove it from all assigned students.')) {
       try {
-        // TODO: Implement actual lesson deletion API call
-        console.log('Deleting lesson:', lessonId);
-      } catch (error) {
+        await deleteLesson(lessonId);
+        // Reload lessons to reflect the deletion
+        await loadLessons();
+      } catch (error: any) {
         console.error('Error deleting lesson:', error);
+        setLessonsError(error.message || 'Failed to delete lesson');
       }
     }
   };
@@ -271,10 +277,22 @@ export function TutorLessonManagementPage() {
 
       {/* Lessons List */}
       <div className="space-y-4">
-        {studentsLoading ? (
+        {isLoadingLessons ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
             <p className="mt-2 text-gray-600 dark:text-gray-400">Loading lessons...</p>
+          </div>
+        ) : lessonsError ? (
+          <div className="text-center py-12">
+            <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Error loading lessons</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{lessonsError}</p>
+            <button
+              onClick={loadLessons}
+              className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Try Again
+            </button>
           </div>
         ) : filteredLessons.length === 0 ? (
           <div className="text-center py-12">
@@ -290,7 +308,6 @@ export function TutorLessonManagementPage() {
         ) : (
           filteredLessons.map((lesson) => {
             const assignedStudentsData = getStudentsByIds(lesson.assignedStudents);
-            
             
             return (
               <div
@@ -324,12 +341,12 @@ export function TutorLessonManagementPage() {
                       </div>
                       <div className="flex items-center space-x-1">
                         <Calendar className="h-4 w-4" />
-                        <span>Created {formattedCreatedDate}</span>
+                        <span>Created {new Date(lesson.created_at).toLocaleDateString()}</span>
                       </div>
-                      {formattedUpdatedDate !== formattedCreatedDate && (
+                      {lesson.updated_at !== lesson.created_at && (
                         <div className="flex items-center space-x-1">
                           <Calendar className="h-4 w-4" />
-                          <span>Updated {formattedUpdatedDate}</span>
+                          <span>Updated {new Date(lesson.updated_at).toLocaleDateString()}</span>
                         </div>
                       )}
                     </div>
@@ -362,7 +379,7 @@ export function TutorLessonManagementPage() {
                       <Eye className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => handleEditLesson(lesson)}
+                      onClick={() => console.log('Edit lesson:', lesson.id)}
                       className="p-2 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                       title="Edit Lesson"
                     >
@@ -477,8 +494,6 @@ export function TutorLessonManagementPage() {
           </div>
         </div>
       )}
-
-      {/* Edit Modal would go here - similar structure to create modal */}
     </div>
   );
 }
