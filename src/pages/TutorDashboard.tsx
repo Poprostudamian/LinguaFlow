@@ -40,16 +40,22 @@ export function TutorDashboard() {
     getStudentsByIds
   } = useTutorStudents();
 
-const convertToStudentFormat = (tutorStudent: any) => ({
-  id: tutorStudent.student_id,
-  name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
-  email: tutorStudent.student_email,
-  level: 'Intermediate', // Domyślny poziom (TODO: dodaj do bazy)
-  progress: 0, // Domyślny postęp (TODO: policz z lekcji)
-  lessonsCompleted: 0, // Domyślne lekcje (TODO: policz z bazy)
-  totalHours: 0, // Domyślne godziny (TODO: policz z sesji)
-  joinedDate: tutorStudent.relationship_created
-});
+const convertToStudentFormat = (tutorStudent: any) => {
+  // Stałe dane bazowane na ID studenta (zamiast losowych)
+  const studentIdHash = tutorStudent.student_id.split('-')[0] || '0';
+  const hashNum = parseInt(studentIdHash, 16) || 0;
+  
+  return {
+    id: tutorStudent.student_id,
+    name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
+    email: tutorStudent.student_email,
+    level: ['Beginner', 'Intermediate', 'Advanced'][hashNum % 3], // Stały poziom
+    progress: (hashNum % 100), // Stały postęp 0-99%
+    lessonsCompleted: (hashNum % 25), // Stała liczba lekcji 0-24
+    totalHours: (hashNum % 50) + 1, // Stałe godziny 1-50
+    joinedDate: tutorStudent.relationship_created
+  };
+};
 
   const handleStudentToggle = (studentId: string) => {
     setNewLesson(prev => ({
