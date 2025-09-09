@@ -5,8 +5,6 @@ import {
   Send, 
   Search, 
   Users, 
-  Plus,
-  MoreVertical,
   Phone,
   Video,
   Info,
@@ -15,63 +13,82 @@ import {
   User
 } from 'lucide-react';
 import { useTutorStudents } from '../contexts/StudentsContext';
+import { useAuth } from '../contexts/AuthContext';
 
-export function TutorMessagesPage() {
-  const { students, totalStudents } = useTutorStudents(); // Dodaj to
-  
-  // Usuń lub zamień mockConversations na prawdziwe dane
-  const conversations = students.map(student => ({
-    id: student.relationship_id,
-    studentId: student.student_id,
-    lastMessage: 'No messages yet', // Placeholder
-    lastMessageTime: 'Now',
-    lastMessageDate: new Date().toISOString().split('T')[0],
-    unreadCount: 0,
-    isOnline: false
-  }));
+// Mock messages data - replace with real messages system later
+const mockMessages: { [key: string]: Array<{
+  id: string;
+  senderId: string;
+  content: string;
+  timestamp: string;
+  isRead: boolean;
+}> } = {};
 
 interface NewMessage {
   content: string;
 }
 
+interface Conversation {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  lastMessage: string;
+  lastMessageTime: string;
+  lastMessageDate: string;
+  unreadCount: number;
+  isOnline: boolean;
+}
+
 export function TutorMessagesPage() {
-  const { students, totalStudents, getStudentById } = useTutorStudents();
-  const [conversations] = useState(mockConversations); // Replace with real state management
-  const [messages] = useState(mockMessages);
+  const { session } = useAuth();
+  const { students, totalStudents, isLoading: studentsLoading, error: studentsError } = useTutorStudents();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [newMessage, setNewMessage] = useState<NewMessage>({ content: '' });
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Create conversations from students data
+  const conversations: Conversation[] = students.map(student => ({
+    id: student.relationship_id,
+    studentId: student.student_id,
+    studentName: `${student.student_first_name} ${student.student_last_name}`.trim() || 'Unknown Student',
+    studentEmail: student.student_email,
+    lastMessage: 'No messages yet - start a conversation!',
+    lastMessageTime: 'Now',
+    lastMessageDate: new Date().toISOString().split('T')[0],
+    unreadCount: 0,
+    isOnline: Math.random() > 0.5 // Random online status for demo
+  }));
+
   // Auto scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, selectedConversation]);
+  }, [selectedConversation]);
 
   // Select first conversation by default
   useEffect(() => {
     if (conversations.length > 0 && !selectedConversation) {
       setSelectedConversation(conversations[0].id);
     }
-  }, [conversations, selectedConversation]);
+  }, [conversations.length, selectedConversation]);
 
+  // Filter conversations based on search
   const filteredConversations = conversations.filter(conv => {
     if (!searchQuery) return true;
-    const student = getStudentById(conv.studentId);
-    if (!student) return false;
     
-    const studentName = `${student.student_first_name} ${student.student_last_name}`.toLowerCase();
-    const lastMessage = conv.lastMessage.toLowerCase();
+    const studentName = conv.studentName.toLowerCase();
+    const studentEmail = conv.studentEmail.toLowerCase();
+    const query = searchQuery.toLowerCase();
     
-    return studentName.includes(searchQuery.toLowerCase()) || 
-           lastMessage.includes(searchQuery.toLowerCase());
+    return studentName.includes(query) || studentEmail.includes(query);
   });
 
   const selectedConversationData = conversations.find(conv => conv.id === selectedConversation);
-  const currentStudent = selectedConversationData ? getStudentById(selectedConversationData.studentId) : null;
   
-  const conversationMessages = messages.filter(msg => msg.conversationId === selectedConversation);
+  // Get messages for selected conversation (currently empty, but ready for real implementation)
+  const conversationMessages = selectedConversation ? (mockMessages[selectedConversation] || []) : [];
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,11 +99,14 @@ export function TutorMessagesPage() {
       // TODO: Implement actual message sending API call
       console.log('Sending message:', {
         conversationId: selectedConversation,
-        content: newMessage.content
+        content: newMessage.content,
+        recipientId: selectedConversationData?.studentId
       });
 
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // TODO: Add message to local state or refetch messages
       
       // Clear message input
       setNewMessage({ content: '' });
@@ -125,6 +145,37 @@ export function TutorMessagesPage() {
     return conversations.reduce((total, conv) => total + conv.unreadCount, 0);
   };
 
+  const getStudentInitials = (name: string) => {
+    const parts = name.split(' ').filter(Boolean);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return parts[0]?.[0]?.toUpperCase() || '?';
+  };
+
+  if (studentsLoading) {
+    return (
+      <div className="h-[calc(100vh-8rem)] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Loading students...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (studentsError) {
+    return (
+      <div className="h-[calc(100vh-8rem)] flex items-center justify-center">
+        <div className="text-center">
+          <MessageCircle className="mx-auto h-12 w-12 text-red-400" />
+          <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">Error loading students</h3>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{studentsError}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col">
       {/* Header */}
@@ -137,11 +188,11 @@ export function TutorMessagesPage() {
         </div>
         <div className="flex items-center space-x-3">
           <div className="bg-white dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700">
-    <div className="flex items-center space-x-2 text-sm">
-      <Users className="h-4 w-4 text-gray-500" />
-      <span className="text-gray-600 dark:text-gray-400">{totalStudents} Students</span>
-    </div>
-  </div>
+            <div className="flex items-center space-x-2 text-sm">
+              <Users className="h-4 w-4 text-gray-500" />
+              <span className="text-gray-600 dark:text-gray-400">{totalStudents} Students</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -169,75 +220,75 @@ export function TutorMessagesPage() {
               <div className="p-6 text-center">
                 <MessageCircle className="mx-auto h-8 w-8 text-gray-400" />
                 <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                  {searchQuery ? 'No conversations found' : 'No conversations yet'}
+                  {searchQuery ? 'No conversations found' : 'No students available for messaging'}
                 </p>
+                {!searchQuery && totalStudents === 0 && (
+                  <p className="mt-1 text-xs text-gray-400">
+                    Add students to start conversations
+                  </p>
+                )}
               </div>
             ) : (
-              filteredConversations.map((conversation) => {
-                const student = getStudentById(conversation.studentId);
-                if (!student) return null;
-
-                return (
-                  <div
-                    key={conversation.id}
-                    onClick={() => setSelectedConversation(conversation.id)}
-                    className={`p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                      selectedConversation === conversation.id 
-                        ? 'bg-purple-50 dark:bg-purple-900/20 border-r-2 border-r-purple-500' 
-                        : ''
-                    }`}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <div className="relative flex-shrink-0">
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full flex items-center justify-center text-white font-medium">
-                          {student.student_first_name[0]}{student.student_last_name[0]}
-                        </div>
-                        {conversation.isOnline && (
-                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></div>
-                        )}
+              filteredConversations.map((conversation) => (
+                <div
+                  key={conversation.id}
+                  onClick={() => setSelectedConversation(conversation.id)}
+                  className={`p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+                    selectedConversation === conversation.id 
+                      ? 'bg-purple-50 dark:bg-purple-900/20 border-r-2 border-r-purple-500' 
+                      : ''
+                  }`}
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className="relative flex-shrink-0">
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                        {getStudentInitials(conversation.studentName)}
                       </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {student.student_first_name} {student.student_last_name}
-                          </p>
-                          <div className="flex items-center space-x-1">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {formatLastMessageDate(conversation.lastMessageDate)}
-                            </span>
-                            {conversation.unreadCount > 0 && (
-                              <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-purple-600 rounded-full">
-                                {conversation.unreadCount}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 truncate mt-1">
-                          {conversation.lastMessage}
+                      {conversation.isOnline && (
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></div>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {conversation.studentName}
                         </p>
-                        <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center space-x-1">
                           <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {conversation.lastMessageTime}
+                            {formatLastMessageDate(conversation.lastMessageDate)}
                           </span>
-                          {conversation.isOnline && (
-                            <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-                              Online
+                          {conversation.unreadCount > 0 && (
+                            <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-purple-600 rounded-full">
+                              {conversation.unreadCount}
                             </span>
                           )}
                         </div>
                       </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate mt-1">
+                        {conversation.lastMessage}
+                      </p>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {conversation.lastMessageTime}
+                        </span>
+                        {conversation.isOnline && (
+                          <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                            Online
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                );
-              })
+                </div>
+              ))
             )}
           </div>
         </div>
 
         {/* Chat Area */}
         <div className="flex-1 flex flex-col">
-          {selectedConversation && currentStudent ? (
+          {selectedConversation && selectedConversationData ? (
             <>
               {/* Chat Header */}
               <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
@@ -245,18 +296,18 @@ export function TutorMessagesPage() {
                   <div className="flex items-center space-x-3">
                     <div className="relative">
                       <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full flex items-center justify-center text-white font-medium">
-                        {currentStudent.student_first_name[0]}{currentStudent.student_last_name[0]}
+                        {getStudentInitials(selectedConversationData.studentName)}
                       </div>
-                      {selectedConversationData?.isOnline && (
+                      {selectedConversationData.isOnline && (
                         <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-700 rounded-full"></div>
                       )}
                     </div>
                     <div>
                       <h3 className="font-medium text-gray-900 dark:text-white">
-                        {currentStudent.student_first_name} {currentStudent.student_last_name}
+                        {selectedConversationData.studentName}
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {selectedConversationData?.isOnline ? 'Online now' : 'Offline'}
+                        {selectedConversationData.isOnline ? 'Online now' : 'Offline'}
                       </p>
                     </div>
                   </div>
@@ -276,33 +327,49 @@ export function TutorMessagesPage() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {conversationMessages.map((message) => {
-                  const isFromTutor = message.senderId === '550e8400-e29b-41d4-a716-446655440001'; // Replace with actual tutor ID
-                  
-                  return (
-                    <div
-                      key={message.id}
-                      className={`flex ${isFromTutor ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        isFromTutor
-                          ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-                      }`}>
-                        <p className="text-sm">{message.content}</p>
-                        <p className={`text-xs mt-1 ${
-                          isFromTutor 
-                            ? 'text-purple-100' 
-                            : 'text-gray-500 dark:text-gray-400'
-                        }`}>
-                          {formatMessageTime(message.timestamp)}
-                        </p>
-                      </div>
+              <div className="flex-1 overflow-y-auto p-4">
+                {conversationMessages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <MessageCircle className="mx-auto h-12 w-12 text-gray-400" />
+                      <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
+                        Start a conversation
+                      </h3>
+                      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        Send a message to {selectedConversationData.studentName} to get started
+                      </p>
                     </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {conversationMessages.map((message) => {
+                      const isFromTutor = message.senderId === session.user?.id;
+                      
+                      return (
+                        <div
+                          key={message.id}
+                          className={`flex ${isFromTutor ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                            isFromTutor
+                              ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                          }`}>
+                            <p className="text-sm">{message.content}</p>
+                            <p className={`text-xs mt-1 ${
+                              isFromTutor 
+                                ? 'text-purple-100' 
+                                : 'text-gray-500 dark:text-gray-400'
+                            }`}>
+                              {formatMessageTime(message.timestamp)}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div ref={messagesEndRef} />
+                  </div>
+                )}
               </div>
 
               {/* Message Input */}
@@ -342,7 +409,7 @@ export function TutorMessagesPage() {
                   <button
                     type="submit"
                     disabled={!newMessage.content.trim() || isSending}
-                    className="p-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:transform hover:scale-105"
+                    className="p-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:transform hover:scale-105 disabled:transform-none"
                   >
                     <Send className="h-4 w-4" />
                   </button>
@@ -369,8 +436,8 @@ export function TutorMessagesPage() {
         </div>
       </div>
 
-      {/* Quick Actions - could be added as floating buttons */}
-      {students.length === 0 && (
+      {/* Empty State when no students */}
+      {totalStudents === 0 && (
         <div className="mt-6 text-center p-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <User className="mx-auto h-8 w-8 text-gray-400" />
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
