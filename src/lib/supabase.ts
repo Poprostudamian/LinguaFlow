@@ -431,6 +431,7 @@ export const getTutorLessons = async (tutorId: string): Promise<LessonWithAssign
     throw error;
   }
 };
+
 /**
  * Create a new lesson and assign to students
  */
