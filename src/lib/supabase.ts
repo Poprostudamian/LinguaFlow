@@ -197,55 +197,52 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
 export const getTutorStudents = async () => {
   console.log('🔍 Getting tutor students...');
   
-  // TYMCZASOWO - użyj surowego zapytania zamiast view
   const { data, error } = await supabase
     .from('user_relationships')
     .select(`
       id,
-      tutor_id,
+      tutor_id, 
       student_id,
       created_at,
       status,
       is_active,
       notes,
-      students:users!student_id(
-        id,
+      users:student_id(
         first_name,
         last_name,
         email
-      ),
-      tutors:users!tutor_id(
-        id,
-        first_name,
-        last_name
       )
     `)
     .eq('status', 'accepted')
-    .eq('is_active', true)
-    .order('created_at', { ascending: false });
+    .eq('is_active', true);
 
   if (error) {
     console.error('❌ Error getting tutor students:', error);
     throw error;
   }
   
-  // Transform to match expected format
-  const transformedData = (data || []).map(rel => ({
-    relationship_id: rel.id,
-    tutor_id: rel.tutor_id,
-    tutor_first_name: (rel.tutors as any)?.first_name || '',
-    tutor_last_name: (rel.tutors as any)?.last_name || '',
-    student_id: rel.student_id,
-    student_first_name: (rel.students as any)?.first_name || '',
-    student_last_name: (rel.students as any)?.last_name || '',
-    student_email: (rel.students as any)?.email || '',
-    relationship_created: rel.created_at,
-    status: rel.status,
-    notes: rel.notes,
-    is_active: rel.is_active
-  }));
+  console.log('RAW DATA from Supabase:', data);
   
-  console.log('✅ Found', transformedData?.length || 0, 'students');
+  // Transform data
+  const transformedData = (data || []).map(rel => {
+    console.log('Processing relationship:', rel);
+    return {
+      relationship_id: rel.id,
+      tutor_id: rel.tutor_id,
+      tutor_first_name: '', // nie potrzebne dla tego use case
+      tutor_last_name: '',
+      student_id: rel.student_id,
+      student_first_name: rel.users?.first_name || '',
+      student_last_name: rel.users?.last_name || '',
+      student_email: rel.users?.email || '',
+      relationship_created: rel.created_at,
+      status: rel.status,
+      notes: rel.notes,
+      is_active: rel.is_active
+    };
+  });
+  
+  console.log('TRANSFORMED DATA:', transformedData);
   return transformedData as TutorStudent[];
 }
 
