@@ -207,7 +207,7 @@ export const getTutorStudents = async () => {
       status,
       is_active,
       notes,
-      users:student_id(
+      users!student_id(
         first_name,
         last_name,
         email
@@ -226,14 +226,16 @@ export const getTutorStudents = async () => {
   // Transform data
   const transformedData = (data || []).map(rel => {
     console.log('Processing relationship:', rel);
+    console.log('User data:', rel.users);
+    
     return {
       relationship_id: rel.id,
       tutor_id: rel.tutor_id,
-      tutor_first_name: '', // nie potrzebne dla tego use case
+      tutor_first_name: '',
       tutor_last_name: '',
       student_id: rel.student_id,
-      student_first_name: rel.users?.first_name || '',
-      student_last_name: rel.users?.last_name || '',
+      student_first_name: rel.users?.first_name || 'Unknown',
+      student_last_name: rel.users?.last_name || 'Student',
       student_email: rel.users?.email || '',
       relationship_created: rel.created_at,
       status: rel.status,
