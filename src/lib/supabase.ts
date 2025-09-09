@@ -221,12 +221,13 @@ export const getTutorStudents = async () => {
     throw error;
   }
   
-  console.log('RAW DATA from Supabase:', data);
+  console.log('RAW DATA from Supabase:', JSON.stringify(data, null, 2));
   
   // Transform data
-  const transformedData = (data || []).map(rel => {
-    console.log('Processing relationship:', rel);
-    console.log('User data:', rel.users);
+  const transformedData = (data || []).map((rel, index) => {
+    console.log(`Processing relationship ${index}:`, rel);
+    console.log(`User data for relationship ${index}:`, rel.users);
+    console.log(`Student ID: ${rel.student_id}`);
     
     return {
       relationship_id: rel.id,
