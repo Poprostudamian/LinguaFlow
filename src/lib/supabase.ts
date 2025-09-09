@@ -358,49 +358,53 @@ export interface UpdateLessonData {
 /**
  * Get all lessons for a tutor with assignment information
  */
+// ZAMIEŃ funkcję getTutorLessons w src/lib/supabase.ts na tę poprawioną wersję:
+
+/**
+ * Get all lessons for a tutor with assignment information - NAPRAWIONA WERSJA
+ */
 export const getTutorLessons = async (tutorId: string): Promise<LessonWithAssignments[]> => {
   try {
-    // Get lessons with their assignments
-    const { data: lessons, error: lessonsError } = await supabase
-      .from('lessons')
-      .select(`
-        *,
-        student_lessons!inner(
-          student_id,
-          status,
-          completed_at,
-          progress
-        )
-      `)
-      .eq('tutor_id', tutorId)
-      .order('updated_at', { ascending: false });
-
-    if (lessonsError) throw lessonsError;
-
-    // Also get lessons without assignments
-    const { data: lessonsWithoutAssignments, error: noAssignError } = await supabase
+    console.log('🔍 Getting lessons for tutor:', tutorId);
+    
+    // KROK 1: Pobierz wszystkie lekcje tutora (bez JOIN)
+    const { data: allLessons, error: lessonsError } = await supabase
       .from('lessons')
       .select('*')
       .eq('tutor_id', tutorId)
-      .not('id', 'in', `(${lessons?.map(l => l.id).join(',') || 'null'})`)
       .order('updated_at', { ascending: false });
 
-    if (noAssignError) throw noAssignError;
+    if (lessonsError) {
+      console.error('❌ Error fetching lessons:', lessonsError);
+      throw lessonsError;
+    }
 
-    // Combine and process all lessons
-    const allLessons = [
-      ...(lessons || []),
-      ...(lessonsWithoutAssignments || []).map(lesson => ({
-        ...lesson,
-        student_lessons: []
-      }))
-    ];
+    console.log('✅ Found', allLessons?.length || 0, 'lessons');
 
-    // Transform to expected format
+    if (!allLessons || allLessons.length === 0) {
+      return [];
+    }
+
+    // KROK 2: Pobierz przypisania dla tych lekcji
+    const lessonIds = allLessons.map(lesson => lesson.id);
+    
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('student_lessons')
+      .select('lesson_id, student_id, status, completed_at, progress')
+      .in('lesson_id', lessonIds);
+
+    if (assignmentsError) {
+      console.error('❌ Error fetching assignments:', assignmentsError);
+      // Nie rzucamy błędu - lekcje mogą nie mieć przypisań
+    }
+
+    console.log('✅ Found', assignments?.length || 0, 'assignments');
+
+    // KROK 3: Połącz dane
     const transformedLessons: LessonWithAssignments[] = allLessons.map(lesson => {
-      const studentLessons = lesson.student_lessons || [];
-      const assignedStudents = studentLessons.map((sl: any) => sl.student_id);
-      const completedCount = studentLessons.filter((sl: any) => sl.status === 'completed').length;
+      const lessonAssignments = (assignments || []).filter(a => a.lesson_id === lesson.id);
+      const assignedStudents = lessonAssignments.map(a => a.student_id);
+      const completedCount = lessonAssignments.filter(a => a.status === 'completed').length;
 
       return {
         id: lesson.id,
@@ -412,20 +416,21 @@ export const getTutorLessons = async (tutorId: string): Promise<LessonWithAssign
         created_at: lesson.created_at,
         updated_at: lesson.updated_at,
         is_published: lesson.is_published,
-        assignedCount: studentLessons.length,
+        assignedCount: lessonAssignments.length,
         completedCount,
         assignedStudents,
-        student_lessons: studentLessons
+        student_lessons: lessonAssignments
       };
     });
 
+    console.log('✅ Transformed', transformedLessons.length, 'lessons');
     return transformedLessons;
+
   } catch (error) {
-    console.error('Error fetching tutor lessons:', error);
+    console.error('❌ Error fetching tutor lessons:', error);
     throw error;
   }
 };
-
 /**
  * Create a new lesson and assign to students
  */
