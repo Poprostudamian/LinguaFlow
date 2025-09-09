@@ -1,9 +1,10 @@
-// src/App.tsx - TYMCZASOWO BEZ StudentsProvider
+// src/App.tsx - Włącz z powrotem StudentsProvider
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
-// import { StudentsProvider } from './contexts/StudentsContext'; // ← TYMCZASOWO WYŁĄCZONE
+import { StudentsProvider } from './contexts/StudentsContext'; // ← WŁĄCZ Z POWROTEM
 import { Layout } from './components/Layout';
 import { RouteGuard } from './components/RouteGuard';
 import { Login } from './pages/Login';
@@ -21,7 +22,7 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        {/* <StudentsProvider> ← TYMCZASOWO WYŁĄCZONE */}
+        <StudentsProvider> {/* ← WŁĄCZONE Z POWROTEM */}
           <Router>
             <div className="App">
               <Routes>
@@ -63,7 +64,7 @@ function App() {
               </Routes>
             </div>
           </Router>
-        {/* </StudentsProvider> ← TYMCZASOWO WYŁĄCZONE */}
+        </StudentsProvider> {/* ← WŁĄCZONE Z POWROTEM */}
       </AuthProvider>
     </ThemeProvider>
   );
