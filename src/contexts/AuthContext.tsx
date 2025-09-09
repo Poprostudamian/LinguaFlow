@@ -1,7 +1,10 @@
-// src/contexts/AuthContext.tsx - UPROSZCZONA WERSJA
+// NAPRAWKA 1: AuthContext.tsx - popraw import
+// src/contexts/AuthContext.tsx
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, AuthSession } from '../types';
-import { supabase, getCurrentUser as getSupabaseUser, signOut } from '../lib/supabase';
+import { supabase, getCurrentUser as getSupabaseUser } from '../lib/supabase'; // ← USUŃ signOut z importu
+import { BookOpen } from "lucide-react";
 
 interface AuthContextType {
   session: AuthSession;
@@ -25,13 +28,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         console.log('🔄 Checking auth...');
         
-        // Sprawdź czy mamy sesję
         const { data: { session: authSession } } = await supabase.auth.getSession();
         
         if (authSession?.user && mounted) {
           console.log('✅ Found session for:', authSession.user.email);
           
-          // UPROSZCZONE - użyj danych z auth session
           const user = {
             id: authSession.user.id,
             email: authSession.user.email || '',
@@ -53,7 +54,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initAuth();
 
-    // UPROSZCZONY listener - bez dodatkowych zapytań
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, authSession) => {
         if (!mounted) return;
@@ -105,14 +105,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     try {
-      await signOut();
+      // UŻYJ BEZPOŚREDNIO supabase.auth.signOut() zamiast importowanej funkcji
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
       setSession({ user: null, isAuthenticated: false });
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
 
-  // Krótszy loading screen
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
