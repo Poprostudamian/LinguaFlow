@@ -17,70 +17,84 @@ import {
 import { useTutorStudents } from '../contexts/StudentsContext';
 
 // Mock data for conversations - replace with real API calls
-const mockConversations = [
-  {
-    id: '1',
-    studentId: '550e8400-e29b-41d4-a716-446655440002',
-    lastMessage: 'Thank you for the lesson! I have a question about the grammar exercise.',
-    lastMessageTime: '10:30 AM',
-    lastMessageDate: '2024-03-20',
-    unreadCount: 2,
-    isOnline: true
-  },
-  {
-    id: '2', 
-    studentId: '550e8400-e29b-41d4-a716-446655440003',
-    lastMessage: 'When is our next meeting scheduled?',
-    lastMessageTime: '9:15 AM',
-    lastMessageDate: '2024-03-20',
+// const mockConversations = [
+//   {
+//     id: '1',
+//     studentId: '550e8400-e29b-41d4-a716-446655440002',
+//     lastMessage: 'Thank you for the lesson! I have a question about the grammar exercise.',
+//     lastMessageTime: '10:30 AM',
+//     lastMessageDate: '2024-03-20',
+//     unreadCount: 2,
+//     isOnline: true
+//   },
+//   {
+//     id: '2', 
+//     studentId: '550e8400-e29b-41d4-a716-446655440003',
+//     lastMessage: 'When is our next meeting scheduled?',
+//     lastMessageTime: '9:15 AM',
+//     lastMessageDate: '2024-03-20',
+//     unreadCount: 0,
+//     isOnline: false
+//   },
+//   {
+//     id: '3',
+//     studentId: '550e8400-e29b-41d4-a716-446655440004', 
+//     lastMessage: 'Could you please send me the materials we discussed?',
+//     lastMessageTime: '4:20 PM',
+//     lastMessageDate: '2024-03-19',
+//     unreadCount: 1,
+//     isOnline: true
+//   }
+// ];
+
+// const mockMessages = [
+//   {
+//     id: '1',
+//     conversationId: '1',
+//     senderId: '550e8400-e29b-41d4-a716-446655440002',
+//     content: 'Hello! I just finished the Spanish grammar lesson you assigned.',
+//     timestamp: '2024-03-20T09:00:00Z',
+//     isRead: true
+//   },
+//   {
+//     id: '2',
+//     conversationId: '1',
+//     senderId: '550e8400-e29b-41d4-a716-446655440001', // Tutor
+//     content: 'Great work! How did you find the subjunctive exercises?',
+//     timestamp: '2024-03-20T09:05:00Z',
+//     isRead: true
+//   },
+//   {
+//     id: '3',
+//     conversationId: '1',
+//     senderId: '550e8400-e29b-41d4-a716-446655440002',
+//     content: 'They were challenging but I think I understand the concept better now.',
+//     timestamp: '2024-03-20T09:10:00Z',
+//     isRead: true
+//   },
+//   {
+//     id: '4',
+//     conversationId: '1',
+//     senderId: '550e8400-e29b-41d4-a716-446655440002',
+//     content: 'Thank you for the lesson! I have a question about the grammar exercise.',
+//     timestamp: '2024-03-20T10:30:00Z',
+//     isRead: false
+//   }
+// ];
+
+export function TutorMessagesPage() {
+  const { students, totalStudents } = useTutorStudents(); // Dodaj to
+  
+  // Usuń lub zamień mockConversations na prawdziwe dane
+  const conversations = students.map(student => ({
+    id: student.relationship_id,
+    studentId: student.student_id,
+    lastMessage: 'No messages yet', // Placeholder
+    lastMessageTime: 'Now',
+    lastMessageDate: new Date().toISOString().split('T')[0],
     unreadCount: 0,
     isOnline: false
-  },
-  {
-    id: '3',
-    studentId: '550e8400-e29b-41d4-a716-446655440004', 
-    lastMessage: 'Could you please send me the materials we discussed?',
-    lastMessageTime: '4:20 PM',
-    lastMessageDate: '2024-03-19',
-    unreadCount: 1,
-    isOnline: true
-  }
-];
-
-const mockMessages = [
-  {
-    id: '1',
-    conversationId: '1',
-    senderId: '550e8400-e29b-41d4-a716-446655440002',
-    content: 'Hello! I just finished the Spanish grammar lesson you assigned.',
-    timestamp: '2024-03-20T09:00:00Z',
-    isRead: true
-  },
-  {
-    id: '2',
-    conversationId: '1',
-    senderId: '550e8400-e29b-41d4-a716-446655440001', // Tutor
-    content: 'Great work! How did you find the subjunctive exercises?',
-    timestamp: '2024-03-20T09:05:00Z',
-    isRead: true
-  },
-  {
-    id: '3',
-    conversationId: '1',
-    senderId: '550e8400-e29b-41d4-a716-446655440002',
-    content: 'They were challenging but I think I understand the concept better now.',
-    timestamp: '2024-03-20T09:10:00Z',
-    isRead: true
-  },
-  {
-    id: '4',
-    conversationId: '1',
-    senderId: '550e8400-e29b-41d4-a716-446655440002',
-    content: 'Thank you for the lesson! I have a question about the grammar exercise.',
-    timestamp: '2024-03-20T10:30:00Z',
-    isRead: false
-  }
-];
+  }));
 
 interface NewMessage {
   content: string;
@@ -189,11 +203,11 @@ export function TutorMessagesPage() {
         </div>
         <div className="flex items-center space-x-3">
           <div className="bg-white dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center space-x-2 text-sm">
-              <Users className="h-4 w-4 text-gray-500" />
-              <span className="text-gray-600 dark:text-gray-400">{totalStudents} Students</span>
-            </div>
-          </div>
+    <div className="flex items-center space-x-2 text-sm">
+      <Users className="h-4 w-4 text-gray-500" />
+      <span className="text-gray-600 dark:text-gray-400">{totalStudents} Students</span>
+    </div>
+  </div>
         </div>
       </div>
 
