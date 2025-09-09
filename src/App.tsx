@@ -64,7 +64,7 @@ function App() {
               </Routes>
             </div>
           </Router>
-        </StudentsProvider> {/* ← WŁĄCZONE Z POWROTEM */}
+        </StudentsProvider>
       </AuthProvider>
     </ThemeProvider>
   );
