@@ -291,6 +291,7 @@ export function TutorLessonManagementPage() {
           filteredLessons.map((lesson) => {
             const assignedStudentsData = getStudentsByIds(lesson.assignedStudents);
             
+            
             return (
               <div
                 key={lesson.id}
@@ -309,7 +310,7 @@ export function TutorLessonManagementPage() {
                     </div>
                     
                     <p className="text-gray-600 dark:text-gray-400 mb-4">
-                      {lesson.description}
+                      {lesson.description || 'No description provided'}
                     </p>
 
                     <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
