@@ -1,164 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
+// DODAJ te interfejsy i funkcje do src/lib/supabase.ts
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-// Authentication types
-export interface AuthUser {
-  id: string
-  email: string
-  role: 'student' | 'tutor'
-  first_name?: string
-  last_name?: string
-  avatar_url?: string
-}
-
-export interface SignUpData {
-  email: string
-  password: string
-  first_name: string
-  last_name: string
-  role: 'student' | 'tutor'
-}
-
-export interface SignInData {
-  email: string
-  password: string
-}
-
-// Authentication helper functions
-export const signUp = async (data: SignUpData) => {
-  console.log('🔄 Starting signup process for:', data.email);
-  
-  // Krok 1: Rejestracja w Supabase Auth
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email: data.email,
-    password: data.password,
-    options: {
-      data: {
-        first_name: data.first_name,
-        last_name: data.last_name,
-        role: data.role,
-      }
-    }
-  });
-
-  if (authError) {
-    console.error('❌ Auth signup failed:', authError);
-    throw authError;
-  }
-
-  console.log('✅ Auth signup successful:', authData.user?.email);
-
-  // Krok 2: BACKUP - Jeśli trigger nie zadziałał, dodaj ręcznie do public.users
-  if (authData.user) {
-    try {
-      console.log('🔄 Checking if user exists in public.users...');
-      
-      // Sprawdź czy użytkownik już istnieje w public.users
-      const { data: existingUser, error: checkError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('id', authData.user.id)
-        .maybeSingle();
-
-      if (checkError && checkError.code !== 'PGRST116') {
-        console.error('❌ Error checking existing user:', checkError);
-        // Nie przerywaj - auth się udał
-      }
-
-      if (!existingUser) {
-        console.log('⚠️ User not found in public.users, adding manually...');
-        
-        // Dodaj użytkownika do public.users (backup jeśli trigger nie zadziałał)
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert({
-            id: authData.user.id,
-            email: data.email,
-            password_hash: 'managed_by_supabase_auth',
-            first_name: data.first_name,
-            last_name: data.last_name,
-            role: data.role
-          });
-
-        if (insertError) {
-          console.error('❌ Manual insert failed:', insertError);
-          // Nie rzucaj błędu - auth się udał, może trigger jednak zadziałał
-        } else {
-          console.log('✅ Manual insert successful');
-        }
-      } else {
-        console.log('✅ User already exists in public.users (trigger worked)');
-      }
-    } catch (backupError) {
-      console.error('❌ Backup insert failed:', backupError);
-      // Nie przerywaj - główna rejestracja się udała
-    }
-  }
-
-  return authData;
-}
-
-export const signIn = async (data: SignInData) => {
-  const { data: authData, error } = await supabase.auth.signInWithPassword({
-    email: data.email,
-    password: data.password,
-  })
-
-  if (error) throw error
-
-  return authData
-}
-
-export const signOut = async () => {
-  const { error } = await supabase.auth.signOut()
-  if (error) throw error
-}
-
-export const getCurrentUser = async (): Promise<AuthUser | null> => {
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) return null
-
-  // Get additional user data from our users table
-  const { data: userData, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  if (error || !userData) {
-    // Fallback to auth user data if users table query fails
-    return {
-      id: user.id,
-      email: user.email || '',
-      role: (user.user_metadata?.role as 'student' | 'tutor') || 'student',
-      first_name: user.user_metadata?.first_name,
-      last_name: user.user_metadata?.last_name,
-      avatar_url: user.user_metadata?.avatar_url,
-    }
-  }
-
-  return {
-    id: userData.id,
-    email: userData.email,
-    role: userData.role,
-    first_name: userData.first_name,
-    last_name: userData.last_name,
-    avatar_url: userData.avatar_url,
-  }
-}
-
-// Dodaj te interfejsy i funkcje do istniejącego pliku src/lib/supabase.ts
-
-// === INTERFACES FOR STEP 2 ===
+// === INTERFACES FOR STEP 2 === (dodaj po istniejących interfejsach)
 export interface UserRelationship {
   id: string
   tutor_id: string
@@ -196,10 +38,48 @@ export interface TutorStudent {
   is_active: boolean
 }
 
-// === INVITATION FUNCTIONS ===
+// === FUNCTIONS FOR STEP 2 === (dodaj na końcu pliku)
+
+// Get all students for a tutor
+export const getTutorStudents = async () => {
+  console.log('🔍 Getting tutor students...');
+  
+  const { data, error } = await supabase
+    .from('tutor_students')
+    .select('*')
+    .order('relationship_created', { ascending: false })
+
+  if (error) {
+    console.error('❌ Error getting tutor students:', error);
+    throw error;
+  }
+  
+  console.log('✅ Found', data?.length || 0, 'students');
+  return data as TutorStudent[]
+}
+
+// Get all invitations sent by tutor
+export const getTutorInvitations = async () => {
+  console.log('🔍 Getting tutor invitations...');
+  
+  const { data, error } = await supabase
+    .from('relationship_invitations')
+    .select('*')
+    .order('invited_at', { ascending: false })
+
+  if (error) {
+    console.error('❌ Error getting invitations:', error);
+    throw error;
+  }
+  
+  console.log('✅ Found', data?.length || 0, 'invitations');
+  return data as RelationshipInvitation[]
+}
 
 // Send invitation to student by email
 export const sendStudentInvitation = async (studentEmail: string, message?: string) => {
+  console.log('📧 Sending invitation to:', studentEmail);
+  
   const { data, error } = await supabase
     .from('relationship_invitations')
     .insert({
@@ -209,68 +89,44 @@ export const sendStudentInvitation = async (studentEmail: string, message?: stri
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    console.error('❌ Error sending invitation:', error);
+    throw error;
+  }
+  
+  console.log('✅ Invitation sent successfully');
   return data
 }
 
-// Get all invitations sent by tutor
-export const getTutorInvitations = async () => {
+// Check if email is already a student
+export const findStudentByEmail = async (email: string) => {
+  console.log('🔍 Looking for student:', email);
+  
   const { data, error } = await supabase
-    .from('relationship_invitations')
-    .select('*')
-    .order('invited_at', { ascending: false })
+    .from('users')
+    .select('id, first_name, last_name, email')
+    .eq('email', email.toLowerCase().trim())
+    .eq('role', 'student')
+    .maybeSingle()
 
-  if (error) throw error
-  return data as RelationshipInvitation[]
-}
-
-// Accept invitation (for students)
-export const acceptInvitation = async (invitationId: string) => {
-  const { data, error } = await supabase
-    .from('relationship_invitations')
-    .update({
-      status: 'accepted',
-      responded_at: new Date().toISOString()
-    })
-    .eq('id', invitationId)
-    .select()
-    .single()
-
-  if (error) throw error
+  if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+    console.error('❌ Error finding student:', error);
+    throw error;
+  }
+  
+  if (data) {
+    console.log('✅ Found existing student:', data.first_name, data.last_name);
+  } else {
+    console.log('ℹ️ Student not found, they can register later');
+  }
+  
   return data
-}
-
-// Decline invitation (for students)
-export const declineInvitation = async (invitationId: string) => {
-  const { data, error } = await supabase
-    .from('relationship_invitations')
-    .update({
-      status: 'declined',
-      responded_at: new Date().toISOString()
-    })
-    .eq('id', invitationId)
-    .select()
-    .single()
-
-  if (error) throw error
-  return data
-}
-
-// === RELATIONSHIP FUNCTIONS ===
-
-// Get all students for a tutor
-export const getTutorStudents = async () => {
-  const { data, error } = await supabase
-    .from('tutor_students')
-    .select('*')
-    .order('relationship_created', { ascending: false })
-
-  if (error) throw error
-  return data as TutorStudent[]
 }
 
 // Get all tutors for a student
 export const getStudentTutors = async () => {
+  console.log('🔍 Getting student tutors...');
+  
   const { data, error } = await supabase
     .from('user_relationships')
     .select(`
@@ -290,96 +146,11 @@ export const getStudentTutors = async () => {
     .eq('is_active', true)
     .order('created_at', { ascending: false })
 
-  if (error) throw error
-  return data
-}
-
-// Create direct relationship (for when both users exist)
-export const createDirectRelationship = async (studentId: string, notes?: string) => {
-  const { data, error } = await supabase
-    .from('user_relationships')
-    .insert({
-      student_id: studentId,
-      notes: notes?.trim() || null
-    })
-    .select()
-    .single()
-
-  if (error) throw error
-  return data
-}
-
-// Update relationship notes
-export const updateRelationshipNotes = async (relationshipId: string, notes: string) => {
-  const { data, error } = await supabase
-    .from('user_relationships')
-    .update({
-      notes: notes.trim() || null
-    })
-    .eq('id', relationshipId)
-    .select()
-    .single()
-
-  if (error) throw error
-  return data
-}
-
-// Deactivate relationship (soft delete)
-export const deactivateRelationship = async (relationshipId: string) => {
-  const { data, error } = await supabase
-    .from('user_relationships')
-    .update({
-      is_active: false
-    })
-    .eq('id', relationshipId)
-    .select()
-    .single()
-
-  if (error) throw error
-  return data
-}
-
-// === UTILITY FUNCTIONS ===
-
-// Check if email is already a student
-export const findStudentByEmail = async (email: string) => {
-  const { data, error } = await supabase
-    .from('users')
-    .select('id, first_name, last_name, email')
-    .eq('email', email.toLowerCase().trim())
-    .eq('role', 'student')
-    .maybeSingle()
-
-  if (error) throw error
-  return data
-}
-
-// Expire old invitations (utility function)
-export const expireOldInvitations = async () => {
-  const { error } = await supabase.rpc('expire_old_invitations')
-  if (error) throw error
-}
-
-// Get pending invitations for current user (student)
-export const getMyPendingInvitations = async () => {
-  const user = await getCurrentUser()
-  if (!user) throw new Error('Not authenticated')
-
-  const { data, error } = await supabase
-    .from('relationship_invitations')
-    .select(`
-      *,
-      tutor:users!tutor_id (
-        first_name,
-        last_name,
-        email
-      )
-    `)
-    .eq('student_email', user.email)
-    .eq('status', 'pending')
-    .gt('expires_at', new Date().toISOString())
-    .order('invited_at', { ascending: false })
-
-  if (error) throw error
+  if (error) {
+    console.error('❌ Error getting student tutors:', error);
+    throw error;
+  }
+  
+  console.log('✅ Found', data?.length || 0, 'tutors');
   return data
 }
