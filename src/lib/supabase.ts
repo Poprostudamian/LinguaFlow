@@ -197,37 +197,43 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
 export const getTutorStudents = async () => {
   console.log('🔍 Getting tutor students...');
   
-  const { data, error } = await supabase
+  // Krok 1: Pobierz relacje
+  const { data: relationships, error: relError } = await supabase
     .from('user_relationships')
-    .select(`
-      id,
-      tutor_id, 
-      student_id,
-      created_at,
-      status,
-      is_active,
-      notes,
-      users!student_id(
-        first_name,
-        last_name,
-        email
-      )
-    `)
+    .select('id, tutor_id, student_id, created_at, status, is_active, notes')
     .eq('status', 'accepted')
     .eq('is_active', true);
 
-  if (error) {
-    console.error('❌ Error getting tutor students:', error);
-    throw error;
+  if (relError) {
+    console.error('❌ Error getting relationships:', relError);
+    throw relError;
   }
+
+  console.log('Relationships:', relationships);
+
+  if (!relationships || relationships.length === 0) {
+    return [];
+  }
+
+  // Krok 2: Pobierz dane studentów
+  const studentIds = relationships.map(r => r.student_id);
   
-  console.log('RAW DATA from Supabase:', JSON.stringify(data, null, 2));
-  
-  // Transform data
-  const transformedData = (data || []).map((rel, index) => {
-    console.log(`Processing relationship ${index}:`, rel);
-    console.log(`User data for relationship ${index}:`, rel.users);
-    console.log(`Student ID: ${rel.student_id}`);
+  const { data: students, error: studentsError } = await supabase
+    .from('users')
+    .select('id, first_name, last_name, email')
+    .in('id', studentIds);
+
+  if (studentsError) {
+    console.error('❌ Error getting students:', studentsError);
+    throw studentsError;
+  }
+
+  console.log('Students:', students);
+
+  // Krok 3: Połącz dane
+  const transformedData = relationships.map(rel => {
+    const student = students?.find(s => s.id === rel.student_id);
+    console.log(`Matching student for ${rel.student_id}:`, student);
     
     return {
       relationship_id: rel.id,
@@ -235,17 +241,17 @@ export const getTutorStudents = async () => {
       tutor_first_name: '',
       tutor_last_name: '',
       student_id: rel.student_id,
-      student_first_name: rel.users?.first_name || 'Unknown',
-      student_last_name: rel.users?.last_name || 'Student',
-      student_email: rel.users?.email || '',
+      student_first_name: student?.first_name || 'Unknown',
+      student_last_name: student?.last_name || 'Student',
+      student_email: student?.email || '',
       relationship_created: rel.created_at,
       status: rel.status,
       notes: rel.notes,
       is_active: rel.is_active
     };
   });
-  
-  console.log('TRANSFORMED DATA:', transformedData);
+
+  console.log('Final transformed data:', transformedData);
   return transformedData as TutorStudent[];
 }
 
