@@ -21,6 +21,7 @@ export function TutorStudentsPage() {
     pendingInvitations,
     refreshAll,
     searchStudents,
+    getStudentsByIds,
     getStudentStats
   } = useTutorStudents();
 
