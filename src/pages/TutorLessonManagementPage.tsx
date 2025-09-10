@@ -110,7 +110,6 @@ console.log('DEBUG - First student:', students[0]);
   if (!session.user?.id) return;
   
   setIsCreating(true);
-
   try {
     const lessonData: CreateLessonData = {
       title: newLesson.title.trim(),
@@ -119,24 +118,29 @@ console.log('DEBUG - First student:', students[0]);
       assignedStudentIds: newLesson.assignedStudentIds,
       status: 'published'
     };
-
+    
     await createLesson(session.user.id, lessonData);
     
     // Reload lessons to show the new one
     await loadLessons();
     
-    // DODAJ TO - odśwież statystyki studentów
-    const { refreshStats } = useTutorStudents();
-    await refreshStats();
+    // ❌ USUŃ TĘ LINIJKĘ - funkcja nie istnieje
+    // await refreshStats();
     
-    // Reset form and close modal
+    // ✅ WYCZYŚĆ FORMULARZ PO UTWORZENIU LEKCJI
     setNewLesson({
       title: '',
       description: '',
       content: '',
       assignedStudentIds: []
     });
+    
+    // ✅ ZAMKNIJ MODAL
     setShowCreateModal(false);
+    
+    // ✅ POKAŻ KOMUNIKAT O SUKCESIE
+    console.log('Lesson created successfully!');
+    
   } catch (error: any) {
     console.error('Error creating lesson:', error);
     setLessonsError(error.message || 'Failed to create lesson');
