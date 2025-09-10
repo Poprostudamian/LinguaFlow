@@ -43,6 +43,7 @@ interface Conversation {
 export function TutorMessagesPage() {
   const { session } = useAuth();
   const { students, totalStudents, isLoading: studentsLoading, error: studentsError } = useTutorStudents();
+  const { studentsStats, getStudentStats } = useTutorStudents();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [newMessage, setNewMessage] = useState<NewMessage>({ content: '' });
@@ -50,17 +51,28 @@ export function TutorMessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Create conversations from students data
-  const conversations: Conversation[] = students.map(student => ({
+  const conversations: Conversation[] = students.map(student => {
+  const stats = getStudentStats(student.student_id);
+  
+  return {
     id: student.relationship_id,
     studentId: student.student_id,
     studentName: `${student.student_first_name} ${student.student_last_name}`.trim() || 'Unknown Student',
     studentEmail: student.student_email,
-    lastMessage: 'No messages yet - start a conversation!',
-    lastMessageTime: 'Now',
-    lastMessageDate: new Date().toISOString().split('T')[0],
+    lastMessage: stats?.last_activity 
+      ? `Last activity: ${new Date(stats.last_activity).toLocaleDateString()}`
+      : 'No activity yet',
+    lastMessageTime: stats?.last_activity 
+      ? new Date(stats.last_activity).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      : 'Now',
+    lastMessageDate: stats?.last_activity || new Date().toISOString().split('T')[0],
     unreadCount: 0,
-    isOnline: Math.random() > 0.5 // Random online status for demo
-  }));
+    isOnline: Math.random() > 0.5,
+    // Dodaj stats do obiektu conversation jeśli potrzebujesz
+    lessons: stats?.completed_lessons || 0,
+    studyTime: stats?.total_study_time_minutes || 0
+  };
+});
 
   // Auto scroll to bottom when messages change
   useEffect(() => {
