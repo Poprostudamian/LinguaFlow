@@ -25,20 +25,19 @@ export function TutorStudentsPage() {
 
   // Convert TutorStudent to Student format (BEZ LOSOWYCH DANYCH)
   const convertToStudentFormat = (tutorStudent: any) => {
-    const studentIdHash = tutorStudent.student_id.split('-')[0] || '0';
-    const hashNum = parseInt(studentIdHash, 16) || 0;
-    
-    return {
-      id: tutorStudent.student_id,
-      name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
-      email: tutorStudent.student_email,
-      level: ['Beginner', 'Intermediate', 'Advanced'][hashNum % 3],
-      progress: (hashNum % 100),
-      lessonsCompleted: (hashNum % 25),
-      totalHours: (hashNum % 50) + 1,
-      joinedDate: tutorStudent.relationship_created
-    };
+  const stats = getStudentStats(tutorStudent.student_id);
+  
+  return {
+    id: tutorStudent.student_id,
+    name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
+    email: tutorStudent.student_email,
+    level: ['Beginner', 'Intermediate', 'Advanced'][Math.abs(tutorStudent.student_id.charCodeAt(0)) % 3],
+    progress: stats?.average_progress || 0, // PRAWDZIWY postęp
+    lessonsCompleted: stats?.completed_lessons || 0, // PRAWDZIWE lekcje
+    totalHours: Math.round((stats?.total_study_time_minutes || 0) / 60), // PRAWDZIWE godziny
+    joinedDate: tutorStudent.relationship_created
   };
+};
 
   // Filter students based on search
   const filteredStudents = searchStudents(searchTerm);
