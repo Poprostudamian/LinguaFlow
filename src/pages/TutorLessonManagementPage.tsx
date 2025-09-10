@@ -102,41 +102,45 @@ console.log('DEBUG - First student:', students[0]);
     setFilteredLessons(filtered);
   }, [lessons, statusFilter, searchQuery]);
 
-  const handleCreateLesson = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!session.user?.id) return;
+ const handleCreateLesson = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!session.user?.id) return;
+  
+  setIsCreating(true);
+
+  try {
+    const lessonData: CreateLessonData = {
+      title: newLesson.title.trim(),
+      description: newLesson.description.trim() || undefined,
+      content: newLesson.content.trim(),
+      assignedStudentIds: newLesson.assignedStudentIds,
+      status: 'published'
+    };
+
+    await createLesson(session.user.id, lessonData);
     
-    setIsCreating(true);
-
-    try {
-      const lessonData: CreateLessonData = {
-        title: newLesson.title.trim(),
-        description: newLesson.description.trim() || undefined,
-        content: newLesson.content.trim(),
-        assignedStudentIds: newLesson.assignedStudentIds,
-        status: 'published'
-      };
-
-      await createLesson(session.user.id, lessonData);
-      
-      // Reload lessons to show the new one
-      await loadLessons();
-      
-      // Reset form and close modal
-      setNewLesson({
-        title: '',
-        description: '',
-        content: '',
-        assignedStudentIds: []
-      });
-      setShowCreateModal(false);
-    } catch (error: any) {
-      console.error('Error creating lesson:', error);
-      setLessonsError(error.message || 'Failed to create lesson');
-    } finally {
-      setIsCreating(false);
-    }
-  };
+    // Reload lessons to show the new one
+    await loadLessons();
+    
+    // DODAJ TO - odśwież statystyki studentów
+    const { refreshStats } = useTutorStudents();
+    await refreshStats();
+    
+    // Reset form and close modal
+    setNewLesson({
+      title: '',
+      description: '',
+      content: '',
+      assignedStudentIds: []
+    });
+    setShowCreateModal(false);
+  } catch (error: any) {
+    console.error('Error creating lesson:', error);
+    setLessonsError(error.message || 'Failed to create lesson');
+  } finally {
+    setIsCreating(false);
+  }
+};
 
   const handleStudentToggle = (studentId: string) => {
     setNewLesson(prev => ({
