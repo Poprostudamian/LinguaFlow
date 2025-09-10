@@ -66,21 +66,24 @@ console.log('DEBUG - First student:', students[0]);
 
   // Load tutor's lessons from database
   const loadLessons = async () => {
-    if (!session.user?.id) return;
+  if (!session.user?.id) return;
+  
+  setIsLoadingLessons(true);
+  setLessonsError(null);
+  
+  try {
+    const lessonsData = await getTutorLessons(session.user.id);
+    setLessons(lessonsData);
     
-    setIsLoadingLessons(true);
-    setLessonsError(null);
-    
-    try {
-      const lessonsData = await getTutorLessons(session.user.id);
-      setLessons(lessonsData);
-    } catch (error: any) {
-      console.error('Error loading lessons:', error);
-      setLessonsError(error.message || 'Failed to load lessons');
-    } finally {
-      setIsLoadingLessons(false);
-    }
-  };
+    // Automatycznie odśwież statystyki po załadowaniu lekcji
+    await refreshStats();
+  } catch (error: any) {
+    console.error('Error loading lessons:', error);
+    setLessonsError(error.message || 'Failed to load lessons');
+  } finally {
+    setIsLoadingLessons(false);
+  }
+};
 
   // Filter lessons based on status and search
   useEffect(() => {
