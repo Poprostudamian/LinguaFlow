@@ -30,7 +30,6 @@ interface NewLesson {
   title: string;
   description: string;
   content: string;
-  exerciseType: 'flashcards' | 'written' | 'multiple-choice' | 'word-connection';
   assignedStudentIds: string[];
 }
 
@@ -55,7 +54,6 @@ console.log('DEBUG - First student:', students[0]);
     title: '',
     description: '',
     content: '',
-    exerciseType: 'flashcards',
     assignedStudentIds: []
   });
 
@@ -129,7 +127,6 @@ console.log('DEBUG - First student:', students[0]);
         title: '',
         description: '',
         content: '',
-        exerciseType: 'flashcards',
         assignedStudentIds: []
       });
       setShowCreateModal(false);
@@ -197,52 +194,10 @@ console.log('DEBUG - First student:', students[0]);
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="group relative bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 hover:transform hover:scale-105 hover:shadow-2xl shadow-lg border border-white/20 backdrop-blur-sm"
+          className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:transform hover:scale-105"
         >
-          {/* Main Button Content */}
-          <div className="flex items-center space-x-3">
-            <div className="relative">
-              <Plus className="h-5 w-5 transition-transform duration-300 group-hover:rotate-90" />
-              <div className="absolute -inset-1 bg-white/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            </div>
-            <div className="text-left">
-              <div className="text-lg font-bold">Create New Lesson</div>
-              <div className="text-xs text-purple-100 opacity-90 group-hover:opacity-100 transition-opacity duration-300">
-                Choose from 4 exercise types
-              </div>
-            </div>
-          </div>
-          
-          {/* Exercise Type Icons Preview */}
-          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
-            <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/30">
-              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm2 2h8v2H6V6zm0 4h8v2H6v-2z"/>
-              </svg>
-            </div>
-            <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/30">
-              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-              </svg>
-            </div>
-            <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/30">
-              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd"/>
-              </svg>
-            </div>
-            <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/30">
-              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
-              </svg>
-            </div>
-          </div>
-          
-          {/* Animated Background Elements */}
-          <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-            <div className="absolute top-2 right-2 w-2 h-2 bg-white/30 rounded-full animate-pulse"></div>
-            <div className="absolute bottom-3 left-3 w-1 h-1 bg-white/40 rounded-full animate-pulse delay-300"></div>
-            <div className="absolute top-1/2 right-4 w-1.5 h-1.5 bg-white/25 rounded-full animate-pulse delay-700"></div>
-          </div>
+          <Plus className="h-4 w-4" />
+          <span>Create New Lesson</span>
         </button>
       </div>
 
@@ -456,102 +411,6 @@ console.log('DEBUG - First student:', students[0]);
             </div>
             
             <form onSubmit={handleCreateLesson} className="p-6 space-y-4">
-              {/* Exercise Type Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  Exercise Type
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className={`relative flex flex-col items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${
-                    newLesson.exerciseType === 'flashcards' 
-                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 shadow-md' 
-                      : 'border-gray-300 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="exerciseType"
-                      value="flashcards"
-                      checked={newLesson.exerciseType === 'flashcards'}
-                      onChange={(e) => setNewLesson(prev => ({ ...prev, exerciseType: e.target.value as any }))}
-                      className="sr-only"
-                    />
-                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center mb-2">
-                      <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm2 2h8v2H6V6zm0 4h8v2H6v-2z"/>
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white text-center">Flashcards</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 text-center mt-1">Interactive cards</span>
-                  </label>
-
-                  <label className={`relative flex flex-col items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${
-                    newLesson.exerciseType === 'written' 
-                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 shadow-md' 
-                      : 'border-gray-300 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="exerciseType"
-                      value="written"
-                      checked={newLesson.exerciseType === 'written'}
-                      onChange={(e) => setNewLesson(prev => ({ ...prev, exerciseType: e.target.value as any }))}
-                      className="sr-only"
-                    />
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center mb-2">
-                      <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white text-center">Written Answers</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 text-center mt-1">Text responses</span>
-                  </label>
-
-                  <label className={`relative flex flex-col items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${
-                    newLesson.exerciseType === 'multiple-choice' 
-                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 shadow-md' 
-                      : 'border-gray-300 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="exerciseType"
-                      value="multiple-choice"
-                      checked={newLesson.exerciseType === 'multiple-choice'}
-                      onChange={(e) => setNewLesson(prev => ({ ...prev, exerciseType: e.target.value as any }))}
-                      className="sr-only"
-                    />
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center mb-2">
-                      <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd"/>
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white text-center">ABCD Choice</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 text-center mt-1">Multiple choice</span>
-                  </label>
-
-                  <label className={`relative flex flex-col items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${
-                    newLesson.exerciseType === 'word-connection' 
-                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 shadow-md' 
-                      : 'border-gray-300 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="exerciseType"
-                      value="word-connection"
-                      checked={newLesson.exerciseType === 'word-connection'}
-                      onChange={(e) => setNewLesson(prev => ({ ...prev, exerciseType: e.target.value as any }))}
-                      className="sr-only"
-                    />
-                    <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center mb-2">
-                      <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white text-center">Word Connection</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 text-center mt-1">Match languages</span>
-                  </label>
-                </div>
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Lesson Title
@@ -599,3 +458,44 @@ console.log('DEBUG - First student:', students[0]);
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Assign to Students ({newLesson.assignedStudentIds.length} selected)
                   </label>
+                  <div className="max-h-40 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-2">
+                    {students.map((student) => (
+                      <label key={student.student_id} className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={newLesson.assignedStudentIds.includes(student.student_id)}
+                          onChange={() => handleStudentToggle(student.student_id)}
+                          className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                          {student.student_first_name} {student.student_last_name}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreating}
+                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isCreating ? 'Creating...' : 'Create Lesson'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
