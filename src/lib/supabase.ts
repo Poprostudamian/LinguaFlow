@@ -692,3 +692,88 @@ export const updateStudentLessonProgress = async (
     throw error;
   }
 };
+
+export interface StudentStats {
+  student_id: string;
+  total_lessons: number;
+  completed_lessons: number;
+  in_progress_lessons: number;
+  total_study_time_minutes: number;
+  average_progress: number;
+  last_activity: string | null;
+}
+
+/**
+ * Get comprehensive stats for a student
+ */
+export const getStudentStats = async (studentId: string): Promise<StudentStats> => {
+  try {
+    // Get lesson assignments and progress
+    const { data: studentLessons, error } = await supabase
+      .from('student_lessons')
+      .select(`
+        lesson_id,
+        status,
+        progress,
+        assigned_at,
+        completed_at,
+        updated_at
+      `)
+      .eq('student_id', studentId);
+
+    if (error) throw error;
+
+    const lessons = studentLessons || [];
+    
+    // Calculate stats
+    const totalLessons = lessons.length;
+    const completedLessons = lessons.filter(l => l.status === 'completed').length;
+    const inProgressLessons = lessons.filter(l => l.status === 'in_progress').length;
+    
+    // Calculate average progress
+    const averageProgress = totalLessons > 0 
+      ? Math.round(lessons.reduce((sum, l) => sum + l.progress, 0) / totalLessons)
+      : 0;
+
+    // Calculate study time (estimate: 1% progress = 1 minute)
+    const totalStudyTimeMinutes = lessons.reduce((sum, l) => sum + l.progress, 0);
+
+    // Find last activity
+    const lastActivity = lessons.length > 0 
+      ? lessons
+          .map(l => l.updated_at)
+          .sort()
+          .reverse()[0]
+      : null;
+
+    return {
+      student_id: studentId,
+      total_lessons: totalLessons,
+      completed_lessons: completedLessons,
+      in_progress_lessons: inProgressLessons,
+      total_study_time_minutes: totalStudyTimeMinutes,
+      average_progress: averageProgress,
+      last_activity: lastActivity
+    };
+
+  } catch (error) {
+    console.error('Error fetching student stats:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get stats for multiple students (for tutor dashboard)
+ */
+export const getStudentsStats = async (studentIds: string[]): Promise<StudentStats[]> => {
+  if (studentIds.length === 0) return [];
+
+  try {
+    const statsPromises = studentIds.map(id => getStudentStats(id));
+    const results = await Promise.all(statsPromises);
+    return results;
+  } catch (error) {
+    console.error('Error fetching students stats:', error);
+    throw error;
+  }
+};
