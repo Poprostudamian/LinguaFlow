@@ -20,7 +20,8 @@ export function TutorStudentsPage() {
     activeStudents,
     pendingInvitations,
     refreshAll,
-    searchStudents
+    searchStudents,
+    getStudentStats
   } = useTutorStudents();
 
   // Convert TutorStudent to Student format (BEZ LOSOWYCH DANYCH)
