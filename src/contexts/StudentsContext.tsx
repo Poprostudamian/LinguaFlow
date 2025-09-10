@@ -90,7 +90,29 @@ const { session } = useAuth();
     }
   };
 
-  const refreshAll = async () => {
+const refreshStats = async () => {
+    if (students.length === 0) return;
+    
+    try {
+      setIsLoadingStats(true);
+      const studentIds = students.map(s => s.student_id);
+      const stats = await getStudentsStats(studentIds);
+      
+      // Convert array to object for easy lookup
+      const statsObject = stats.reduce((acc, stat) => {
+        acc[stat.student_id] = stat;
+        return acc;
+      }, {} as { [studentId: string]: StudentStats });
+      
+      setStudentsStats(statsObject);
+    } catch (err: any) {
+      console.error('Error loading stats:', err);
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+  
+ const refreshAll = async () => {
     if (!session.isAuthenticated || session.user?.role !== 'tutor') {
       return;
     }
@@ -103,6 +125,9 @@ const { session } = useAuth();
         refreshStudents(),
         refreshInvitations()
       ]);
+      
+      // Load stats after students are loaded
+      await refreshStats();
     } catch (err: any) {
       console.error('Error loading students data:', err);
       setError('Failed to load students data');
