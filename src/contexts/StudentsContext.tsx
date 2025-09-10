@@ -35,6 +35,7 @@ interface StudentsContextType {
   // Utility functions
   getStudentById: (id: string) => TutorStudent | undefined;
   getStudentsByIds: (ids: string[]) => TutorStudent[];
+  getStudentStats: (studentId: string) => StudentStats | undefined;
   searchStudents: (query: string) => TutorStudent[];
 }
 
