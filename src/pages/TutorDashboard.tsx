@@ -29,16 +29,16 @@ export function TutorDashboard() {
 
   // Use real data from StudentsContext
   const {
-    students,
-    invitations,
-    totalStudents,
-    activeStudents,
-    pendingInvitations,
-    isLoading,
-    error,
-    refreshAll,
-    getStudentsByIds
-  } = useTutorStudents();
+  students,
+  invitations,
+  totalStudents,
+  activeStudents,
+  pendingInvitations,
+  isLoading,
+  error,
+  refreshAll,
+  getStudentsByIds
+} = useTutorStudents();
 
 const convertToStudentFormat = (tutorStudent: any) => {
   const stats = getStudentStats(tutorStudent.student_id);
@@ -49,8 +49,8 @@ const convertToStudentFormat = (tutorStudent: any) => {
     email: tutorStudent.student_email,
     level: 'Intermediate', // Domyślny poziom (TODO: dodaj do bazy)
     progress: stats?.average_progress || 0, // PRAWDZIWY postęp
-    lessonsCompleted: stats?.completed_lessons || 0,
-    totalHours: Math.round((stats?.total_study_time_minutes || 0) / 60), 
+    lessonsCompleted: stats?.completed_lessons || 0, // PRAWDZIWE lekcje
+    totalHours: Math.round((stats?.total_study_time_minutes || 0) / 60), // PRAWDZIWE godziny
     joinedDate: tutorStudent.relationship_created
   };
 };
