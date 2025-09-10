@@ -14,6 +14,8 @@ interface StudentsContextType {
   // Data
   students: TutorStudent[];
   invitations: RelationshipInvitation[];
+  studentsStats: { [studentId: string]: StudentStats };
+  isLoadingStats: boolean;
   
   // Loading states
   isLoading: boolean;
@@ -28,6 +30,7 @@ interface StudentsContextType {
   refreshStudents: () => Promise<void>;
   refreshInvitations: () => Promise<void>;
   refreshAll: () => Promise<void>;
+  refreshStats: () => Promise<void>;
   
   // Utility functions
   getStudentById: (id: string) => TutorStudent | undefined;
