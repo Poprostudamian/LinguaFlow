@@ -136,6 +136,10 @@ const refreshStats = async () => {
     }
   };
 
+  const getStudentStatsUtil = (studentId: string): StudentStats | undefined => {
+    return studentsStats[studentId];
+  };
+  
   // Utility functions
   const getStudentById = (id: string): TutorStudent | undefined => {
     return students.find(student => student.student_id === id);
@@ -174,15 +178,19 @@ const refreshStats = async () => {
     totalStudents,
     activeStudents,
     pendingInvitations,
+    studentsStats,
+    isLoadingStats,
     
     // Actions
     refreshStudents,
     refreshInvitations,
     refreshAll,
+    refreshStats,
     
     // Utilities
     getStudentById,
     getStudentsByIds,
+    getStudentStats: getStudentStatsUtil,
     searchStudents,
   };
 
