@@ -40,16 +40,20 @@ export function TutorDashboard() {
     getStudentsByIds
   } = useTutorStudents();
 
-const convertToStudentFormat = (tutorStudent: any) => ({
-  id: tutorStudent.student_id,
-  name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
-  email: tutorStudent.student_email,
-  level: 'Intermediate', // Domyślny poziom (TODO: dodaj do bazy)
-  progress: 0, // Domyślny postęp (TODO: policz z lekcji)
-  lessonsCompleted: 0, // Domyślne lekcje (TODO: policz z bazy)
-  totalHours: 0, // Domyślne godziny (TODO: policz z sesji)
-  joinedDate: tutorStudent.relationship_created
-});
+const convertToStudentFormat = (tutorStudent: any) => {
+  const stats = getStudentStats(tutorStudent.student_id);
+  
+  return {
+    id: tutorStudent.student_id,
+    name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
+    email: tutorStudent.student_email,
+    level: 'Intermediate', // Domyślny poziom (TODO: dodaj do bazy)
+    progress: stats?.average_progress || 0, // PRAWDZIWY postęp
+    lessonsCompleted: stats?.completed_lessons || 0, // PRAWDZIWE lekcje
+    totalHours: Math.round((stats?.total_study_time_minutes || 0) / 60), // PRAWDZIWE godziny
+    joinedDate: tutorStudent.relationship_created
+  };
+};
 
   const handleStudentToggle = (studentId: string) => {
     setNewLesson(prev => ({
