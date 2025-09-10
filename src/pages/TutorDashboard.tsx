@@ -37,7 +37,8 @@ export function TutorDashboard() {
   isLoading,
   error,
   refreshAll,
-  getStudentsByIds
+  getStudentsByIds,
+  getStudentStats
 } = useTutorStudents();
 
 const convertToStudentFormat = (tutorStudent: any) => {
