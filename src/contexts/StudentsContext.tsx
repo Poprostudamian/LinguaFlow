@@ -46,10 +46,12 @@ interface StudentsProviderProps {
 }
 
 export function StudentsProvider({ children }: StudentsProviderProps) {
-  const { session } = useAuth();
+const { session } = useAuth();
   const [students, setStudents] = useState<TutorStudent[]>([]);
   const [invitations, setInvitations] = useState<RelationshipInvitation[]>([]);
+  const [studentsStats, setStudentsStats] = useState<{ [studentId: string]: StudentStats }>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Load data when tutor logs in
