@@ -4,8 +4,10 @@ import { useAuth } from './AuthContext';
 import { 
   getTutorStudents, 
   getTutorInvitations, 
+  getStudentsStats,
   TutorStudent, 
-  RelationshipInvitation 
+  RelationshipInvitation,
+  StudentStats 
 } from '../lib/supabase';
 
 interface StudentsContextType {
