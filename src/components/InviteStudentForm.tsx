@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Mail, Send, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { inviteStudent, InviteStudentData } from '../lib/supabase-students';
+import { inviteStudent, InviteStudentData } from '../lib/supabase';
 
 interface InviteStudentFormProps {
   onInviteSent: () => void;
