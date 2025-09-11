@@ -903,36 +903,6 @@ export const updateLesson = async (lessonId: string, updates: any): Promise<any>
 };
 
 /**
- * Assign lesson to additional students
- */
-export const assignLessonToStudents = async (lessonId: string, studentIds: string[]): Promise<void> => {
-  try {
-    console.log('👥 Assigning lesson to students:', lessonId, studentIds);
-    
-    const studentLessonsData = studentIds.map(studentId => ({
-      lesson_id: lessonId,
-      student_id: studentId,
-      status: 'assigned' as const,
-      progress: 0
-    }));
-
-    const { error } = await supabase
-      .from('student_lessons')
-      .insert(studentLessonsData);
-
-    if (error) {
-      console.error('❌ Error assigning lesson to students:', error);
-      throw error;
-    }
-    
-    console.log('✅ Students assigned successfully');
-  } catch (error) {
-    console.error('❌ Error assigning lesson to students:', error);
-    throw error;
-  }
-};
-
-/**
  * Remove lesson assignment from students
  */
 export const unassignLessonFromStudents = async (lessonId: string, studentIds: string[]): Promise<void> => {
