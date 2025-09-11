@@ -19,6 +19,15 @@ import { useTutorStudents } from '../contexts/StudentsContext';
 import { useAuth } from '../contexts/AuthContext';
 
 export function TutorDashboard() {
+   // 🔍 DEBUG: Sprawdź użytkownika i dane
+  const { session } = useAuth(); // Dodaj ten import jeśli go nie ma
+  
+  console.log('🔍 DEBUG TutorDashboard:');
+  console.log('- session:', session);
+  console.log('- user role:', session?.user?.role);
+  console.log('- tutorMockData:', tutorMockData);
+  console.log('- tutorMockData.students:', tutorMockData.students);
+  console.log('- tutorMockData.kpis:', tutorMockData.kpis);
   const [newLesson, setNewLesson] = useState({
     title: '',
     description: '',
@@ -116,6 +125,13 @@ const convertToStudentFormat = (tutorStudent: any) => {
 
   return (
     <div className="space-y-8">
+      <div className="bg-yellow-100 dark:bg-yellow-900 p-4 rounded-lg border-2 border-yellow-500">
+        <h3 className="font-bold text-yellow-800 dark:text-yellow-200">🔍 DEBUG INFO</h3>
+        <p>User Role: <strong>{session?.user?.role || 'BRAK'}</strong></p>
+        <p>Students Count: <strong>{tutorMockData.students.length}</strong></p>
+        <p>Total Students KPI: <strong>{tutorMockData.kpis.totalStudents}</strong></p>
+        <p>Czy widzisz ten żółty box? Jeśli TAK, to kod się wykonuje!</p>
+      </div>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
