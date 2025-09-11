@@ -1,153 +1,104 @@
-// src/pages/TutorLessonManagementPage.tsx
+// src/pages/TutorLessonManagementPage.tsx - NAPRAWIONA WERSJA
 import React, { useState, useEffect } from 'react';
-import { 
-  BookOpen, 
-  Plus, 
-  Edit3, 
-  Trash2, 
-  Users, 
-  Calendar,
-  Eye,
-  Search,
-  Filter,
-  CheckCircle,
-  Clock,
-  AlertCircle
-} from 'lucide-react';
+import { Search, Filter, BookOpen, Calendar, Clock, Users, PlusCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { LessonCard } from '../components/LessonCard';
 import { useTutorStudents } from '../contexts/StudentsContext';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  getTutorLessons, 
-  createLesson, 
-  deleteLesson,
-  LessonWithAssignments,
-  CreateLessonData
-} from '../lib/supabase';
-
-type LessonStatus = 'all' | 'published' | 'draft';
-
-interface NewLesson {
-  title: string;
-  description: string;
-  content: string;
-  assignedStudentIds: string[];
-}
+import { getTutorLessons, createLesson, LessonWithAssignments, CreateLessonData } from '../lib/supabase';
 
 export function TutorLessonManagementPage() {
-  const { session } = useAuth();
-  const { students, totalStudents, getStudentsByIds, refreshStats } = useTutorStudents();
-  console.log('DEBUG - Raw students data:', students);
-console.log('DEBUG - First student:', students[0]);
-  
-  // Real state management for lessons
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [lessons, setLessons] = useState<LessonWithAssignments[]>([]);
-  const [filteredLessons, setFilteredLessons] = useState<LessonWithAssignments[]>([]);
-  const [isLoadingLessons, setIsLoadingLessons] = useState(false);
-  const [lessonsError, setLessonsError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  const [statusFilter, setStatusFilter] = useState<LessonStatus>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-
-  const [newLesson, setNewLesson] = useState<NewLesson>({
+  // New lesson form
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newLesson, setNewLesson] = useState<CreateLessonData>({
     title: '',
     description: '',
     content: '',
-    assignedStudentIds: []
+    assignedStudentIds: [],
+    status: 'published'
   });
+  const [isCreating, setIsCreating] = useState(false);
 
-  // Load lessons when component mounts or user changes
+  const { session } = useAuth();
+  const { students } = useTutorStudents();
+
+  // Load lessons on component mount
   useEffect(() => {
-    if (session.isAuthenticated && session.user?.role === 'tutor') {
+    if (session.user?.id) {
       loadLessons();
     }
-  }, [session.isAuthenticated, session.user?.id]);
+  }, [session.user?.id]);
 
-  // Load tutor's lessons from database
   const loadLessons = async () => {
-  if (!session.user?.id) return;
-  
-  setIsLoadingLessons(true);
-  setLessonsError(null);
-  
-  try {
-    const lessonsData = await getTutorLessons(session.user.id);
-    setLessons(lessonsData);
-    
-    // Automatycznie odśwież statystyki po załadowaniu lekcji
-    await refreshStats();
-  } catch (error: any) {
-    console.error('Error loading lessons:', error);
-    setLessonsError(error.message || 'Failed to load lessons');
-  } finally {
-    setIsLoadingLessons(false);
-  }
-};
-
-  // Filter lessons based on status and search
-  useEffect(() => {
-    let filtered = lessons;
-
-    // Filter by status
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(lesson => lesson.status === statusFilter);
+    if (!session.user?.id) {
+      setError('No authenticated user');
+      return;
     }
 
-    // Filter by search query
-    if (searchQuery) {
-      filtered = filtered.filter(lesson => 
-        lesson.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (lesson.description && lesson.description.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const lessonsData = await getTutorLessons(session.user.id);
+      setLessons(lessonsData);
+    } catch (err: any) {
+      console.error('Error loading lessons:', err);
+      setError(err.message || 'Failed to load lessons');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateLesson = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!session.user?.id) {
+      setError('No authenticated user');
+      return;
     }
 
-    setFilteredLessons(filtered);
-  }, [lessons, statusFilter, searchQuery]);
+    if (!newLesson.title.trim()) {
+      setError('Lesson title is required');
+      return;
+    }
 
-const handleCreateLesson = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!session.user?.id) return;
-  
-  setIsCreating(true);
-  try {
-    const lessonData: CreateLessonData = {
-      title: newLesson.title.trim(),
-      description: newLesson.description.trim() || undefined,
-      content: newLesson.content.trim(),
-      assignedStudentIds: newLesson.assignedStudentIds,
-      status: 'published'
-    };
-    
-    await createLesson(session.user.id, lessonData);
-    
-    // Reload lessons to show the new one
-    await loadLessons();
-    
-    // ❌ USUŃ TĘ LINIJKĘ - funkcja nie istnieje
-    // await refreshStats();
-    
-    // ✅ WYCZYŚĆ FORMULARZ PO UTWORZENIU LEKCJI
-    setNewLesson({
-      title: '',
-      description: '',
-      content: '',
-      assignedStudentIds: []
-    });
-    
-    // ✅ ZAMKNIJ MODAL
-    setShowCreateModal(false);
-    
-    // ✅ POKAŻ KOMUNIKAT O SUKCESIE
-    console.log('Lesson created successfully!');
-    
-  } catch (error: any) {
-    console.error('Error creating lesson:', error);
-    setLessonsError(error.message || 'Failed to create lesson');
-  } finally {
-    setIsCreating(false);
-  }
-};
+    setIsCreating(true);
+    setError(null);
+
+    try {
+      await createLesson(session.user.id, {
+        ...newLesson,
+        title: newLesson.title.trim(),
+        description: newLesson.description?.trim() || undefined,
+        content: newLesson.content.trim() || 'Lesson content will be added here.'
+      });
+
+      // Reset form
+      setNewLesson({
+        title: '',
+        description: '',
+        content: '',
+        assignedStudentIds: [],
+        status: 'published'
+      });
+      
+      setShowCreateForm(false);
+      
+      // Reload lessons
+      await loadLessons();
+      
+    } catch (err: any) {
+      console.error('Error creating lesson:', err);
+      setError(err.message || 'Failed to create lesson');
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   const handleStudentToggle = (studentId: string) => {
     setNewLesson(prev => ({
@@ -158,354 +109,295 @@ const handleCreateLesson = async (e: React.FormEvent) => {
     }));
   };
 
-  const handleDeleteLesson = async (lessonId: string) => {
-    if (window.confirm('Are you sure you want to delete this lesson? This will also remove it from all assigned students.')) {
-      try {
-        await deleteLesson(lessonId);
-        // Reload lessons to reflect the deletion
-        await loadLessons();
-      } catch (error: any) {
-        console.error('Error deleting lesson:', error);
-        setLessonsError(error.message || 'Failed to delete lesson');
-      }
-    }
-  };
+  // Filter lessons
+  const filteredLessons = lessons.filter(lesson => {
+    const matchesSearch = lesson.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || lesson.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'published':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'draft':
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-      default:
-        return <AlertCircle className="h-4 w-4 text-gray-500" />;
-    }
-  };
+  const publishedLessons = filteredLessons.filter(l => l.status === 'published');
+  const draftLessons = filteredLessons.filter(l => l.status === 'draft');
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'published':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'draft':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
-    }
-  };
+  if (isLoading && lessons.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <RefreshCw className="h-8 w-8 animate-spin text-purple-600" />
+        <span className="ml-2 text-gray-600 dark:text-gray-400">Loading lessons...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Lesson Management</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Lesson Management
+          </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Create, edit and manage your lessons for students
+            Create and manage your lessons
           </p>
         </div>
+        
         <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:transform hover:scale-105"
+          onClick={() => setShowCreateForm(!showCreateForm)}
+          className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-200"
         >
-          <Plus className="h-4 w-4" />
-          <span>Create New Lesson</span>
+          <PlusCircle className="h-4 w-4" />
+          <span>Create Lesson</span>
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Lessons</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{lessons.length}</p>
-            </div>
-            <BookOpen className="h-8 w-8 text-purple-500" />
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mr-2" />
+            <p className="text-red-600 dark:text-red-400">{error}</p>
+            <button
+              onClick={loadLessons}
+              className="ml-auto text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 underline"
+            >
+              Retry
+            </button>
           </div>
         </div>
+      )}
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Published</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {lessons.filter(l => l.status === 'published').length}
-              </p>
-            </div>
-            <CheckCircle className="h-8 w-8 text-green-500" />
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-2">
+            <BookOpen className="h-5 w-5 text-purple-600" />
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Lessons</span>
           </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+            {lessons.length}
+          </p>
         </div>
-
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Drafts</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {lessons.filter(l => l.status === 'draft').length}
-              </p>
-            </div>
-            <Clock className="h-8 w-8 text-yellow-500" />
+        
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-2">
+            <Calendar className="h-5 w-5 text-blue-600" />
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Published</span>
           </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+            {publishedLessons.length}
+          </p>
         </div>
-
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Students</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalStudents}</p>
-            </div>
-            <Users className="h-8 w-8 text-blue-500" />
+        
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-2">
+            <Clock className="h-5 w-5 text-orange-600" />
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Drafts</span>
           </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+            {draftLessons.length}
+          </p>
+        </div>
+        
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-2">
+            <Users className="h-5 w-5 text-green-600" />
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Assignments</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+            {lessons.reduce((sum, l) => sum + l.assignedCount, 0)}
+          </p>
         </div>
       </div>
 
-      {/* Filters and Search */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <div className="relative">
+      {/* Create Lesson Form */}
+      {showCreateForm && (
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Create New Lesson
+          </h2>
+          
+          <form onSubmit={handleCreateLesson} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Lesson Title *
+              </label>
+              <input
+                type="text"
+                value={newLesson.title}
+                onChange={(e) => setNewLesson({...newLesson, title: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                placeholder="e.g., Spanish Grammar Basics"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Description
+              </label>
+              <textarea
+                value={newLesson.description}
+                onChange={(e) => setNewLesson({...newLesson, description: e.target.value})}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+                placeholder="Brief description of the lesson..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Content
+              </label>
+              <textarea
+                value={newLesson.content}
+                onChange={(e) => setNewLesson({...newLesson, content: e.target.value})}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+                placeholder="Lesson content, instructions, materials..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Assign to Students ({newLesson.assignedStudentIds.length} selected)
+              </label>
+              <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-3">
+                {students.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    No students available. Add students first in the Students tab.
+                  </p>
+                ) : (
+                  students.map((student) => (
+                    <label key={student.student_id} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newLesson.assignedStudentIds.includes(student.student_id)}
+                        onChange={() => handleStudentToggle(student.student_id)}
+                        className="rounded border-gray-300 dark:border-gray-600 text-purple-600 focus:ring-purple-500 dark:focus:ring-purple-400"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                        {student.student_first_name} {student.student_last_name}
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        ({student.student_email})
+                      </span>
+                    </label>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={isCreating || !newLesson.title.trim()}
+                className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md transition-all duration-200"
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>{isCreating ? 'Creating...' : 'Create Lesson'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowCreateForm(false)}
+                disabled={isCreating}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Search and Filter */}
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search lessons..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              placeholder="Search lessons by title..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
           </div>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Filter className="h-4 w-4 text-gray-400" />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as LessonStatus)}
-            className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
+          
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-gray-400" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            >
+              <option value="all">All Status</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+            </select>
+          </div>
+          
+          <button
+            onClick={loadLessons}
+            disabled={isLoading}
+            className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
           >
-            <option value="all">All Status</option>
-            <option value="published">Published</option>
-            <option value="draft">Draft</option>
-          </select>
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
         </div>
       </div>
 
       {/* Lessons List */}
-      <div className="space-y-4">
-        {isLoadingLessons ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600 dark:text-gray-400">Loading lessons...</p>
-          </div>
-        ) : lessonsError ? (
-          <div className="text-center py-12">
-            <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Error loading lessons</h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{lessonsError}</p>
+      {filteredLessons.length === 0 && !isLoading ? (
+        <div className="text-center py-12">
+          <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            {lessons.length === 0 ? 'No lessons yet' : 'No lessons found'}
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
+            {lessons.length === 0 
+              ? 'Create your first lesson to get started!' 
+              : 'Try adjusting your search or filter criteria.'}
+          </p>
+          {lessons.length === 0 && (
             <button
-              onClick={loadLessons}
-              className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              onClick={() => setShowCreateForm(true)}
+              className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-200"
             >
-              Try Again
+              <PlusCircle className="h-4 w-4" />
+              <span>Create Your First Lesson</span>
             </button>
-          </div>
-        ) : filteredLessons.length === 0 ? (
-          <div className="text-center py-12">
-            <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No lessons found</h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {searchQuery || statusFilter !== 'all' 
-                ? 'Try adjusting your search or filters' 
-                : 'Get started by creating your first lesson'
-              }
-            </p>
-          </div>
-        ) : (
-          filteredLessons.map((lesson) => {
-            const assignedStudentsData = getStudentsByIds(lesson.assignedStudents);
-            
-            return (
-              <div
-                key={lesson.id}
-                className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
-                        {lesson.title}
-                      </h3>
-                      <span className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(lesson.status)}`}>
-                        {getStatusIcon(lesson.status)}
-                        <span className="capitalize">{lesson.status}</span>
-                      </span>
-                    </div>
-                    
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">
-                      {lesson.description || 'No description provided'}
-                    </p>
-
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                      <div className="flex items-center space-x-1">
-                        <Users className="h-4 w-4" />
-                        <span>{lesson.assignedCount} assigned</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <CheckCircle className="h-4 w-4" />
-                        <span>{lesson.completedCount} completed</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>Created {new Date(lesson.created_at).toLocaleDateString()}</span>
-                      </div>
-                      {lesson.updated_at !== lesson.created_at && (
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>Updated {new Date(lesson.updated_at).toLocaleDateString()}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Assigned Students */}
-                    {assignedStudentsData.length > 0 && (
-                      <div className="mt-3">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Assigned to:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {assignedStudentsData.map((student) => (
-                            <span
-                              key={student.student_id}
-                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-                            >
-                              {student.student_first_name} {student.student_last_name}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center space-x-2 ml-4">
-                    <button
-                      onClick={() => console.log('View lesson:', lesson.id)}
-                      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                      title="View Lesson"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => console.log('Edit lesson:', lesson.id)}
-                      className="p-2 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                      title="Edit Lesson"
-                    >
-                      <Edit3 className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteLesson(lesson.id)}
-                      className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                      title="Delete Lesson"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {/* Create Lesson Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Create New Lesson</h2>
-            </div>
-            
-            <form onSubmit={handleCreateLesson} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Lesson Title
-                </label>
-                <input
-                  type="text"
-                  value={newLesson.title}
-                  onChange={(e) => setNewLesson(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="Enter lesson title"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={newLesson.description}
-                  onChange={(e) => setNewLesson(prev => ({ ...prev, description: e.target.value }))}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="Enter lesson description"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Content
-                </label>
-                <textarea
-                  value={newLesson.content}
-                  onChange={(e) => setNewLesson(prev => ({ ...prev, content: e.target.value }))}
-                  rows={6}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="Enter lesson content"
-                  required
-                />
-              </div>
-
-              {/* Assign to Students */}
-              {students.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Assign to Students ({newLesson.assignedStudentIds.length} selected)
-                  </label>
-                  <div className="max-h-40 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-3 space-y-2">
-                    {students.map((student) => (
-                      <label key={student.student_id} className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={newLesson.assignedStudentIds.includes(student.student_id)}
-                          onChange={() => handleStudentToggle(student.student_id)}
-                          className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                        />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">
-                          {student.student_first_name} {student.student_last_name}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isCreating}
-                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isCreating ? 'Creating...' : 'Create Lesson'}
-                </button>
-              </div>
-            </form>
-          </div>
+          )}
         </div>
+      ) : (
+        <>
+          {/* Published Lessons */}
+          {publishedLessons.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Published Lessons ({publishedLessons.length})
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {publishedLessons.map((lesson) => (
+                  <LessonCard key={lesson.id} lesson={lesson} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Draft Lessons */}
+          {draftLessons.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Draft Lessons ({draftLessons.length})
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {draftLessons.map((lesson) => (
+                  <LessonCard key={lesson.id} lesson={lesson} />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
