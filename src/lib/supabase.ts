@@ -901,28 +901,3 @@ export const updateLesson = async (lessonId: string, updates: any): Promise<any>
     throw error;
   }
 };
-
-/**
- * Remove lesson assignment from students
- */
-export const unassignLessonFromStudents = async (lessonId: string, studentIds: string[]): Promise<void> => {
-  try {
-    console.log('👥 Unassigning lesson from students:', lessonId, studentIds);
-    
-    const { error } = await supabase
-      .from('student_lessons')
-      .delete()
-      .eq('lesson_id', lessonId)
-      .in('student_id', studentIds);
-
-    if (error) {
-      console.error('❌ Error unassigning lesson from students:', error);
-      throw error;
-    }
-    
-    console.log('✅ Students unassigned successfully');
-  } catch (error) {
-    console.error('❌ Error unassigning lesson from students:', error);
-    throw error;
-  }
-};
