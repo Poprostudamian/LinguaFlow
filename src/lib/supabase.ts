@@ -867,3 +867,136 @@ export const searchTutorStudents = async (tutorId: string, searchTerm: string): 
     return fullName.includes(lowerQuery) || email.includes(lowerQuery);
   });
 };
+
+export const updateLesson = async (lessonId: string, updates: any): Promise<any> => {
+  try {
+    console.log('🔄 Updating lesson:', lessonId, updates);
+    
+    const updateData: any = {
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+
+    // Update is_published based on status if status is provided
+    if (updates.status) {
+      updateData.is_published = updates.status === 'published';
+    }
+
+    const { data: lesson, error } = await supabase
+      .from('lessons')
+      .update(updateData)
+      .eq('id', lessonId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error updating lesson:', error);
+      throw error;
+    }
+    
+    console.log('✅ Lesson updated successfully');
+    return lesson;
+  } catch (error) {
+    console.error('❌ Error updating lesson:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a lesson (and all its assignments)
+ */
+export const deleteLesson = async (lessonId: string): Promise<void> => {
+  try {
+    console.log('🗑️ Deleting lesson:', lessonId);
+    
+    // First delete all student_lessons assignments
+    const { error: assignmentsError } = await supabase
+      .from('student_lessons')
+      .delete()
+      .eq('lesson_id', lessonId);
+
+    if (assignmentsError) {
+      console.error('❌ Error deleting assignments:', assignmentsError);
+      throw assignmentsError;
+    }
+
+    // Then delete the lesson
+    const { error: lessonError } = await supabase
+      .from('lessons')
+      .delete()
+      .eq('id', lessonId);
+
+    if (lessonError) {
+      console.error('❌ Error deleting lesson:', lessonError);
+      throw lessonError;
+    }
+    
+    console.log('✅ Lesson deleted successfully');
+  } catch (error) {
+    console.error('❌ Error deleting lesson:', error);
+    throw error;
+  }
+};
+
+/**
+ * Assign lesson to additional students
+ */
+export const assignLessonToStudents = async (lessonId: string, studentIds: string[]): Promise<void> => {
+  try {
+    console.log('👥 Assigning lesson to students:', lessonId, studentIds);
+    
+    const studentLessonsData = studentIds.map(studentId => ({
+      lesson_id: lessonId,
+      student_id: studentId,
+      status: 'assigned' as const,
+      progress: 0
+    }));
+
+    const { error } = await supabase
+      .from('student_lessons')
+      .insert(studentLessonsData);
+
+    if (error) {
+      console.error('❌ Error assigning lesson to students:', error);
+      throw error;
+    }
+    
+    console.log('✅ Students assigned successfully');
+  } catch (error) {
+    console.error('❌ Error assigning lesson to students:', error);
+    throw error;
+  }
+};
+
+/**
+ * Remove lesson assignment from students
+ */
+export const unassignLessonFromStudents = async (lessonId: string, studentIds: string[]): Promise<void> => {
+  try {
+    console.log('👥 Unassigning lesson from students:', lessonId, studentIds);
+    
+    const { error } = await supabase
+      .from('student_lessons')
+      .delete()
+      .eq('lesson_id', lessonId)
+      .in('student_id', studentIds);
+
+    if (error) {
+      console.error('❌ Error unassigning lesson from students:', error);
+      throw error;
+    }
+    
+    console.log('✅ Students unassigned successfully');
+  } catch (error) {
+    console.error('❌ Error unassigning lesson from students:', error);
+    throw error;
+  }
+};
+
+// Export interface for UpdateLessonData
+export interface UpdateLessonData {
+  title?: string;
+  description?: string;
+  content?: string;
+  status?: 'draft' | 'published';
+}
