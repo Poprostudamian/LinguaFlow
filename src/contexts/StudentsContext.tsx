@@ -4,24 +4,22 @@ import { useAuth } from './AuthContext';
 import { 
   getTutorStudents, 
   getTutorInvitations, 
-  getStudentsStats,
+  getTutorStudentStats,
+  searchTutorStudents,
   TutorStudent, 
-  RelationshipInvitation,
-  StudentStats 
-} from '../lib/supabase';
+  RelationshipInvitation
+} from '../lib/supabase-students';
 
 interface StudentsContextType {
   // Data
   students: TutorStudent[];
   invitations: RelationshipInvitation[];
-  studentsStats: { [studentId: string]: StudentStats };
-  isLoadingStats: boolean;
   
   // Loading states
   isLoading: boolean;
   error: string | null;
   
-  // Stats (computed)
+  // Stats (computed from API)
   totalStudents: number;
   activeStudents: number;
   pendingInvitations: number;
@@ -30,12 +28,10 @@ interface StudentsContextType {
   refreshStudents: () => Promise<void>;
   refreshInvitations: () => Promise<void>;
   refreshAll: () => Promise<void>;
-  refreshStats: () => Promise<void>;
   
   // Utility functions
   getStudentById: (id: string) => TutorStudent | undefined;
   getStudentsByIds: (ids: string[]) => TutorStudent[];
-  getStudentStats: (studentId: string) => StudentStats | undefined;
   searchStudents: (query: string) => TutorStudent[];
 }
 
@@ -46,13 +42,18 @@ interface StudentsProviderProps {
 }
 
 export function StudentsProvider({ children }: StudentsProviderProps) {
-const { session } = useAuth();
+  const { session } = useAuth();
   const [students, setStudents] = useState<TutorStudent[]>([]);
   const [invitations, setInvitations] = useState<RelationshipInvitation[]>([]);
-  const [studentsStats, setStudentsStats] = useState<{ [studentId: string]: StudentStats }>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Stats from API
+  const [statsFromAPI, setStatsFromAPI] = useState({
+    totalStudents: 0,
+    activeStudents: 0,
+    pendingInvitations: 0
+  });
 
   // Load data when tutor logs in
   useEffect(() => {
@@ -62,58 +63,59 @@ const { session } = useAuth();
       // Clear data when not authenticated or not a tutor
       setStudents([]);
       setInvitations([]);
+      setStatsFromAPI({ totalStudents: 0, activeStudents: 0, pendingInvitations: 0 });
       setError(null);
     }
-  }, [session.isAuthenticated, session.user?.role]);
+  }, [session.isAuthenticated, session.user?.role, session.user?.id]);
 
   const refreshStudents = async () => {
+    if (!session.user?.id) {
+      throw new Error('No authenticated user');
+    }
+
     try {
       setError(null);
-      const studentsData = await getTutorStudents();
+      const studentsData = await getTutorStudents(session.user.id);
       setStudents(studentsData);
     } catch (err: any) {
       console.error('Error loading students:', err);
-      setError('Failed to load students');
+      setError(err.message || 'Failed to load students');
       throw err;
     }
   };
 
   const refreshInvitations = async () => {
+    if (!session.user?.id) {
+      throw new Error('No authenticated user');
+    }
+
     try {
       setError(null);
-      const invitationsData = await getTutorInvitations();
+      const invitationsData = await getTutorInvitations(session.user.id);
       setInvitations(invitationsData);
     } catch (err: any) {
       console.error('Error loading invitations:', err);
-      setError('Failed to load invitations');
+      setError(err.message || 'Failed to load invitations');
       throw err;
     }
   };
 
-const refreshStats = async () => {
-    if (students.length === 0) return;
-    
+  const refreshStats = async () => {
+    if (!session.user?.id) {
+      return;
+    }
+
     try {
-      setIsLoadingStats(true);
-      const studentIds = students.map(s => s.student_id);
-      const stats = await getStudentsStats(studentIds);
-      
-      // Convert array to object for easy lookup
-      const statsObject = stats.reduce((acc, stat) => {
-        acc[stat.student_id] = stat;
-        return acc;
-      }, {} as { [studentId: string]: StudentStats });
-      
-      setStudentsStats(statsObject);
+      const stats = await getTutorStudentStats(session.user.id);
+      setStatsFromAPI(stats);
     } catch (err: any) {
       console.error('Error loading stats:', err);
-    } finally {
-      setIsLoadingStats(false);
+      // Don't set error for stats, they're not critical
     }
   };
-  
- const refreshAll = async () => {
-    if (!session.isAuthenticated || session.user?.role !== 'tutor') {
+
+  const refreshAll = async () => {
+    if (!session.isAuthenticated || session.user?.role !== 'tutor' || !session.user?.id) {
       return;
     }
 
@@ -123,23 +125,17 @@ const refreshStats = async () => {
     try {
       await Promise.all([
         refreshStudents(),
-        refreshInvitations()
+        refreshInvitations(),
+        refreshStats()
       ]);
-      
-      // Load stats after students are loaded
-      await refreshStats();
     } catch (err: any) {
       console.error('Error loading students data:', err);
-      setError('Failed to load students data');
+      setError(err.message || 'Failed to load students data');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getStudentStatsUtil = (studentId: string): StudentStats | undefined => {
-    return studentsStats[studentId];
-  };
-  
   // Utility functions
   const getStudentById = (id: string): TutorStudent | undefined => {
     return students.find(student => student.student_id === id);
@@ -160,10 +156,12 @@ const refreshStats = async () => {
     });
   };
 
-  // Computed stats
-  const totalStudents = students.length;
-  const activeStudents = students.filter(s => s.is_active).length;
-  const pendingInvitations = invitations.filter(inv => inv.status === 'pending').length;
+  // Use stats from API if available, otherwise compute from local data
+  const totalStudents = statsFromAPI.totalStudents || students.length;
+  const activeStudents = statsFromAPI.activeStudents || students.filter(s => s.student_is_active).length;
+  const pendingInvitations = statsFromAPI.pendingInvitations || invitations.filter(inv => 
+    inv.status === 'pending' && new Date(inv.expires_at) > new Date()
+  ).length;
 
   const value: StudentsContextType = {
     // Data
@@ -178,19 +176,15 @@ const refreshStats = async () => {
     totalStudents,
     activeStudents,
     pendingInvitations,
-    studentsStats,
-    isLoadingStats,
     
     // Actions
     refreshStudents,
     refreshInvitations,
     refreshAll,
-    refreshStats,
     
     // Utilities
     getStudentById,
     getStudentsByIds,
-    getStudentStats: getStudentStatsUtil,
     searchStudents,
   };
 
