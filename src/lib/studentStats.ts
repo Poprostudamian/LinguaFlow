@@ -124,50 +124,58 @@ export async function getTutorRealKPIs(tutorId: string): Promise<TutorKPIs> {
       .eq('tutor_id', tutorId)
       .eq('is_published', true);
 
-    // Studenci z przynajmniej jedną lekcją
-    const { data: activeStudentData } = await supabase
-      .from('student_lessons')
-      .select('student_id')
-      .in('lesson_id', 
-        supabase
-          .from('lessons')
-          .select('id')
-          .eq('tutor_id', tutorId)
-      );
+    // POPRAWKA: Najpierw pobierz ID lekcji tutora
+    const { data: tutorLessons, error: lessonIdsError } = await supabase
+      .from('lessons')
+      .select('id')
+      .eq('tutor_id', tutorId);
 
-    const activeStudents = new Set(activeStudentData?.map(s => s.student_id)).size;
+    if (lessonIdsError) throw lessonIdsError;
 
-    // Całkowite godziny nauczania
-    const { data: completedLessons } = await supabase
-      .from('student_lessons')
-      .select('time_spent')
-      .eq('status', 'completed')
-      .in('lesson_id',
-        supabase
-          .from('lessons')
-          .select('id')
-          .eq('tutor_id', tutorId)
-      );
+    const lessonIds = tutorLessons?.map(l => l.id) || [];
 
-    const totalMinutes = completedLessons?.reduce((acc, l) => acc + (l.time_spent || 0), 0) || 0;
-    const teachingHours = Math.round(totalMinutes / 60 * 10) / 10;
+    let activeStudents = 0;
+    let teachingHours = 0;
+    let completionRate = 0;
 
-    // Współczynnik ukończenia lekcji
-    const { data: allAssignments } = await supabase
-      .from('student_lessons')
-      .select('status')
-      .in('lesson_id',
-        supabase
-          .from('lessons')
-          .select('id')
-          .eq('tutor_id', tutorId)
-      );
+    // Tylko jeśli tutor ma lekcje, pobierz statystyki
+    if (lessonIds.length > 0) {
+      // Studenci z przynajmniej jedną lekcją
+      const { data: activeStudentData, error: activeStudentsError } = await supabase
+        .from('student_lessons')
+        .select('student_id')
+        .in('lesson_id', lessonIds);
 
-    const totalAssignments = allAssignments?.length || 0;
-    const completedAssignments = allAssignments?.filter(a => a.status === 'completed').length || 0;
-    const completionRate = totalAssignments > 0 
-      ? Math.round((completedAssignments / totalAssignments) * 100)
-      : 0;
+      if (activeStudentsError) throw activeStudentsError;
+
+      activeStudents = new Set(activeStudentData?.map(s => s.student_id) || []).size;
+
+      // Całkowite godziny nauczania
+      const { data: completedLessons, error: completedError } = await supabase
+        .from('student_lessons')
+        .select('time_spent')
+        .eq('status', 'completed')
+        .in('lesson_id', lessonIds);
+
+      if (completedError) throw completedError;
+
+      const totalMinutes = completedLessons?.reduce((acc, l) => acc + (l.time_spent || 0), 0) || 0;
+      teachingHours = Math.round(totalMinutes / 60 * 10) / 10;
+
+      // Współczynnik ukończenia lekcji
+      const { data: allAssignments, error: assignmentsError } = await supabase
+        .from('student_lessons')
+        .select('status')
+        .in('lesson_id', lessonIds);
+
+      if (assignmentsError) throw assignmentsError;
+
+      const totalAssignments = allAssignments?.length || 0;
+      const completedAssignments = allAssignments?.filter(a => a.status === 'completed').length || 0;
+      completionRate = totalAssignments > 0 
+        ? Math.round((completedAssignments / totalAssignments) * 100)
+        : 0;
+    }
 
     return {
       totalStudents: totalStudents || 0,
