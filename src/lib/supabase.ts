@@ -867,37 +867,3 @@ export const searchTutorStudents = async (tutorId: string, searchTerm: string): 
     return fullName.includes(lowerQuery) || email.includes(lowerQuery);
   });
 };
-
-export const updateLesson = async (lessonId: string, updates: any): Promise<any> => {
-  try {
-    console.log('🔄 Updating lesson:', lessonId, updates);
-    
-    const updateData: any = {
-      ...updates,
-      updated_at: new Date().toISOString()
-    };
-
-    // Update is_published based on status if status is provided
-    if (updates.status) {
-      updateData.is_published = updates.status === 'published';
-    }
-
-    const { data: lesson, error } = await supabase
-      .from('lessons')
-      .update(updateData)
-      .eq('id', lessonId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('❌ Error updating lesson:', error);
-      throw error;
-    }
-    
-    console.log('✅ Lesson updated successfully');
-    return lesson;
-  } catch (error) {
-    console.error('❌ Error updating lesson:', error);
-    throw error;
-  }
-};
