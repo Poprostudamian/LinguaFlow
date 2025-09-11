@@ -435,7 +435,14 @@ const handleUnassignStudents = async (lessonId: string, studentIds: string[]) =>
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {publishedLessons.map((lesson) => (
-                  <LessonCard key={lesson.id} lesson={lesson} />
+                  <LessonCard 
+    key={lesson.id} 
+    lesson={lesson} 
+    onEdit={handleEditLesson}
+    onDelete={handleDeleteLesson}
+    onAssignStudents={handleAssignStudents}
+    onUnassignStudents={handleUnassignStudents}
+  />
                 ))}
               </div>
             </div>
