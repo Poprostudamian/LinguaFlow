@@ -105,7 +105,7 @@ console.log('DEBUG - First student:', students[0]);
     setFilteredLessons(filtered);
   }, [lessons, statusFilter, searchQuery]);
 
- const handleCreateLesson = async (e: React.FormEvent) => {
+const handleCreateLesson = async (e: React.FormEvent) => {
   e.preventDefault();
   if (!session.user?.id) return;
   
