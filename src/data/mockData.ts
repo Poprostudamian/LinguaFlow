@@ -1,3 +1,4 @@
+// src/data/mockData.ts - KOMPLETNY PLIK
 import { Lesson, Student, Message } from '../types';
 
 export const allLessons: Lesson[] = [
