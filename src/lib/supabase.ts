@@ -778,203 +778,51 @@ export const getStudentsStats = async (studentIds: string[]): Promise<StudentSta
   }
 };
 
-export interface TutorStudent {
-  student_id: string
-  student_email: string
-  student_first_name: string
-  student_last_name: string
-  student_avatar_url?: string
-  student_phone?: string
-  student_is_active: boolean
-  student_created_at: string
-  relationship_created: string
-  relationship_is_active: boolean
-  relationship_notes?: string
-}
+// ===== DODAJ TO NA KOŃCU PLIKU src/lib/supabase.ts =====
 
-export interface RelationshipInvitation {
-  id: string
-  tutor_id: string
-  student_email: string
-  student_id?: string
-  invitation_token: string
-  status: 'pending' | 'accepted' | 'declined' | 'expired'
-  invited_at: string
-  responded_at?: string
-  expires_at: string
-  message?: string
-}
-
+// Export aliases for StudentsContext compatibility
 export interface InviteStudentData {
-  studentEmail: string
-  message?: string
+  studentEmail: string;
+  message?: string;
 }
 
 /**
- * Get all students for a specific tutor
- * Uses JOIN to get student details from users table
+ * Alias for sendStudentInvitation to match StudentsContext expectations
  */
-export const getTutorStudents = async (tutorId: string): Promise<TutorStudent[]> => {
-  const { data, error } = await supabase
-    .from('tutor_students')
-    .select(`
-      student_id,
-      created_at,
-      is_active,
-      student:student_id (
-        email,
-        first_name,
-        last_name,
-        avatar_url,
-        phone,
-        is_active,
-        created_at
-      )
-    `)
-    .eq('tutor_id', tutorId)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
-
-  if (error) {
-    console.error('Error fetching tutor students:', error)
-    throw new Error(`Failed to fetch students: ${error.message}`)
-  }
-
-  // Transform the nested data to flat structure
-  return (data || []).map(item => ({
-    student_id: item.student_id,
-    student_email: item.student.email,
-    student_first_name: item.student.first_name,
-    student_last_name: item.student.last_name,
-    student_avatar_url: item.student.avatar_url,
-    student_phone: item.student.phone,
-    student_is_active: item.student.is_active,
-    student_created_at: item.student.created_at,
-    relationship_created: item.created_at,
-    relationship_is_active: item.is_active,
-    relationship_notes: undefined // Will add notes field later if needed
-  }))
-}
+export const inviteStudent = async (tutorId: string, inviteData: InviteStudentData) => {
+  return sendStudentInvitation(inviteData.studentEmail, inviteData.message);
+};
 
 /**
- * Get all invitations sent by a tutor
- */
-
-
-/**
- * Send invitation to a student
- */
-export const inviteStudent = async (
-  tutorId: string, 
-  inviteData: InviteStudentData
-): Promise<RelationshipInvitation> => {
-  const { data, error } = await supabase
-    .from('relationship_invitations')
-    .insert({
-      tutor_id: tutorId,
-      student_email: inviteData.studentEmail.toLowerCase().trim(),
-      message: inviteData.message?.trim() || null,
-      status: 'pending',
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
-    })
-    .select()
-    .single()
-
-  if (error) {
-    console.error('Error sending invitation:', error)
-    
-    // Handle specific error cases
-    if (error.code === '23505') { // Unique constraint violation
-      throw new Error('You have already sent an invitation to this email address.')
-    }
-    
-    throw new Error(`Failed to send invitation: ${error.message}`)
-  }
-
-  return data
-}
-
-/**
- * Search students by name or email (for current tutor only)
- */
-export const searchTutorStudents = async (
-  tutorId: string, 
-  searchTerm: string
-): Promise<TutorStudent[]> => {
-  if (!searchTerm.trim()) {
-    return getTutorStudents(tutorId)
-  }
-
-  const { data, error } = await supabase
-    .from('tutor_students')
-    .select(`
-      student_id,
-      created_at,
-      is_active,
-      student:student_id (
-        email,
-        first_name,
-        last_name,
-        avatar_url,
-        phone,
-        is_active,
-        created_at
-      )
-    `)
-    .eq('tutor_id', tutorId)
-    .eq('is_active', true)
-    .or(`student.first_name.ilike.%${searchTerm}%,student.last_name.ilike.%${searchTerm}%,student.email.ilike.%${searchTerm}%`)
-    .order('created_at', { ascending: false })
-
-  if (error) {
-    console.error('Error searching students:', error)
-    throw new Error(`Failed to search students: ${error.message}`)
-  }
-
-  // Transform the nested data to flat structure
-  return (data || []).map(item => ({
-    student_id: item.student_id,
-    student_email: item.student.email,
-    student_first_name: item.student.first_name,
-    student_last_name: item.student.last_name,
-    student_avatar_url: item.student.avatar_url,
-    student_phone: item.student.phone,
-    student_is_active: item.student.is_active,
-    student_created_at: item.student.created_at,
-    relationship_created: item.created_at,
-    relationship_is_active: item.is_active,
-    relationship_notes: undefined
-  }))
-}
-
-/**
- * Get statistics for tutor's students
+ * Alias for getTutorStudentStats to match StudentsContext expectations
  */
 export const getTutorStudentStats = async (tutorId: string) => {
   try {
     // Get total students count
     const { count: totalStudents, error: studentsError } = await supabase
-      .from('tutor_students')
+      .from('user_relationships')
       .select('*', { count: 'exact', head: true })
       .eq('tutor_id', tutorId)
-      .eq('is_active', true)
+      .eq('status', 'accepted')
+      .eq('is_active', true);
 
-    if (studentsError) throw studentsError
+    if (studentsError) throw studentsError;
 
     // Get active students (those who logged in recently)
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const { count: activeStudents, error: activeError } = await supabase
-      .from('tutor_students')
+      .from('user_relationships')
       .select(`
-        student:student_id (
+        student:users!student_id (
           last_login
         )
       `, { count: 'exact', head: true })
       .eq('tutor_id', tutorId)
+      .eq('status', 'accepted')
       .eq('is_active', true)
-      .gte('student.last_login', thirtyDaysAgo)
+      .gte('student.last_login', thirtyDaysAgo);
 
-    if (activeError) throw activeError
+    if (activeError) throw activeError;
 
     // Get pending invitations count
     const { count: pendingInvitations, error: invitationsError } = await supabase
@@ -982,21 +830,40 @@ export const getTutorStudentStats = async (tutorId: string) => {
       .select('*', { count: 'exact', head: true })
       .eq('tutor_id', tutorId)
       .eq('status', 'pending')
-      .gte('expires_at', new Date().toISOString())
+      .gte('expires_at', new Date().toISOString());
 
-    if (invitationsError) throw invitationsError
+    if (invitationsError) throw invitationsError;
 
     return {
       totalStudents: totalStudents || 0,
       activeStudents: activeStudents || 0,
       pendingInvitations: pendingInvitations || 0
-    }
+    };
   } catch (error) {
-    console.error('Error fetching student stats:', error)
+    console.error('Error fetching student stats:', error);
     return {
       totalStudents: 0,
       activeStudents: 0,
       pendingInvitations: 0
-    }
+    };
   }
-}
+};
+
+/**
+ * Search students wrapper for StudentsContext
+ */
+export const searchTutorStudents = async (tutorId: string, searchTerm: string): Promise<TutorStudent[]> => {
+  // For now, just return all students - you can enhance this later with actual search
+  const allStudents = await getTutorStudents();
+  
+  if (!searchTerm.trim()) {
+    return allStudents;
+  }
+  
+  const lowerQuery = searchTerm.toLowerCase();
+  return allStudents.filter(student => {
+    const fullName = `${student.student_first_name} ${student.student_last_name}`.toLowerCase();
+    const email = student.student_email.toLowerCase();
+    return fullName.includes(lowerQuery) || email.includes(lowerQuery);
+  });
+};
