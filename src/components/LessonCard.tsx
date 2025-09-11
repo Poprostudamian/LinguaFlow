@@ -1,4 +1,4 @@
-// src/components/AdvancedLessonCard.tsx
+// src/components/LessonCard.tsx
 import React, { useState } from 'react';
 import { 
   Calendar, 
@@ -17,7 +17,7 @@ import {
 import { LessonWithAssignments } from '../lib/supabase';
 import { useTutorStudents } from '../contexts/StudentsContext';
 
-interface AdvancedLessonCardProps {
+interface LessonCardProps {
   lesson: LessonWithAssignments;
   onEdit?: (lessonId: string, updates: any) => Promise<void>;
   onDelete?: (lessonId: string) => Promise<void>;
@@ -25,13 +25,13 @@ interface AdvancedLessonCardProps {
   onUnassignStudents?: (lessonId: string, studentIds: string[]) => Promise<void>;
 }
 
-export function AdvancedLessonCard({ 
+export function LessonCard({ 
   lesson, 
   onEdit, 
   onDelete, 
   onAssignStudents, 
   onUnassignStudents 
-}: AdvancedLessonCardProps) {
+}: LessonCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [showStudentManagement, setShowStudentManagement] = useState(false);
