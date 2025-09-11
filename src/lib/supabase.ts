@@ -903,42 +903,6 @@ export const updateLesson = async (lessonId: string, updates: any): Promise<any>
 };
 
 /**
- * Delete a lesson (and all its assignments)
- */
-export const deleteLesson = async (lessonId: string): Promise<void> => {
-  try {
-    console.log('🗑️ Deleting lesson:', lessonId);
-    
-    // First delete all student_lessons assignments
-    const { error: assignmentsError } = await supabase
-      .from('student_lessons')
-      .delete()
-      .eq('lesson_id', lessonId);
-
-    if (assignmentsError) {
-      console.error('❌ Error deleting assignments:', assignmentsError);
-      throw assignmentsError;
-    }
-
-    // Then delete the lesson
-    const { error: lessonError } = await supabase
-      .from('lessons')
-      .delete()
-      .eq('id', lessonId);
-
-    if (lessonError) {
-      console.error('❌ Error deleting lesson:', lessonError);
-      throw lessonError;
-    }
-    
-    console.log('✅ Lesson deleted successfully');
-  } catch (error) {
-    console.error('❌ Error deleting lesson:', error);
-    throw error;
-  }
-};
-
-/**
  * Assign lesson to additional students
  */
 export const assignLessonToStudents = async (lessonId: string, studentIds: string[]): Promise<void> => {
