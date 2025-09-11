@@ -1,10 +1,8 @@
-// src/App.tsx - Włącz z powrotem StudentsProvider
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
-import { StudentsProvider } from './contexts/StudentsContext'; // ← WŁĄCZ Z POWROTEM
+import { StudentsProvider } from './contexts/StudentsContext';
 import { Layout } from './components/Layout';
 import { RouteGuard } from './components/RouteGuard';
 import { Login } from './pages/Login';
