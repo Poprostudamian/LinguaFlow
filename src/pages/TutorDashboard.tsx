@@ -16,6 +16,7 @@ import {
 import { KPICard } from '../components/KPICard';
 import { StudentCard } from '../components/StudentCard';
 import { useTutorStudents } from '../contexts/StudentsContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export function TutorDashboard() {
   const [newLesson, setNewLesson] = useState({
