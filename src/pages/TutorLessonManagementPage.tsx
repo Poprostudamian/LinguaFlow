@@ -63,6 +63,54 @@ export function TutorLessonManagementPage() {
     }
   };
 
+  const handleEditLesson = async (lessonId: string, updates: UpdateLessonData) => {
+  try {
+    console.log('🔄 Editing lesson:', lessonId, updates);
+    await updateLesson(lessonId, updates);
+    await loadLessons(); // Reload lessons
+    console.log('✅ Lesson updated successfully');
+  } catch (error) {
+    console.error('❌ Error updating lesson:', error);
+    throw error;
+  }
+};
+
+const handleDeleteLesson = async (lessonId: string) => {
+  try {
+    console.log('🗑️ Deleting lesson:', lessonId);
+    await deleteLesson(lessonId);
+    await loadLessons(); // Reload lessons
+    console.log('✅ Lesson deleted successfully');
+  } catch (error) {
+    console.error('❌ Error deleting lesson:', error);
+    throw error;
+  }
+};
+
+const handleAssignStudents = async (lessonId: string, studentIds: string[]) => {
+  try {
+    console.log('👥 Assigning students:', lessonId, studentIds);
+    await assignLessonToStudents(lessonId, studentIds);
+    await loadLessons(); // Reload lessons
+    console.log('✅ Students assigned successfully');
+  } catch (error) {
+    console.error('❌ Error assigning students:', error);
+    throw error;
+  }
+};
+
+const handleUnassignStudents = async (lessonId: string, studentIds: string[]) => {
+  try {
+    console.log('👥 Unassigning students:', lessonId, studentIds);
+    await unassignLessonFromStudents(lessonId, studentIds);
+    await loadLessons(); // Reload lessons
+    console.log('✅ Students unassigned successfully');
+  } catch (error) {
+    console.error('❌ Error unassigning students:', error);
+    throw error;
+  }
+};
+
   const handleCreateLesson = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -401,7 +449,7 @@ export function TutorLessonManagementPage() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {draftLessons.map((lesson) => (
-                  <AdvancedLessonCard 
+                  <LessonCard 
                     key={lesson.id} 
                     lesson={lesson} 
                     onEdit={handleEditLesson}
