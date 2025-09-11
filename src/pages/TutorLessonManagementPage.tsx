@@ -392,7 +392,14 @@ export function TutorLessonManagementPage() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {draftLessons.map((lesson) => (
-                  <LessonCard key={lesson.id} lesson={lesson} />
+                  <AdvancedLessonCard 
+                    key={lesson.id} 
+                    lesson={lesson} 
+                    onEdit={handleEditLesson}
+                    onDelete={handleDeleteLesson}
+                    onAssignStudents={handleAssignStudents}
+                    onUnassignStudents={handleUnassignStudents}
+                  />
                 ))}
               </div>
             </div>
