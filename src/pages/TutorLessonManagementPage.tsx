@@ -4,7 +4,7 @@ import { Search, Filter, BookOpen, Calendar, Clock, Users, PlusCircle, AlertCirc
 import { LessonCard } from '../components/LessonCard';
 import { useTutorStudents } from '../contexts/StudentsContext';
 import { useAuth } from '../contexts/AuthContext';
-import { import { 
+import { 
   getTutorLessons, 
   createLesson, 
   updateLesson,
