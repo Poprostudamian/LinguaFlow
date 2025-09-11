@@ -8,7 +8,7 @@ import {
   searchTutorStudents,
   TutorStudent, 
   RelationshipInvitation
-} from '../lib/supabase-students';
+} from '../lib/supabase';
 
 interface StudentsContextType {
   // Data
