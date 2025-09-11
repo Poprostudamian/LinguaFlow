@@ -992,11 +992,3 @@ export const unassignLessonFromStudents = async (lessonId: string, studentIds: s
     throw error;
   }
 };
-
-// Export interface for UpdateLessonData
-export interface UpdateLessonData {
-  title?: string;
-  description?: string;
-  content?: string;
-  status?: 'draft' | 'published';
-}
