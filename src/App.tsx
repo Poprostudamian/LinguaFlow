@@ -20,7 +20,7 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <StudentsProvider> {/* ✅ DODAJ TEN WRAPPER */}
+        <StudentsProvider>
           <Router>
             <div className="App">
               <Routes>
@@ -62,7 +62,7 @@ function App() {
               </Routes>
             </div>
           </Router>
-        </StudentsProvider> {/* ✅ ZAMKNIJ WRAPPER */}
+        </StudentsProvider>
       </AuthProvider>
     </ThemeProvider>
   );
