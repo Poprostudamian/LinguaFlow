@@ -859,20 +859,7 @@ export const getTutorStudents = async (tutorId: string): Promise<TutorStudent[]>
 /**
  * Get all invitations sent by a tutor
  */
-export const getTutorInvitations = async (tutorId: string): Promise<RelationshipInvitation[]> => {
-  const { data, error } = await supabase
-    .from('relationship_invitations')
-    .select('*')
-    .eq('tutor_id', tutorId)
-    .order('invited_at', { ascending: false })
 
-  if (error) {
-    console.error('Error fetching invitations:', error)
-    throw new Error(`Failed to fetch invitations: ${error.message}`)
-  }
-
-  return data || []
-}
 
 /**
  * Send invitation to a student
