@@ -23,7 +23,7 @@ export function TutorStudentsPage() {
   } = useTutorStudents();
 
   // Convert TutorStudent to Student format - PRAWDZIWE DANE Z BAZY
- const convertToStudentFormat = (tutorStudent: any) => {
+const convertToStudentFormat = (tutorStudent: any) => {
     console.log('🔍 Converting student with data:', tutorStudent);
     
     const converted = {
@@ -38,6 +38,10 @@ export function TutorStudentsPage() {
       joinedDate: tutorStudent.relationship_created,
       avatar_url: tutorStudent.avatar_url
     };
+    
+    console.log('✅ Converted to real format:', converted);
+    return converted;
+  };
 
   // Filter students based on search
   const filteredStudents = searchStudents(searchTerm);
