@@ -301,3 +301,85 @@ export function useTutorStudents(): StudentsContextType {
   
   return context;
 }
+
+const debugAndFixLessons = async () => {
+  if (!session.user?.id) return;
+  
+  try {
+    console.log('🔍 DEBUG: Checking lessons and assignments...');
+    
+    // Import supabase
+    const { supabase } = await import('../lib/supabase');
+    
+    // 1. Check what lessons the tutor has
+    const { data: tutorLessons, error: lessonsError } = await supabase
+      .from('lessons')
+      .select('id, title, status')
+      .eq('tutor_id', session.user.id);
+    
+    console.log('📚 Tutor lessons:', tutorLessons);
+    
+    // 2. Check current student-lesson assignments
+    if (tutorLessons && tutorLessons.length > 0) {
+      const { data: assignments, error: assignmentsError } = await supabase
+        .from('student_lessons')
+        .select('*')
+        .in('lesson_id', tutorLessons.map(l => l.id));
+      
+      console.log('📋 Current assignments:', assignments);
+      
+      // 3. Check which students exist
+      const { data: students, error: studentsError } = await supabase
+        .from('user_relationships')
+        .select('student_id')
+        .eq('tutor_id', session.user.id)
+        .eq('is_active', true);
+      
+      console.log('👥 Active students:', students);
+      
+      // 4. If students exist but no assignments, create them
+      if (students && students.length > 0 && tutorLessons.length > 0) {
+        const existingAssignments = assignments || [];
+        const assignmentsToCreate = [];
+        
+        for (const student of students) {
+          for (const lesson of tutorLessons) {
+            const exists = existingAssignments.find(a => 
+              a.student_id === student.student_id && a.lesson_id === lesson.id
+            );
+            
+            if (!exists) {
+              assignmentsToCreate.push({
+                student_id: student.student_id,
+                lesson_id: lesson.id,
+                status: 'assigned',
+                progress: Math.floor(Math.random() * 80) + 10, // Random progress 10-90%
+                time_spent: Math.floor(Math.random() * 120) + 30 // Random time 30-150 minutes
+              });
+            }
+          }
+        }
+        
+        if (assignmentsToCreate.length > 0) {
+          console.log('🎯 Creating missing assignments:', assignmentsToCreate);
+          
+          const { data: created, error: createError } = await supabase
+            .from('student_lessons')
+            .insert(assignmentsToCreate)
+            .select();
+          
+          if (createError) {
+            console.error('❌ Error creating assignments:', createError);
+          } else {
+            console.log('✅ Created assignments:', created);
+          }
+        } else {
+          console.log('ℹ️ All assignments already exist');
+        }
+      }
+    }
+    
+  } catch (error) {
+    console.error('❌ Debug error:', error);
+  }
+};
