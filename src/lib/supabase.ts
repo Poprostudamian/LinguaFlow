@@ -1294,7 +1294,6 @@ export const subscribeToConversationUpdates = (onUpdate: () => void) => {
 };
 
 // Get real student statistics (lessons, progress, etc.)
-// Enhanced getTutorStudents with real statistics
 export const getStudentRealStats = async (studentId: string) => {
   try {
     console.log('📊 Getting real stats for student:', studentId);
