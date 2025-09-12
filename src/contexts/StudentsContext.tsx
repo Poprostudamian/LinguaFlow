@@ -2,10 +2,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import {
-  getTutorStudents,
-  getTutorInvitations,
+  getTutorStudents, 
+  getTutorInvitations, 
   getTutorStudentStats,
-  TutorStudent,
+  searchTutorStudents,
+  TutorStudent, 
   RelationshipInvitation
 } from '../lib/supabase';
 
