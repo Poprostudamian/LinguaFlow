@@ -751,3 +751,426 @@ export function TutorLessonManagementPage() {
                           value={exercise.title}
                           onChange={(e) => updateExercise(exerciseIndex, 'title', e.target.value)}
                           className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-600 dark:text-white"
+// Kontynuacja od momentu <input type="text" value={exercise.title}...
+
+                          placeholder="np. Wybierz poprawną odpowiedź"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                          Punkty
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={exercise.points}
+                          onChange={(e) => updateExercise(exerciseIndex, 'points', parseInt(e.target.value) || 1)}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-600 dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                          Typ
+                        </label>
+                        <select
+                          value={exercise.type}
+                          onChange={(e) => updateExercise(exerciseIndex, 'type', e.target.value)}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-600 dark:text-white"
+                        >
+                          <option value="multiple_choice">ABCD</option>
+                          <option value="flashcard">Fiszki</option>
+                          <option value="text_answer">Tekstowe</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Pytanie - wspólne dla wszystkich typów oprócz flashcard */}
+                    {exercise.type !== 'flashcard' && (
+                      <div className="mb-3">
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                          Pytanie
+                        </label>
+                        <textarea
+                          value={exercise.question}
+                          onChange={(e) => updateExercise(exerciseIndex, 'question', e.target.value)}
+                          rows={2}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-600 dark:text-white resize-none"
+                          placeholder="Wpisz treść pytania..."
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Multiple Choice specific fields */}
+                    {exercise.type === 'multiple_choice' && (
+                      <>
+                        <div className="mb-3">
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                            Opcje odpowiedzi
+                          </label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {(exercise.options || ['', '', '', '']).map((option, optionIndex) => (
+                              <div key={optionIndex} className="flex items-center space-x-2">
+                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 w-4">
+                                  {String.fromCharCode(65 + optionIndex)}:
+                                </span>
+                                <input
+                                  type="text"
+                                  value={option}
+                                  onChange={(e) => {
+                                    const newOptions = [...(exercise.options || ['', '', '', ''])];
+                                    newOptions[optionIndex] = e.target.value;
+                                    updateExercise(exerciseIndex, 'options', newOptions);
+                                  }}
+                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-600 dark:text-white"
+                                  placeholder={`Opcja ${String.fromCharCode(65 + optionIndex)}`}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                            Poprawna odpowiedź
+                          </label>
+                          <select
+                            value={exercise.correctAnswer || ''}
+                            onChange={(e) => updateExercise(exerciseIndex, 'correctAnswer', e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-600 dark:text-white"
+                          >
+                            <option value="">Wybierz poprawną odpowiedź</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                          </select>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Flashcard specific fields */}
+                    {exercise.type === 'flashcard' && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">
+                            Fiszki ({(exercise.flashcards || []).length})
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => addFlashcard(exerciseIndex)}
+                            className="flex items-center space-x-1 text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 px-2 py-1 border border-green-300 dark:border-green-600 rounded-md"
+                          >
+                            <Plus className="h-3 w-3" />
+                            <span>Dodaj fiszkę</span>
+                          </button>
+                        </div>
+                        
+                        {(exercise.flashcards || []).map((flashcard, flashcardIndex) => (
+                          <div key={flashcardIndex} className="p-3 border border-gray-300 dark:border-gray-500 rounded-md bg-white dark:bg-gray-600">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                                Fiszka #{flashcardIndex + 1}
+                              </span>
+                              {(exercise.flashcards || []).length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeFlashcard(exerciseIndex, flashcardIndex)}
+                                  className="text-red-500 hover:text-red-700"
+                                  title="Usuń fiszkę"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                                  Przód (słowo/pytanie)
+                                </label>
+                                <input
+                                  type="text"
+                                  value={flashcard.front}
+                                  onChange={(e) => updateFlashcard(exerciseIndex, flashcardIndex, 'front', e.target.value)}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md dark:bg-gray-500 dark:text-white"
+                                  placeholder="np. Hello"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                                  Tył (tłumaczenie/odpowiedź)
+                                </label>
+                                <input
+                                  type="text"
+                                  value={flashcard.back}
+                                  onChange={(e) => updateFlashcard(exerciseIndex, flashcardIndex, 'back', e.target.value)}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded-md dark:bg-gray-500 dark:text-white"
+                                  placeholder="np. Cześć"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Text Answer specific fields */}
+                    {exercise.type === 'text_answer' && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                          Maksymalna długość odpowiedzi (znaków)
+                        </label>
+                        <input
+                          type="number"
+                          min="50"
+                          max="2000"
+                          value={exercise.maxLength || 500}
+                          onChange={(e) => updateExercise(exerciseIndex, 'maxLength', parseInt(e.target.value) || 500)}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-600 dark:text-white"
+                          placeholder="500"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+                
+                {exercises.length === 0 && (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <p className="text-sm">Brak ćwiczeń. Wybierz typ ćwiczenia powyżej aby rozpocząć.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Assign Students */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Assign to Students ({newLesson.assignedStudentIds.length} selected)
+              </label>
+              <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-3">
+                {students.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    No students available. Add students first in the Students tab.
+                  </p>
+                ) : (
+                  students.map((student) => (
+                    <label key={student.student_id} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newLesson.assignedStudentIds.includes(student.student_id)}
+                        onChange={() => handleStudentToggle(student.student_id)}
+                        className="rounded border-gray-300 dark:border-gray-600 text-purple-600 focus:ring-purple-500 dark:focus:ring-purple-400"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                        {student.student_first_name} {student.student_last_name}
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        ({student.student_email})
+                      </span>
+                    </label>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Form Buttons */}
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={isCreating || !newLesson.title.trim()}
+                className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md transition-all duration-200"
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>{isCreating ? 'Creating...' : `Create Lesson${exercises.length > 0 ? ` (${exercises.length} exercises)` : ''}`}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreateForm(false);
+                  setExercises([]);
+                  setNewLesson({
+                    title: '',
+                    description: '',
+                    assignedStudentIds: [],
+                    status: 'published'
+                  });
+                }}
+                disabled={isCreating}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Search and Filter */}
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search lessons by title..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-gray-400" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            >
+              <option value="all">All Status</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+            </select>
+          </div>
+          
+          <button
+            onClick={loadLessons}
+            disabled={isLoading}
+            className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Lessons List */}
+      <div className="space-y-4">
+        {filteredLessons.length === 0 ? (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
+            <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              {lessons.length === 0 ? 'No lessons yet' : 'No lessons match your search'}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              {lessons.length === 0 
+                ? 'Get started by creating your first lesson with interactive exercises.'
+                : 'Try adjusting your search term or filters.'
+              }
+            </p>
+            {lessons.length === 0 && (
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-200"
+              >
+                Create Your First Lesson
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {filteredLessons.map((lesson) => (
+              <div key={lesson.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {lesson.title}
+                      </h3>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        lesson.status === 'published' 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                      }`}>
+                        {lesson.status}
+                      </span>
+                    </div>
+                    
+                    {lesson.description && (
+                      <p className="text-gray-600 dark:text-gray-400 mb-3">
+                        {lesson.description}
+                      </p>
+                    )}
+                    
+                    <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                      <span className="flex items-center space-x-1">
+                        <Users className="h-4 w-4" />
+                        <span>{lesson.assignedCount || 0} assigned</span>
+                      </span>
+                      <span className="flex items-center space-x-1">
+                        <Calendar className="h-4 w-4" />
+                        <span>{new Date(lesson.created_at).toLocaleDateString()}</span>
+                      </span>
+                      <span className="flex items-center space-x-1">
+                        <BookOpen className="h-4 w-4" />
+                        <span>Sample exercises</span>
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex items-center space-x-2 ml-4">
+                    <button
+                      onClick={() => openLessonModal(lesson, 'preview')}
+                      className="flex items-center space-x-1 px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 border border-blue-300 dark:border-blue-600 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                      title="Preview lesson content"
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span>Preview</span>
+                    </button>
+                    <button
+                      onClick={() => openLessonModal(lesson, 'edit')}
+                      className="flex items-center space-x-1 px-3 py-2 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 border border-purple-300 dark:border-purple-600 rounded-md hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
+                      title="Edit lesson and exercises"
+                    >
+                      <Edit className="h-4 w-4" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`Are you sure you want to delete "${lesson.title}"? This action cannot be undone.`)) {
+                          handleDeleteLesson(lesson.id);
+                        }
+                      }}
+                      className="flex items-center space-x-1 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 border border-red-300 dark:border-red-600 rounded-md hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                      title="Delete lesson permanently"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Summary Footer */}
+      {lessons.length > 0 && (
+        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+          <div className="flex items-center justify-between text-sm">
+            <div className="text-gray-600 dark:text-gray-400">
+              Showing {filteredLessons.length} of {lessons.length} lessons
+            </div>
+            <div className="flex items-center space-x-4 text-gray-600 dark:text-gray-400">
+              <span className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>{publishedLessons.length} Published</span>
+              </span>
+              <span className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <span>{draftLessons.length} Drafts</span>
+              </span>
+              <span className="flex items-center space-x-1">
+                <Users className="h-3 w-3" />
+                <span>{lessons.reduce((sum, l) => sum + (l.assignedCount || 0), 0)} Total Assignments</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default TutorLessonManagementPage;
