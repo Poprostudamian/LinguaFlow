@@ -1292,3 +1292,161 @@ export const subscribeToConversationUpdates = (onUpdate: () => void) => {
     )
     .subscribe();
 };
+
+// Get real student statistics (lessons, progress, etc.)
+export const getStudentRealStats = async (studentId: string) => {
+  try {
+    // Get completed lessons count
+    const { count: lessonsCompleted, error: lessonsError } = await supabase
+      .from('student_lessons')
+      .select('*', { count: 'exact', head: true })
+      .eq('student_id', studentId)
+      .eq('status', 'completed');
+
+    if (lessonsError) throw lessonsError;
+
+    // Get total assigned lessons
+    const { count: totalLessons, error: totalError } = await supabase
+      .from('student_lessons')
+      .select('*', { count: 'exact', head: true })
+      .eq('student_id', studentId);
+
+    if (totalError) throw totalError;
+
+    // Calculate average progress
+    const { data: progressData, error: progressError } = await supabase
+      .from('student_lessons')
+      .select('progress')
+      .eq('student_id', studentId);
+
+    if (progressError) throw progressError;
+
+    const averageProgress = progressData && progressData.length > 0
+      ? Math.round(progressData.reduce((sum, lesson) => sum + (lesson.progress || 0), 0) / progressData.length)
+      : 0;
+
+    // Get total time spent (sum of time_spent in minutes, convert to hours)
+    const { data: timeData, error: timeError } = await supabase
+      .from('student_lessons')
+      .select('time_spent')
+      .eq('student_id', studentId);
+
+    if (timeError) throw timeError;
+
+    const totalMinutes = timeData?.reduce((sum, lesson) => sum + (lesson.time_spent || 0), 0) || 0;
+    const totalHours = Math.round((totalMinutes / 60) * 10) / 10; // Round to 1 decimal
+
+    return {
+      lessonsCompleted: lessonsCompleted || 0,
+      totalLessons: totalLessons || 0,
+      progress: averageProgress,
+      totalHours,
+      level: averageProgress >= 80 ? 'Advanced' : averageProgress >= 50 ? 'Intermediate' : 'Beginner'
+    };
+  } catch (error) {
+    console.error('Error getting student stats:', error);
+    return {
+      lessonsCompleted: 0,
+      totalLessons: 0,
+      progress: 0,
+      totalHours: 0,
+      level: 'Beginner'
+    };
+  }
+};
+
+// Enhanced getTutorStudents with real statistics
+export const getTutorStudentsWithStats = async (): Promise<any[]> => {
+  const students = await getTutorStudents();
+  
+  // Get stats for each student
+  const studentsWithStats = await Promise.all(
+    students.map(async (student) => {
+      const stats = await getStudentRealStats(student.student_id);
+      return {
+        ...student,
+        ...stats
+      };
+    })
+  );
+
+  return studentsWithStats;
+};
+
+// Get tutor teaching statistics
+export const getTutorTeachingStats = async (tutorId: string) => {
+  try {
+    // Get total students
+    const { count: totalStudents } = await supabase
+      .from('user_relationships')
+      .select('*', { count: 'exact', head: true })
+      .eq('tutor_id', tutorId)
+      .eq('is_active', true);
+
+    // Get total lessons created
+    const { count: totalLessons } = await supabase
+      .from('lessons')
+      .select('*', { count: 'exact', head: true })
+      .eq('tutor_id', tutorId);
+
+    // Get completed lessons by students
+    const { data: completedLessons, error: completedError } = await supabase
+      .from('student_lessons')
+      .select(`
+        lesson:lessons!inner(tutor_id),
+        status
+      `)
+      .eq('lessons.tutor_id', tutorId)
+      .eq('status', 'completed');
+
+    if (completedError) throw completedError;
+
+    // Get total assigned lessons by this tutor
+    const { data: assignedLessons, error: assignedError } = await supabase
+      .from('student_lessons')
+      .select(`
+        lesson:lessons!inner(tutor_id)
+      `)
+      .eq('lessons.tutor_id', tutorId);
+
+    if (assignedError) throw assignedError;
+
+    // Calculate completion rate
+    const completionRate = assignedLessons && assignedLessons.length > 0
+      ? Math.round((completedLessons?.length || 0) / assignedLessons.length * 100)
+      : 0;
+
+    // Get total teaching hours (estimate based on completed lessons)
+    const { data: timeData, error: timeError } = await supabase
+      .from('student_lessons')
+      .select(`
+        time_spent,
+        lesson:lessons!inner(tutor_id)
+      `)
+      .eq('lessons.tutor_id', tutorId);
+
+    if (timeError) throw timeError;
+
+    const totalMinutes = timeData?.reduce((sum, item) => sum + (item.time_spent || 0), 0) || 0;
+    const teachingHours = Math.round((totalMinutes / 60) * 10) / 10;
+
+    return {
+      totalStudents: totalStudents || 0,
+      totalLessons: totalLessons || 0,
+      completedLessons: completedLessons?.length || 0,
+      completionRate,
+      teachingHours,
+      activeStudents: totalStudents || 0 // TODO: Improve with last login date
+    };
+  } catch (error) {
+    console.error('Error getting tutor teaching stats:', error);
+    return {
+      totalStudents: 0,
+      totalLessons: 0,
+      completedLessons: 0,
+      completionRate: 0,
+      teachingHours: 0,
+      activeStudents: 0
+    };
+  }
+};
