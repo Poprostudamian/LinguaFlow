@@ -634,3 +634,74 @@ export function TutorLessonManagementPage() {
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
+        </div>
+      </div>
+
+      {/* Lessons List */}
+      <div className="space-y-4">
+        {filteredLessons.length === 0 ? (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
+            <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              {lessons.length === 0 ? 'No lessons yet' : 'No lessons match your search'}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              {lessons.length === 0 
+                ? 'Get started by creating your first lesson with interactive exercises.'
+                : 'Try adjusting your search term or filters.'
+              }
+            </p>
+            {lessons.length === 0 && (
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-200"
+              >
+                Create Your First Lesson
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {filteredLessons.map((lesson) => (
+              <LessonCard
+                key={lesson.id}
+                lesson={lesson}
+                onEdit={handleEditLesson}
+                onDelete={handleDeleteLesson}
+                onAssignStudents={handleAssignStudents}
+                onUnassignStudents={handleUnassignStudents}
+                availableStudents={students}
+                showTutorActions={true}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Summary Footer */}
+      {lessons.length > 0 && (
+        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+          <div className="flex items-center justify-between text-sm">
+            <div className="text-gray-600 dark:text-gray-400">
+              Showing {filteredLessons.length} of {lessons.length} lessons
+            </div>
+            <div className="flex items-center space-x-4 text-gray-600 dark:text-gray-400">
+              <span className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>{publishedLessons.length} Published</span>
+              </span>
+              <span className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <span>{draftLessons.length} Drafts</span>
+              </span>
+              <span className="flex items-center space-x-1">
+                <Users className="h-3 w-3" />
+                <span>{lessons.reduce((sum, l) => sum + l.assignedCount, 0)} Assignments</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
