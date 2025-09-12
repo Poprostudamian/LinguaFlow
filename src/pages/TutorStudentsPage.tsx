@@ -1,5 +1,4 @@
-// src/pages/TutorStudentsPage.tsx - Z PRAWDZIWYMI DANYMI
-
+// src/pages/TutorStudentsPage.tsx - PRAWDZIWE DANE BEZ MOCK DANYCH
 import React, { useState } from 'react';
 import { Search, Filter, Users, BookOpen, Clock, Mail, UserPlus, RefreshCw, AlertCircle } from 'lucide-react';
 import { StudentCard } from '../components/StudentCard';
@@ -23,20 +22,18 @@ export function TutorStudentsPage() {
     searchStudents
   } = useTutorStudents();
 
-  // Convert TutorStudent to Student format (BEZ LOSOWYCH DANYCH)
+  // Convert TutorStudent to Student format - PRAWDZIWE DANE Z BAZY
   const convertToStudentFormat = (tutorStudent: any) => {
-    const studentIdHash = tutorStudent.student_id.split('-')[0] || '0';
-    const hashNum = parseInt(studentIdHash, 16) || 0;
-    
     return {
       id: tutorStudent.student_id,
       name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
       email: tutorStudent.student_email,
-      level: ['Beginner', 'Intermediate', 'Advanced'][hashNum % 3],
-      progress: (hashNum % 100),
-      lessonsCompleted: (hashNum % 25),
-      totalHours: (hashNum % 50) + 1,
-      joinedDate: tutorStudent.relationship_created
+      level: 'Not set', // TODO: Add level field to database
+      progress: 0, // TODO: Calculate from completed lessons
+      lessonsCompleted: 0, // TODO: Get from student_lessons table
+      totalHours: 0, // TODO: Calculate from lesson times
+      joinedDate: tutorStudent.relationship_created,
+      avatar_url: undefined // TODO: Add avatar support
     };
   };
 
@@ -50,100 +47,146 @@ export function TutorStudentsPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { bg: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400', text: 'Pending' },
-      accepted: { bg: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400', text: 'Accepted' },
-      declined: { bg: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400', text: 'Declined' },
-      expired: { bg: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400', text: 'Expired' }
+      pending: { bg: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300', text: 'Pending' },
+      accepted: { bg: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300', text: 'Accepted' },
+      declined: { bg: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300', text: 'Declined' },
+      expired: { bg: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300', text: 'Expired' }
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
     
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${config.bg}`}>
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg}`}>
         {config.text}
       </span>
     );
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pl-PL', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const isInvitationExpired = (expiresAt: string) => {
+    return new Date(expiresAt) < new Date();
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <RefreshCw className="h-8 w-8 animate-spin text-purple-600" />
-        <span className="ml-2 text-gray-600 dark:text-gray-400">Loading students...</span>
+        <div className="text-center">
+          <RefreshCw className="h-12 w-12 text-gray-400 mx-auto mb-4 animate-spin" />
+          <p className="text-gray-600 dark:text-gray-400">Loading students data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Students
+          </h1>
+        </div>
+
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="h-5 w-5 text-red-600" />
+            <div>
+              <h3 className="text-red-800 dark:text-red-200 font-medium">Database Error</h3>
+              <p className="text-red-600 dark:text-red-300 text-sm">{error}</p>
+            </div>
+          </div>
+          <button
+            onClick={refreshAll}
+            className="mt-3 px-3 py-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-md hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Students Management
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Manage your students, send invitations, and track their progress
-        </p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Students
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Manage your students and send invitations
+          </p>
+        </div>
+        <button
+          onClick={refreshAll}
+          className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+        >
+          <RefreshCw className="h-4 w-4" />
+          <span>Refresh</span>
+        </button>
       </div>
 
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+      {/* Real Data Indicator */}
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+          <span className="text-blue-800 dark:text-blue-200 font-medium">
+            Live Database Connection
+          </span>
+        </div>
+        <div className="text-blue-600 dark:text-blue-300 text-sm mt-1">
+          Total Students: {totalStudents} • Active: {activeStudents} • Pending Invitations: {pendingInvitations}
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mr-2" />
-            <p className="text-red-600 dark:text-red-400">{error}</p>
-            <button
-              onClick={refreshAll}
-              className="ml-auto text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 underline"
-            >
-              Retry
-            </button>
+            <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+              <Users className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Students</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{totalStudents}</p>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Stats Overview - PRAWDZIWE DANE */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-2">
-            <Users className="h-5 w-5 text-purple-600" />
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Students</span>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center">
+            <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+              <BookOpen className="h-6 w-6 text-green-600 dark:text-green-400" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Students</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{activeStudents}</p>
+            </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-            {totalStudents}
-          </p>
         </div>
-        
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-2">
-            <BookOpen className="h-5 w-5 text-blue-600" />
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Active Students</span>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center">
+            <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
+              <Mail className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Invitations</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{pendingInvitations}</p>
+            </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-            {activeStudents}
-          </p>
-        </div>
-        
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-2">
-            <Mail className="h-5 w-5 text-orange-600" />
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Pending Invitations</span>
-          </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-            {pendingInvitations}
-          </p>
-        </div>
-        
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-2">
-            <Clock className="h-5 w-5 text-green-600" />
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg. Progress</span>
-          </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-            {totalStudents > 0 ? Math.round(activeStudents / totalStudents * 100) : 0}%
-          </p>
         </div>
       </div>
 
-      {/* Tabs Navigation */}
+      {/* Tabs */}
       <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex space-x-8">
           <button
@@ -156,10 +199,10 @@ export function TutorStudentsPage() {
           >
             <div className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
-              <span>My Students ({totalStudents})</span>
+              <span>Students ({totalStudents})</span>
             </div>
           </button>
-          
+
           <button
             onClick={() => setActiveTab('invitations')}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
@@ -171,14 +214,9 @@ export function TutorStudentsPage() {
             <div className="flex items-center space-x-2">
               <Mail className="h-4 w-4" />
               <span>Invitations ({invitations.length})</span>
-              {pendingInvitations > 0 && (
-                <span className="bg-orange-100 text-orange-800 text-xs px-2 py-0.5 rounded-full">
-                  {pendingInvitations}
-                </span>
-              )}
             </div>
           </button>
-          
+
           <button
             onClick={() => setActiveTab('invite')}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
@@ -221,16 +259,7 @@ export function TutorStudentsPage() {
           </div>
 
           {/* Students Grid - PRAWDZIWE DANE */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredStudents.map((student) => (
-              <StudentCard 
-                key={student.student_id} 
-                student={convertToStudentFormat(student)} 
-              />
-            ))}
-          </div>
-
-          {filteredStudents.length === 0 && !isLoading && (
+          {filteredStudents.length === 0 && !isLoading ? (
             <div className="text-center py-12">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -244,38 +273,49 @@ export function TutorStudentsPage() {
               {totalStudents === 0 && (
                 <button
                   onClick={() => setActiveTab('invite')}
-                  className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-200"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
                 >
-                  <UserPlus className="h-4 w-4" />
-                  <span>Invite Your First Student</span>
+                  Send First Invitation
                 </button>
               )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredStudents.map((student) => (
+                <StudentCard 
+                  key={student.student_id} 
+                  student={convertToStudentFormat(student)} 
+                />
+              ))}
             </div>
           )}
         </div>
       )}
 
       {activeTab === 'invitations' && (
-        <div className="space-y-4">
+        <div className="space-y-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Invitation History
+          </h2>
+
           {invitations.length === 0 ? (
             <div className="text-center py-12">
               <Mail className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                No invitations sent
+                No invitations sent yet
               </h3>
               <p className="text-gray-500 dark:text-gray-400 mb-4">
-                Send your first student invitation to get started!
+                Send your first invitation to start building your student base.
               </p>
               <button
                 onClick={() => setActiveTab('invite')}
-                className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-200"
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
               >
-                <UserPlus className="h-4 w-4" />
-                <span>Send Invitation</span>
+                Send Invitation
               </button>
             </div>
           ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-gray-50 dark:bg-gray-900">
@@ -292,39 +332,35 @@ export function TutorStudentsPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Expires
                       </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Message
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {invitations.map((invitation) => (
                       <tr key={invitation.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {invitation.student_email}
-                          </div>
-                          {invitation.message && (
-                            <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                              {invitation.message}
-                            </div>
-                          )}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                          {invitation.student_email}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {getStatusBadge(invitation.status)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(invitation.invited_at).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {invitation.status === 'pending' ? (
-                            new Date(invitation.expires_at) > new Date() ? (
-                              <span className="text-orange-600 dark:text-orange-400">
-                                {Math.ceil((new Date(invitation.expires_at).getTime() - new Date().getTime()) / (1000 * 3600 * 24))} days
-                              </span>
-                            ) : (
-                              <span className="text-red-600 dark:text-red-400">Expired</span>
-                            )
-                          ) : (
-                            '-'
+                          {getStatusBadge(
+                            isInvitationExpired(invitation.expires_at) && invitation.status === 'pending' 
+                              ? 'expired' 
+                              : invitation.status
                           )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          {formatDate(invitation.invited_at)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          {formatDate(invitation.expires_at)}
+                          {isInvitationExpired(invitation.expires_at) && (
+                            <span className="ml-2 text-red-500">(Expired)</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
+                          {invitation.message || 'No message'}
                         </td>
                       </tr>
                     ))}
@@ -337,7 +373,12 @@ export function TutorStudentsPage() {
       )}
 
       {activeTab === 'invite' && (
-        <InviteStudentForm onInviteSent={handleInviteSent} />
+        <div className="space-y-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Invite New Student
+          </h2>
+          <InviteStudentForm onInviteSent={handleInviteSent} />
+        </div>
       )}
     </div>
   );
