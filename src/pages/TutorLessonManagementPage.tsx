@@ -27,6 +27,27 @@ interface Exercise {
   points: number;
 }
 
+// Na początku pliku dodaj prosty interface:
+interface SimpleExercise {
+  type: 'multiple_choice' | 'flashcard' | 'text_answer';
+  title: string;
+  question: string;
+  points: number;
+}
+
+// W komponencie dodaj state:
+const [exercises, setExercises] = useState<SimpleExercise[]>([]);
+
+// Dodaj funkcję do dodawania ćwiczeń:
+const addSimpleExercise = () => {
+  setExercises(prev => [...prev, {
+    type: 'multiple_choice',
+    title: '',
+    question: '',
+    points: 1
+  }]);
+};
+
 export function TutorLessonManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -39,7 +60,7 @@ export function TutorLessonManagementPage() {
   const [newLesson, setNewLesson] = useState<CreateLessonData>({
     title: '',
     description: '',
-    content: '',
+    // content: '',
     assignedStudentIds: [],
     status: 'published'
   });
@@ -370,7 +391,7 @@ export function TutorLessonManagementPage() {
               />
             </div>
 
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Content
               </label>
@@ -381,7 +402,7 @@ export function TutorLessonManagementPage() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
                 placeholder="Lesson content, instructions, materials..."
               />
-            </div>
+            </div> */}
 
             {/* Exercises Section */}
             <div>
@@ -584,7 +605,7 @@ export function TutorLessonManagementPage() {
                   setNewLesson({
                     title: '',
                     description: '',
-                    content: '',
+                    // content: '',
                     assignedStudentIds: [],
                     status: 'published'
                   });
