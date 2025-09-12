@@ -1,6 +1,6 @@
-// src/pages/TutorLessonManagementPage.tsx - NAPRAWIONA WERSJA
+// src/pages/TutorLessonManagementPage.tsx - KOMPLETNA WERSJA Z ĆWICZENIAMI
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, BookOpen, Calendar, Clock, Users, PlusCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, Filter, BookOpen, Calendar, Clock, Users, PlusCircle, AlertCircle, RefreshCw, Plus, X } from 'lucide-react';
 import { LessonCard } from '../components/LessonCard';
 import { useTutorStudents } from '../contexts/StudentsContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,9 +11,21 @@ import {
   deleteLesson,
   assignLessonToStudents,
   unassignLessonFromStudents,
+  createLessonExercises,
   LessonWithAssignments, 
   CreateLessonData,
-  UpdateLessonData } from '../lib/supabase';
+  UpdateLessonData
+} from '../lib/supabase';
+
+interface Exercise {
+  type: 'multiple_choice' | 'flashcard' | 'text_answer';
+  title: string;
+  question: string;
+  correct_answer: string;
+  options: string[];
+  explanation: string;
+  points: number;
+}
 
 export function TutorLessonManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,8 +44,10 @@ export function TutorLessonManagementPage() {
     status: 'published'
   });
   const [isCreating, setIsCreating] = useState(false);
-  const [exercises, setExercises] = useState<any[]>([]);
-  
+
+  // Exercises state
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+
   const { session } = useAuth();
   const { students } = useTutorStudents();
 
@@ -65,52 +79,56 @@ export function TutorLessonManagementPage() {
   };
 
   const handleEditLesson = async (lessonId: string, updates: UpdateLessonData) => {
-  try {
     console.log('🔄 Editing lesson:', lessonId, updates);
-    await updateLesson(lessonId, updates);
-    await loadLessons(); // Reload lessons
-    console.log('✅ Lesson updated successfully');
-  } catch (error) {
-    console.error('❌ Error updating lesson:', error);
-    throw error;
-  }
-};
+    try {
+      await updateLesson(lessonId, updates);
+      await loadLessons();
+      console.log('✅ Lesson updated successfully');
+    } catch (error) {
+      console.error('❌ Error updating lesson:', error);
+      setError('Failed to update lesson');
+      throw error;
+    }
+  };
 
-const handleDeleteLesson = async (lessonId: string) => {
-  try {
+  const handleDeleteLesson = async (lessonId: string) => {
     console.log('🗑️ Deleting lesson:', lessonId);
-    await deleteLesson(lessonId);
-    await loadLessons(); // Reload lessons
-    console.log('✅ Lesson deleted successfully');
-  } catch (error) {
-    console.error('❌ Error deleting lesson:', error);
-    throw error;
-  }
-};
+    try {
+      await deleteLesson(lessonId);
+      await loadLessons();
+      console.log('✅ Lesson deleted successfully');
+    } catch (error) {
+      console.error('❌ Error deleting lesson:', error);
+      setError('Failed to delete lesson');
+      throw error;
+    }
+  };
 
-const handleAssignStudents = async (lessonId: string, studentIds: string[]) => {
-  try {
+  const handleAssignStudents = async (lessonId: string, studentIds: string[]) => {
     console.log('👥 Assigning students:', lessonId, studentIds);
-    await assignLessonToStudents(lessonId, studentIds);
-    await loadLessons(); // Reload lessons
-    console.log('✅ Students assigned successfully');
-  } catch (error) {
-    console.error('❌ Error assigning students:', error);
-    throw error;
-  }
-};
+    try {
+      await assignLessonToStudents(lessonId, studentIds);
+      await loadLessons();
+      console.log('✅ Students assigned successfully');
+    } catch (error) {
+      console.error('❌ Error assigning students:', error);
+      setError('Failed to assign students');
+      throw error;
+    }
+  };
 
-const handleUnassignStudents = async (lessonId: string, studentIds: string[]) => {
-  try {
+  const handleUnassignStudents = async (lessonId: string, studentIds: string[]) => {
     console.log('👥 Unassigning students:', lessonId, studentIds);
-    await unassignLessonFromStudents(lessonId, studentIds);
-    await loadLessons(); // Reload lessons
-    console.log('✅ Students unassigned successfully');
-  } catch (error) {
-    console.error('❌ Error unassigning students:', error);
-    throw error;
-  }
-};
+    try {
+      await unassignLessonFromStudents(lessonId, studentIds);
+      await loadLessons();
+      console.log('✅ Students unassigned successfully');
+    } catch (error) {
+      console.error('❌ Error unassigning students:', error);
+      setError('Failed to unassign students');
+      throw error;
+    }
+  };
 
   const handleCreateLesson = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,14 +147,20 @@ const handleUnassignStudents = async (lessonId: string, studentIds: string[]) =>
     setError(null);
 
     try {
-      await createLesson(session.user.id, {
+      const lesson = await createLesson(session.user.id, {
         ...newLesson,
         title: newLesson.title.trim(),
         description: newLesson.description?.trim() || undefined,
         content: newLesson.content.trim() || 'Lesson content will be added here.'
       });
 
-      // Reset form
+      // Create exercises if any exist
+      if (exercises.length > 0) {
+        await createLessonExercises(lesson.id, exercises);
+      }
+
+      // Reset form including exercises
+      setExercises([]);
       setNewLesson({
         title: '',
         description: '',
@@ -146,8 +170,6 @@ const handleUnassignStudents = async (lessonId: string, studentIds: string[]) =>
       });
       
       setShowCreateForm(false);
-      
-      // Reload lessons
       await loadLessons();
       
     } catch (err: any) {
@@ -165,6 +187,37 @@ const handleUnassignStudents = async (lessonId: string, studentIds: string[]) =>
         ? prev.assignedStudentIds.filter(id => id !== studentId)
         : [...prev.assignedStudentIds, studentId]
     }));
+  };
+
+  // Exercise management functions
+  const addExercise = () => {
+    setExercises(prev => [...prev, {
+      type: 'multiple_choice',
+      title: '',
+      question: '',
+      correct_answer: '',
+      options: ['', '', '', ''],
+      explanation: '',
+      points: 1
+    }]);
+  };
+
+  const updateExercise = (index: number, field: keyof Exercise, value: any) => {
+    setExercises(prev => prev.map((exercise, i) => 
+      i === index ? { ...exercise, [field]: value } : exercise
+    ));
+  };
+
+  const removeExercise = (index: number) => {
+    setExercises(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateExerciseOption = (exerciseIndex: number, optionIndex: number, value: string) => {
+    setExercises(prev => prev.map((exercise, i) => 
+      i === exerciseIndex 
+        ? { ...exercise, options: exercise.options.map((opt, j) => j === optionIndex ? value : opt) }
+        : exercise
+    ));
   };
 
   // Filter lessons
@@ -194,7 +247,7 @@ const handleUnassignStudents = async (lessonId: string, studentIds: string[]) =>
             Lesson Management
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Create and manage your lessons
+            Create and manage your lessons with interactive exercises
           </p>
         </div>
         
@@ -272,19 +325,36 @@ const handleUnassignStudents = async (lessonId: string, studentIds: string[]) =>
             Create New Lesson
           </h2>
           
-          <form onSubmit={handleCreateLesson} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Lesson Title *
-              </label>
-              <input
-                type="text"
-                value={newLesson.title}
-                onChange={(e) => setNewLesson({...newLesson, title: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                placeholder="e.g., Spanish Grammar Basics"
-                required
-              />
+          <form onSubmit={handleCreateLesson} className="space-y-6">
+            {/* Basic Lesson Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Lesson Title *
+                </label>
+                <input
+                  type="text"
+                  value={newLesson.title}
+                  onChange={(e) => setNewLesson({...newLesson, title: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder="e.g., Spanish Grammar Basics"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Status
+                </label>
+                <select
+                  value={newLesson.status}
+                  onChange={(e) => setNewLesson({...newLesson, status: e.target.value as 'draft' | 'published'})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                </select>
+              </div>
             </div>
             
             <div>
@@ -313,6 +383,159 @@ const handleUnassignStudents = async (lessonId: string, studentIds: string[]) =>
               />
             </div>
 
+            {/* Exercises Section */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Ćwiczenia ({exercises.length})
+                </label>
+                <button
+                  type="button"
+                  onClick={addExercise}
+                  className="flex items-center space-x-1 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Dodaj ćwiczenie</span>
+                </button>
+              </div>
+              
+              <div className="space-y-4 max-h-80 overflow-y-auto">
+                {exercises.map((exercise, exerciseIndex) => (
+                  <div key={exerciseIndex} className="p-4 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Ćwiczenie #{exerciseIndex + 1}
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => removeExercise(exerciseIndex)}
+                        className="p-1 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
+                        title="Usuń ćwiczenie"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                          Typ ćwiczenia
+                        </label>
+                        <select
+                          value={exercise.type}
+                          onChange={(e) => updateExercise(exerciseIndex, 'type', e.target.value)}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-600 dark:text-white"
+                        >
+                          <option value="multiple_choice">ABCD (Wybór wielokrotny)</option>
+                          <option value="flashcard">Fiszki</option>
+                          <option value="text_answer">Odpowiedź tekstowa</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                          Tytuł ćwiczenia
+                        </label>
+                        <input
+                          type="text"
+                          value={exercise.title}
+                          onChange={(e) => updateExercise(exerciseIndex, 'title', e.target.value)}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-600 dark:text-white"
+                          placeholder="np. Wybierz poprawną odpowiedź"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="mb-3">
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                        Pytanie
+                      </label>
+                      <textarea
+                        value={exercise.question}
+                        onChange={(e) => updateExercise(exerciseIndex, 'question', e.target.value)}
+                        rows={2}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-600 dark:text-white resize-none"
+                        placeholder="Wpisz treść pytania..."
+                      />
+                    </div>
+                    
+                    {exercise.type === 'multiple_choice' && (
+                      <div className="mb-3">
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                          Opcje odpowiedzi (ABCD)
+                        </label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {exercise.options.map((option, optionIndex) => (
+                            <div key={optionIndex} className="flex items-center space-x-2">
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 w-4">
+                                {String.fromCharCode(65 + optionIndex)}:
+                              </span>
+                              <input
+                                type="text"
+                                value={option}
+                                onChange={(e) => updateExerciseOption(exerciseIndex, optionIndex, e.target.value)}
+                                className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-600 dark:text-white"
+                                placeholder={`Opcja ${String.fromCharCode(65 + optionIndex)}`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                          Poprawna odpowiedź
+                        </label>
+                        {exercise.type === 'multiple_choice' ? (
+                          <select
+                            value={exercise.correct_answer}
+                            onChange={(e) => updateExercise(exerciseIndex, 'correct_answer', e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-600 dark:text-white"
+                          >
+                            <option value="">Wybierz poprawną odpowiedź</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            value={exercise.correct_answer}
+                            onChange={(e) => updateExercise(exerciseIndex, 'correct_answer', e.target.value)}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-600 dark:text-white"
+                            placeholder="Wpisz poprawną odpowiedź..."
+                          />
+                        )}
+                      </div>
+                      
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                          Wyjaśnienie (opcjonalne)
+                        </label>
+                        <input
+                          type="text"
+                          value={exercise.explanation}
+                          onChange={(e) => updateExercise(exerciseIndex, 'explanation', e.target.value)}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-600 dark:text-white"
+                          placeholder="Dlaczego ta odpowiedź jest poprawna..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {exercises.length === 0 && (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <p className="text-sm">Brak ćwiczeń. Kliknij "Dodaj ćwiczenie" aby stworzyć pierwsze.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Assign Students */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Assign to Students ({newLesson.assignedStudentIds.length} selected)
@@ -355,44 +578,23 @@ const handleUnassignStudents = async (lessonId: string, studentIds: string[]) =>
 
               <button
                 type="button"
-                onClick={() => setShowCreateForm(false)}
+                onClick={() => {
+                  setShowCreateForm(false);
+                  setExercises([]);
+                  setNewLesson({
+                    title: '',
+                    description: '',
+                    content: '',
+                    assignedStudentIds: [],
+                    status: 'published'
+                  });
+                }}
                 disabled={isCreating}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
             </div>
-
-// Dodaj funkcje zarządzania ćwiczeniami:
-const addExercise = () => {
-  setExercises(prev => [...prev, {
-    type: 'multiple_choice',
-    title: '',
-    question: '',
-    correct_answer: '',
-    options: ['', '', '', ''],
-    explanation: '',
-    points: 1
-  }]);
-};
-
-const updateExercise = (index: number, field: string, value: any) => {
-  setExercises(prev => prev.map((exercise, i) => 
-    i === index ? { ...exercise, [field]: value } : exercise
-  ));
-};
-
-const removeExercise = (index: number) => {
-  setExercises(prev => prev.filter((_, i) => i !== index));
-};
-
-const updateExerciseOption = (exerciseIndex: number, optionIndex: number, value: string) => {
-  setExercises(prev => prev.map((exercise, i) => 
-    i === exerciseIndex 
-      ? { ...exercise, options: exercise.options.map((opt: string, j: number) => j === optionIndex ? value : opt) }
-      : exercise
-  ));
-};
           </form>
         </div>
       )}
@@ -432,76 +634,3 @@ const updateExerciseOption = (exerciseIndex: number, optionIndex: number, value:
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
-        </div>
-      </div>
-
-      {/* Lessons List */}
-      {filteredLessons.length === 0 && !isLoading ? (
-        <div className="text-center py-12">
-          <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            {lessons.length === 0 ? 'No lessons yet' : 'No lessons found'}
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-4">
-            {lessons.length === 0 
-              ? 'Create your first lesson to get started!' 
-              : 'Try adjusting your search or filter criteria.'}
-          </p>
-          {lessons.length === 0 && (
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-200"
-            >
-              <PlusCircle className="h-4 w-4" />
-              <span>Create Your First Lesson</span>
-            </button>
-          )}
-        </div>
-      ) : (
-        <>
-          {/* Published Lessons */}
-          {publishedLessons.length > 0 && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                Published Lessons ({publishedLessons.length})
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {publishedLessons.map((lesson) => (
-                  <LessonCard 
-    key={lesson.id} 
-    lesson={lesson} 
-    onEdit={handleEditLesson}
-    onDelete={handleDeleteLesson}
-    onAssignStudents={handleAssignStudents}
-    onUnassignStudents={handleUnassignStudents}
-  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Draft Lessons */}
-          {draftLessons.length > 0 && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                Draft Lessons ({draftLessons.length})
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {draftLessons.map((lesson) => (
-                  <LessonCard 
-                    key={lesson.id} 
-                    lesson={lesson} 
-                    onEdit={handleEditLesson}
-                    onDelete={handleDeleteLesson}
-                    onAssignStudents={handleAssignStudents}
-                    onUnassignStudents={handleUnassignStudents}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
