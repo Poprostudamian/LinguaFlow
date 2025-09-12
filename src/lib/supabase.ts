@@ -641,7 +641,7 @@ export const assignLessonToStudents = async (lessonId: string, studentIds: strin
     console.error('Error in assignLessonToStudents:', error)
     throw error
   }
-
+};
 /**
  * Remove lesson assignment from students
  */
