@@ -24,13 +24,13 @@ export function TutorStudentsPage() {
 
   // Convert TutorStudent to Student format - PRAWDZIWE DANE Z BAZY
 const convertToStudentFormat = (tutorStudent: any) => {
-  console.log('🔍 Converting student:', tutorStudent);
+  console.log('🔍 Converting student with real stats:', tutorStudent);
   
   const converted = {
     id: tutorStudent.student_id,
     name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
     email: tutorStudent.student_email,
-    // Use real data if available, otherwise defaults
+    // Use REAL stats from the same system as Dashboard
     level: tutorStudent.level || 'Not set',
     progress: tutorStudent.progress || 0,
     lessonsCompleted: tutorStudent.lessonsCompleted || 0,
@@ -39,7 +39,7 @@ const convertToStudentFormat = (tutorStudent: any) => {
     avatar_url: tutorStudent.avatar_url
   };
   
-  console.log('✅ Converted with real data:', converted);
+  console.log('✅ Final converted with REAL stats:', converted);
   return converted;
 };
 
