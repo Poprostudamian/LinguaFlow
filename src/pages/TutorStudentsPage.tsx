@@ -23,22 +23,23 @@ export function TutorStudentsPage() {
   } = useTutorStudents();
 
   // Convert TutorStudent to Student format - PRAWDZIWE DANE Z BAZY
- const convertToStudentFormat = (tutorStudent: any) => {
-  console.log('🔍 Converting student to format:', tutorStudent);
+const convertToStudentFormat = (tutorStudent: any) => {
+  console.log('🔍 Converting student:', tutorStudent);
   
   const converted = {
     id: tutorStudent.student_id,
     name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
     email: tutorStudent.student_email,
-    level: 'Not set', // Remove fake data generation
-    progress: 0, // Remove fake data generation  
-    lessonsCompleted: 0, // Remove fake data generation
-    totalHours: 0, // Remove fake data generation
+    // Use real data if available, otherwise defaults
+    level: tutorStudent.level || 'Not set',
+    progress: tutorStudent.progress || 0,
+    lessonsCompleted: tutorStudent.lessonsCompleted || 0,
+    totalHours: tutorStudent.totalHours || 0,
     joinedDate: tutorStudent.relationship_created,
-    avatar_url: undefined
+    avatar_url: tutorStudent.avatar_url
   };
   
-  console.log('✅ Converted to format:', converted);
+  console.log('✅ Converted with real data:', converted);
   return converted;
 };
 
