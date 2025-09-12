@@ -58,47 +58,44 @@ export function StudentsProvider({ children }: { children: React.ReactNode }) {
   }, [session.isAuthenticated, session.user?.role, session.user?.id]);
 
  const refreshStudents = async () => {
-  if (!session?.user?.id) return;
+  if (!session.user?.id) {
+    throw new Error('No authenticated user');
+  }
 
   try {
-    console.log('🔄 Loading students with real stats...');
-    console.log('User ID:', session.user.id);
+    setError(null);
+    console.log('🔄 Loading students with real statistics...');
     
-    // Import the function dynamically to make sure it exists
-    const { getTutorStudentsWithStats } = await import('../lib/supabase');
-    
-    if (typeof getTutorStudentsWithStats !== 'function') {
-      console.error('❌ getTutorStudentsWithStats is not available, using fallback');
+    // Try to get students with real stats
+    try {
+      // Import the function dynamically
+      const { getTutorStudentsWithRealStats } = await import('../lib/supabase');
       
-      // Fallback to basic function
-      const { getTutorStudents } = await import('../lib/supabase');
-      const basicStudents = await getTutorStudents();
-      
-      // Add basic stats manually
-      const studentsWithBasicStats = basicStudents
-        .filter((student, index, self) => 
-          index === self.findIndex(s => s.student_id === student.student_id)
-        )
-        .map(student => ({
-          ...student,
-          level: 'Beginner',
-          progress: Math.floor(Math.random() * 100),
-          lessonsCompleted: Math.floor(Math.random() * 20),
-          totalHours: Math.floor(Math.random() * 50)
-        }));
-      
-      setStudents(studentsWithBasicStats);
-      console.log('✅ Loaded basic students:', studentsWithBasicStats);
-      return;
+      if (typeof getTutorStudentsWithRealStats === 'function') {
+        const studentsWithStats = await getTutorStudentsWithRealStats();
+        setStudents(studentsWithStats);
+        console.log('✅ Loaded students with real stats:', studentsWithStats);
+        return;
+      }
+    } catch (importError) {
+      console.log('⚠️ Real stats function not available, using basic data');
     }
     
-    const studentsData = await getTutorStudentsWithStats();
-    setStudents(studentsData);
+    // Fallback to basic students data
+    const studentsData = await getTutorStudents(session.user.id);
     
-    console.log('✅ Loaded', studentsData.length, 'students with real stats');
+    // Remove duplicates
+    const uniqueStudents = studentsData.filter((student, index, self) => 
+      index === self.findIndex(s => s.student_id === student.student_id)
+    );
+    
+    console.log('✅ Loaded basic students (no duplicates):', uniqueStudents);
+    setStudents(uniqueStudents);
+    
   } catch (err: any) {
     console.error('❌ Error loading students:', err);
     setError(err.message || 'Failed to load students');
+    throw err;
   }
 };
 
