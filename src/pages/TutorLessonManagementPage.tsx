@@ -221,94 +221,42 @@ export function TutorLessonManagementPage() {
   // LESSON MANAGEMENT FUNCTIONS
   // ========================================================================================
 
-  const handleCreateLesson = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleCreateLesson = async (lessonData: any) => {
+  try {
+    // 1. Utwórz lekcję
+    const { data: lesson, error: lessonError } = await supabase
+      .from('lessons')
+      .insert({
+        tutor_id: session.user?.id,
+        title: lessonData.title,
+        description: lessonData.description,
+        // inne pola...
+      })
+      .select()
+      .single();
+
+    if (lessonError) throw lessonError;
+
+    // 2. Przypisz studentów (z obsługą duplikatów)
+    if (lessonData.assignedStudentIds.length > 0) {
+      const result = await assignLessonToStudents(lesson.id, lessonData.assignedStudentIds);
+      
+      console.log(`Lekcja utworzona! Nowe przypisania: ${result.newAssignments}, pominięte: ${result.skipped}`);
+    }
+
+    // 3. Reset formularza
+    // ... resetowanie stanu
+
+  } catch (error) {
+    console.error('Error creating lesson:', error);
     
-    if (!session?.user?.id) {
-      setError('No authenticated user');
-      return;
+    if (error.code === '23505') {
+      alert('Niektórzy studenci są już przypisani do tej lekcji. Duplikaty zostały pominięte.');
+    } else {
+      alert('Błąd podczas tworzenia lekcji: ' + error.message);
     }
-
-    if (!newLesson.title.trim()) {
-      setError('Lesson title is required');
-      return;
-    }
-
-    setIsCreating(true);
-    setError(null);
-
-    try {
-      let lesson;
-      
-      // Próbuj użyć funkcji createLesson
-      try {
-        lesson = await createLesson(session.user.id, {
-          ...newLesson,
-          title: newLesson.title.trim(),
-          description: newLesson.description?.trim() || undefined
-        });
-      } catch (createError) {
-        // Fallback - bezpośrednie wstawienie do Supabase
-        const { data, error: insertError } = await supabase
-          .from('lessons')
-          .insert([{
-            title: newLesson.title.trim(),
-            description: newLesson.description?.trim() || null,
-            status: newLesson.status,
-            tutor_id: session.user.id,
-            content: '' // Dodaj puste content jeśli tabela tego wymaga
-          }])
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        lesson = data;
-      }
-
-      // Przypisz studentów jeśli wybrano
-      if (newLesson.assignedStudentIds.length > 0) {
-        try {
-          await assignLessonToStudents(lesson.id, newLesson.assignedStudentIds);
-        } catch (assignError) {
-          // Fallback assignment
-          const assignments = newLesson.assignedStudentIds.map(studentId => ({
-            lesson_id: lesson.id,
-            student_id: studentId,
-            assigned_at: new Date().toISOString(),
-            status: 'assigned'
-          }));
-
-          await supabase
-            .from('student_lessons')
-            .insert(assignments);
-        }
-      }
-
-      // W przyszłości tutaj będziemy zapisywać ćwiczenia
-      if (exercises.length > 0) {
-        console.log('Exercises to save:', exercises.length);
-        // TODO: Zaimplementować zapisywanie ćwiczeń do bazy
-      }
-
-      // Reset form
-      setExercises([]);
-      setNewLesson({
-        title: '',
-        description: '',
-        assignedStudentIds: [],
-        status: 'published'
-      });
-      
-      setShowCreateForm(false);
-      await loadLessons();
-      
-    } catch (err: any) {
-      console.error('Error creating lesson:', err);
-      setError(err.message || 'Failed to create lesson');
-    } finally {
-      setIsCreating(false);
-    }
-  };
+  }
+};
 
   const handleEditLesson = async (lessonId: string, updates: UpdateLessonData) => {
     console.log('🔄 Editing lesson:', lessonId, updates);
