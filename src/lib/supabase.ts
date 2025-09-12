@@ -1299,78 +1299,59 @@ export const getStudentRealStats = async (studentId: string) => {
   try {
     console.log('📊 Getting real stats for student:', studentId);
 
-    // Get completed lessons count
-    const { count: lessonsCompleted, error: lessonsError } = await supabase
+    // Get student lessons data
+    const { data: lessons, error: lessonsError } = await supabase
       .from('student_lessons')
-      .select('*', { count: 'exact', head: true })
-      .eq('student_id', studentId)
-      .eq('status', 'completed');
+      .select('*')
+      .eq('student_id', studentId);
 
     if (lessonsError) {
       console.log('⚠️ No student_lessons table or error:', lessonsError);
+      // Return defaults if table doesn't exist yet
+      return {
+        level: 'Beginner',
+        progress: 0,
+        lessonsCompleted: 0,
+        totalHours: 0
+      };
     }
 
-    // Get total assigned lessons
-    const { count: totalLessons, error: totalError } = await supabase
-      .from('student_lessons')
-      .select('*', { count: 'exact', head: true })
-      .eq('student_id', studentId);
-
-    if (totalError) {
-      console.log('⚠️ Error getting total lessons:', totalError);
-    }
-
+    const totalLessons = lessons?.length || 0;
+    const completedLessons = lessons?.filter(l => l.status === 'completed').length || 0;
+    
     // Calculate average progress
-    const { data: progressData, error: progressError } = await supabase
-      .from('student_lessons')
-      .select('progress')
-      .eq('student_id', studentId);
+    const averageProgress = totalLessons > 0
+      ? Math.round(lessons.reduce((sum, l) => sum + (l.progress || 0), 0) / totalLessons)
+      : 0;
 
-    if (progressError) {
-      console.log('⚠️ Error getting progress:', progressError);
-    }
+    // Calculate total study time (convert minutes to hours)
+    const totalMinutes = lessons?.reduce((sum, l) => sum + (l.time_spent || 0), 0) || 0;
+    const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
 
-    const averageProgress = progressData && progressData.length > 0
-      ? Math.round(progressData.reduce((sum, lesson) => sum + (lesson.progress || 0), 0) / progressData.length)
-      : Math.floor(Math.random() * 100); // Fallback to random for demo
-
-    // Get total time spent
-    const { data: timeData, error: timeError } = await supabase
-      .from('student_lessons')
-      .select('time_spent')
-      .eq('student_id', studentId);
-
-    if (timeError) {
-      console.log('⚠️ Error getting time data:', timeError);
-    }
-
-    const totalMinutes = timeData?.reduce((sum, lesson) => sum + (lesson.time_spent || 0), 0) || 0;
-    const totalHours = totalMinutes > 0 ? Math.round((totalMinutes / 60) * 10) / 10 : Math.floor(Math.random() * 50); // Fallback
+    // Determine level based on progress
+    const level = averageProgress >= 80 ? 'Advanced' : 
+                  averageProgress >= 50 ? 'Intermediate' : 'Beginner';
 
     const stats = {
-      lessonsCompleted: lessonsCompleted || Math.floor(Math.random() * 20),
-      totalLessons: totalLessons || Math.floor(Math.random() * 25),
+      level,
       progress: averageProgress,
-      totalHours,
-      level: averageProgress >= 80 ? 'Advanced' : averageProgress >= 50 ? 'Intermediate' : 'Beginner'
+      lessonsCompleted: completedLessons,
+      totalHours
     };
 
-    console.log('📊 Student stats for', studentId, ':', stats);
+    console.log('📊 Real stats for', studentId, ':', stats);
     return stats;
+
   } catch (error) {
     console.error('❌ Error getting student stats:', error);
     
-    // Fallback stats
-    const fallbackStats = {
-      lessonsCompleted: Math.floor(Math.random() * 20),
-      totalLessons: Math.floor(Math.random() * 25),
-      progress: Math.floor(Math.random() * 100),
-      totalHours: Math.floor(Math.random() * 50),
-      level: ['Beginner', 'Intermediate', 'Advanced'][Math.floor(Math.random() * 3)]
+    // Return defaults on error
+    return {
+      level: 'Beginner',
+      progress: 0,
+      lessonsCompleted: 0,
+      totalHours: 0
     };
-    
-    console.log('📊 Using fallback stats:', fallbackStats);
-    return fallbackStats;
   }
 };
 
