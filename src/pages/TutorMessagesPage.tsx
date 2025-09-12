@@ -1,4 +1,6 @@
-// src/pages/TutorMessagesPage.tsx - KOMPLETNA WERSJA Z PRAWDZIWYMI DANYMI
+// src/pages/TutorMessagesPage.tsx - NAPRAWIONA WERSJA
+// Replace your current file completely with this version
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Send, 
@@ -47,12 +49,20 @@ export function TutorMessagesPage() {
 
   // Subscribe to real-time updates
   useEffect(() => {
-    const subscription = subscribeToConversationUpdates(() => {
-      loadConversations();
-    });
+    let subscription: any;
+    
+    const setupSubscription = async () => {
+      subscription = subscribeToConversationUpdates(() => {
+        loadConversations();
+      });
+    };
+
+    setupSubscription();
 
     return () => {
-      subscription.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -60,16 +70,29 @@ export function TutorMessagesPage() {
   useEffect(() => {
     if (!selectedConversation) return;
 
-    const subscription = subscribeToConversationMessages(
-      selectedConversation,
-      (newMessage) => {
-        setCurrentMessages(prev => [...prev, newMessage]);
-        scrollToBottom();
-      }
-    );
+    let subscription: any;
+
+    const setupMessageSubscription = async () => {
+      subscription = subscribeToConversationMessages(
+        selectedConversation,
+        (newMessage) => {
+          // Prevent duplicate messages - check if message already exists
+          setCurrentMessages(prev => {
+            const exists = prev.find(m => m.id === newMessage.id);
+            if (exists) return prev;
+            return [...prev, newMessage];
+          });
+          scrollToBottom();
+        }
+      );
+    };
+
+    setupMessageSubscription();
 
     return () => {
-      subscription.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, [selectedConversation]);
 
@@ -89,7 +112,7 @@ export function TutorMessagesPage() {
       setConversations(data);
     } catch (error: any) {
       console.error('Error loading conversations:', error);
-      setError('Failed to load conversations');
+      setError('Failed to load conversations. Make sure the messaging tables are created.');
     } finally {
       setIsLoading(false);
     }
@@ -125,15 +148,25 @@ export function TutorMessagesPage() {
     e.preventDefault();
     if (!newMessage.trim() || !selectedConversation || isSending) return;
 
+    const messageContent = newMessage.trim();
+    setNewMessage(''); // Clear input immediately
+    
     try {
       setIsSending(true);
-      const message = await sendMessage(selectedConversation, newMessage);
-      setCurrentMessages(prev => [...prev, message]);
-      setNewMessage('');
+      const message = await sendMessage(selectedConversation, messageContent);
+      
+      // Add message to current messages if not already there (prevent duplicates)
+      setCurrentMessages(prev => {
+        const exists = prev.find(m => m.id === message.id);
+        if (exists) return prev;
+        return [...prev, message];
+      });
+      
       scrollToBottom();
     } catch (error) {
       console.error('Error sending message:', error);
       setError('Failed to send message');
+      setNewMessage(messageContent); // Restore message on error
     } finally {
       setIsSending(false);
     }
@@ -141,13 +174,16 @@ export function TutorMessagesPage() {
 
   const startNewConversation = async (studentId: string) => {
     try {
+      setError(null);
+      console.log('Starting conversation with student:', studentId);
+      
       const conversationId = await createOrGetConversation(studentId);
       setShowNewChat(false);
       await selectConversation(conversationId);
       loadConversations(); // Refresh list
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error starting conversation:', error);
-      setError('Failed to start conversation');
+      setError(`Failed to start conversation: ${error.message}`);
     }
   };
 
@@ -426,37 +462,50 @@ export function TutorMessagesPage() {
                     <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">
                       Start New Conversation
                     </h3>
-                    <div className="space-y-2">
-                      {availableStudents.map((student) => (
-                        <button
-                          key={student.id}
-                          onClick={() => startNewConversation(student.id)}
-                          className="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                        >
-                          <div className="flex items-center space-x-3">
-                            {student.avatar_url ? (
-                              <img
-                                src={student.avatar_url}
-                                alt={`${student.first_name} ${student.last_name}`}
-                                className="h-8 w-8 rounded-full"
-                              />
-                            ) : (
-                              <div className="h-8 w-8 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
-                                <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    
+                    {availableStudents.length === 0 ? (
+                      <div className="text-center py-8">
+                        <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500 dark:text-gray-400">
+                          No students available for messaging
+                        </p>
+                        <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
+                          Add students first in the Students tab
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {availableStudents.map((student) => (
+                          <button
+                            key={student.id}
+                            onClick={() => startNewConversation(student.id)}
+                            className="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                          >
+                            <div className="flex items-center space-x-3">
+                              {student.avatar_url ? (
+                                <img
+                                  src={student.avatar_url}
+                                  alt={`${student.first_name} ${student.last_name}`}
+                                  className="h-8 w-8 rounded-full"
+                                />
+                              ) : (
+                                <div className="h-8 w-8 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
+                                  <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                </div>
+                              )}
+                              <div>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {student.first_name} {student.last_name}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {student.email}
+                                </p>
                               </div>
-                            )}
-                            <div>
-                              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                {student.first_name} {student.last_name}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {student.email}
-                              </p>
                             </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
