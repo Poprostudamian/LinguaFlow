@@ -24,6 +24,7 @@ export function TutorStudentsPage() {
 
   // Convert TutorStudent to Student format - PRAWDZIWE DANE Z BAZY
   const convertToStudentFormat = (tutorStudent: any) => {
+    console.log('🔍 Converting student:', tutorStudent);
     return {
       id: tutorStudent.student_id,
       name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
@@ -35,6 +36,7 @@ export function TutorStudentsPage() {
       joinedDate: tutorStudent.relationship_created,
       avatar_url: undefined // TODO: Add avatar support
     };
+    console.log('✅ Converted to:', converted);
   };
 
   // Filter students based on search
