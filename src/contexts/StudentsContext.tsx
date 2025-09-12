@@ -3,7 +3,6 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import {
   getTutorStudents,
-  getTutorStudentsWithStats,
   getTutorInvitations,
   getTutorStudentStats,
   TutorStudent,
