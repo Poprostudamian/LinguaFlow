@@ -867,3 +867,90 @@ export const searchTutorStudents = async (tutorId: string, searchTerm: string): 
     return fullName.includes(lowerQuery) || email.includes(lowerQuery);
   });
 };
+
+// ===== DODAJ TO DO src/lib/supabase.ts =====
+
+// Typy ćwiczeń
+export interface ExerciseType {
+  id: string;
+  name: 'multiple_choice' | 'flashcard' | 'text_answer';
+  display_name: string;
+  description?: string;
+}
+
+export interface LessonExercise {
+  id: string;
+  lesson_id: string;
+  exercise_type: 'multiple_choice' | 'flashcard' | 'text_answer';
+  title: string;
+  question: string;
+  correct_answer?: string;
+  options?: string[]; // dla ABCD
+  explanation?: string;
+  order_number: number;
+  points: number;
+  created_at: string;
+}
+
+// Rozszerz CreateLessonData
+export interface CreateLessonData {
+  title: string;
+  description?: string;
+  content: string;
+  assignedStudentIds: string[];
+  status?: 'draft' | 'published';
+  exercises?: {
+    type: 'multiple_choice' | 'flashcard' | 'text_answer';
+    title: string;
+    question: string;
+    correct_answer?: string;
+    options?: string[]; // dla ABCD
+    explanation?: string;
+    points?: number;
+  }[];
+}
+
+// Funkcja do tworzenia ćwiczeń
+export const createLessonExercises = async (lessonId: string, exercises: any[]) => {
+  if (exercises.length === 0) return;
+
+  const exercisesData = exercises.map((exercise, index) => ({
+    lesson_id: lessonId,
+    exercise_type: exercise.type,
+    title: exercise.title,
+    question: exercise.question,
+    correct_answer: exercise.correct_answer,
+    options: exercise.options ? JSON.stringify(exercise.options) : null,
+    explanation: exercise.explanation,
+    order_number: index + 1,
+    points: exercise.points || 1
+  }));
+
+  const { error } = await supabase
+    .from('lesson_exercises')
+    .insert(exercisesData);
+
+  if (error) {
+    console.error('Error creating exercises:', error);
+    throw error;
+  }
+};
+
+// Funkcja do pobierania ćwiczeń lekcji
+export const getLessonExercises = async (lessonId: string): Promise<LessonExercise[]> => {
+  const { data, error } = await supabase
+    .from('lesson_exercises')
+    .select('*')
+    .eq('lesson_id', lessonId)
+    .order('order_number');
+
+  if (error) {
+    console.error('Error fetching lesson exercises:', error);
+    throw error;
+  }
+
+  return (data || []).map(exercise => ({
+    ...exercise,
+    options: exercise.options ? JSON.parse(exercise.options) : null
+  }));
+};
