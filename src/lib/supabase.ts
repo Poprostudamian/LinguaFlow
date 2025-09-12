@@ -1355,6 +1355,43 @@ export const getStudentRealStats = async (studentId: string) => {
   }
 };
 
+/**
+ * Get tutor students with real statistics
+ */
+export const getTutorStudentsWithRealStats = async () => {
+  try {
+    console.log('🔄 Getting tutor students with real stats...');
+    
+    const students = await getTutorStudents();
+    console.log('👥 Got', students.length, 'basic students');
+    
+    // Remove duplicates
+    const uniqueStudents = students.filter((student, index, self) => 
+      index === self.findIndex(s => s.student_id === student.student_id)
+    );
+    
+    console.log('👥 After removing duplicates:', uniqueStudents.length, 'students');
+    
+    // Get real stats for each student
+    const studentsWithStats = await Promise.all(
+      uniqueStudents.map(async (student) => {
+        const stats = await getStudentRealStats(student.student_id);
+        return {
+          ...student,
+          ...stats
+        };
+      })
+    );
+
+    console.log('✅ Students with real stats:', studentsWithStats);
+    return studentsWithStats;
+
+  } catch (error) {
+    console.error('❌ Error getting students with stats:', error);
+    throw error;
+  }
+};
+
 // Enhanced getTutorStudents with real statistics
 export const getTutorStudentsWithStats = async (): Promise<any[]> => {
   console.log('🔄 Getting tutor students with stats...');
