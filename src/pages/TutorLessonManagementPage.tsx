@@ -27,26 +27,6 @@ interface Exercise {
   points: number;
 }
 
-// Na początku pliku dodaj prosty interface:
-interface SimpleExercise {
-  type: 'multiple_choice' | 'flashcard' | 'text_answer';
-  title: string;
-  question: string;
-  points: number;
-}
-
-// W komponencie dodaj state:
-const [exercises, setExercises] = useState<SimpleExercise[]>([]);
-
-// Dodaj funkcję do dodawania ćwiczeń:
-const addSimpleExercise = () => {
-  setExercises(prev => [...prev, {
-    type: 'multiple_choice',
-    title: '',
-    question: '',
-    points: 1
-  }]);
-};
 
 export function TutorLessonManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
