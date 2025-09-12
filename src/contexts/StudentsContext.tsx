@@ -66,72 +66,37 @@ const refreshStudents = async () => {
 
   try {
     setError(null);
-    console.log('🔄 DEBUG: Starting refreshStudents...');
-    console.log('🔄 User ID:', session.user.id);
+    console.log('🔄 ULTRA SIMPLE DEBUG: Starting...');
     
-    // Step 1: Get basic students
-    console.log('📊 Step 1: Getting basic students...');
+    // Get basic students - this should work
     const basicStudents = await getTutorStudents(session.user.id);
-    console.log('📊 Basic students result:', basicStudents);
+    console.log('📊 Raw students from getTutorStudents:', basicStudents);
     
-    // Step 2: Try to use studentStats
-    console.log('📊 Step 2: Trying to import and use studentStats...');
-    try {
-      const { getTutorStudentsWithRealStats } = await import('../lib/studentStats');
-      console.log('📊 studentStats import successful');
-      
-      if (typeof getTutorStudentsWithRealStats === 'function') {
-        console.log('📊 Calling getTutorStudentsWithRealStats...');
-        const studentsWithStats = await getTutorStudentsWithRealStats(session.user.id);
-        console.log('📊 Result from getTutorStudentsWithRealStats:', studentsWithStats);
-        
-        // Convert to proper format
-        const convertedStudents = studentsWithStats.map(student => ({
-          relationship_id: student.id,
-          tutor_id: session.user.id,
-          tutor_first_name: '',
-          tutor_last_name: '',
-          student_id: student.id,
-          student_first_name: student.name.split(' ')[0] || 'Student',
-          student_last_name: student.name.split(' ').slice(1).join(' ') || '',
-          student_email: student.email,
-          relationship_created: student.joinedDate,
-          is_active: true,
-          // Include the real stats
-          level: student.level,
-          progress: student.progress,
-          lessonsCompleted: student.lessonsCompleted,
-          totalHours: student.totalHours
-        }));
-        
-        console.log('📊 Final converted students with real stats:', convertedStudents);
-        setStudents(convertedStudents);
-        return;
-      }
-    } catch (importError) {
-      console.log('📊 Import error, using fallback:', importError);
-    }
-    
-    // Fallback: Use basic students with some test stats
-    console.log('📊 Step 3: Using fallback with basic students...');
+    // Remove duplicates
     const uniqueStudents = basicStudents.filter((student, index, self) => 
       index === self.findIndex(s => s.student_id === student.student_id)
     );
+    console.log('📊 After removing duplicates:', uniqueStudents);
     
-    // Add test stats that are different from the hash-based ones
-    const studentsWithTestStats = uniqueStudents.map((student, index) => ({
-      ...student,
-      level: ['Advanced', 'Intermediate', 'Expert'][index % 3], // Different from original
-      progress: 75 + (index * 5), // High progress
-      lessonsCompleted: 8 + index, // Multiple lessons
-      totalHours: 12 + (index * 3) // Significant hours
-    }));
+    // Add HARD-CODED test stats to prove the system works
+    const studentsWithHardCodedStats = uniqueStudents.map((student, index) => {
+      const enhanced = {
+        ...student,
+        // HARD-CODED STATS - should definitely show up
+        level: 'REAL DATA TEST',
+        progress: 99,
+        lessonsCompleted: 15,
+        totalHours: 25
+      };
+      console.log('📊 Enhanced student:', enhanced);
+      return enhanced;
+    });
     
-    console.log('📊 Final fallback students with test stats:', studentsWithTestStats);
-    setStudents(studentsWithTestStats);
+    console.log('📊 FINAL students with hard-coded stats:', studentsWithHardCodedStats);
+    setStudents(studentsWithHardCodedStats);
     
   } catch (err: any) {
-    console.error('❌ Error in refreshStudents:', err);
+    console.error('❌ ULTRA SIMPLE ERROR:', err);
     setError(err.message || 'Failed to load students');
     throw err;
   }
