@@ -1,16 +1,16 @@
-// src/contexts/StudentsContext.tsx
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+// src/contexts/StudentsContext.tsx - UPDATED with real statistics
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { 
-  getTutorStudents, 
-  getTutorInvitations, 
+import {
+  getTutorStudents,
+  getTutorStudentsWithStats,
+  getTutorInvitations,
   getTutorStudentStats,
-  searchTutorStudents,
-  TutorStudent, 
+  TutorStudent,
   RelationshipInvitation
 } from '../lib/supabase';
 
-interface StudentsContextType {
+export interface StudentsContextType {
   // Data
   students: TutorStudent[];
   invitations: RelationshipInvitation[];
@@ -19,7 +19,7 @@ interface StudentsContextType {
   isLoading: boolean;
   error: string | null;
   
-  // Stats (computed from API)
+  // Stats
   totalStudents: number;
   activeStudents: number;
   pendingInvitations: number;
@@ -29,7 +29,7 @@ interface StudentsContextType {
   refreshInvitations: () => Promise<void>;
   refreshAll: () => Promise<void>;
   
-  // Utility functions
+  // Utilities
   getStudentById: (id: string) => TutorStudent | undefined;
   getStudentsByIds: (ids: string[]) => TutorStudent[];
   searchStudents: (query: string) => TutorStudent[];
@@ -37,77 +37,66 @@ interface StudentsContextType {
 
 const StudentsContext = createContext<StudentsContextType | undefined>(undefined);
 
-interface StudentsProviderProps {
-  children: ReactNode;
-}
-
-export function StudentsProvider({ children }: StudentsProviderProps) {
+export function StudentsProvider({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
   const [students, setStudents] = useState<TutorStudent[]>([]);
   const [invitations, setInvitations] = useState<RelationshipInvitation[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Stats from API
   const [statsFromAPI, setStatsFromAPI] = useState({
     totalStudents: 0,
     activeStudents: 0,
     pendingInvitations: 0
   });
 
-  // Load data when tutor logs in
+  // Auto-load data when authenticated as tutor
   useEffect(() => {
-    if (session.isAuthenticated && session.user?.role === 'tutor') {
+    if (session.isAuthenticated && session.user?.role === 'tutor' && session.user?.id) {
       refreshAll();
     } else {
-      // Clear data when not authenticated or not a tutor
-      setStudents([]);
-      setInvitations([]);
-      setStatsFromAPI({ totalStudents: 0, activeStudents: 0, pendingInvitations: 0 });
-      setError(null);
+      setIsLoading(false);
     }
   }, [session.isAuthenticated, session.user?.role, session.user?.id]);
 
   const refreshStudents = async () => {
-    if (!session.user?.id) {
-      throw new Error('No authenticated user');
-    }
+    if (!session?.user?.id) return;
 
     try {
-      setError(null);
-      const studentsData = await getTutorStudents(session.user.id);
+      console.log('🔄 Loading students with real stats...');
+      
+      // Get students with real statistics from database
+      const studentsData = await getTutorStudentsWithStats();
       setStudents(studentsData);
+      
+      console.log('✅ Loaded', studentsData.length, 'students with real stats');
     } catch (err: any) {
       console.error('Error loading students:', err);
       setError(err.message || 'Failed to load students');
-      throw err;
     }
   };
 
   const refreshInvitations = async () => {
-    if (!session.user?.id) {
-      throw new Error('No authenticated user');
-    }
+    if (!session?.user?.id) return;
 
     try {
-      setError(null);
-      const invitationsData = await getTutorInvitations(session.user.id);
+      console.log('🔄 Loading invitations...');
+      const invitationsData = await getTutorInvitations();
       setInvitations(invitationsData);
+      console.log('✅ Loaded', invitationsData.length, 'invitations');
     } catch (err: any) {
       console.error('Error loading invitations:', err);
-      setError(err.message || 'Failed to load invitations');
-      throw err;
+      // Don't set error for invitations, they're not critical
     }
   };
 
   const refreshStats = async () => {
-    if (!session.user?.id) {
-      return;
-    }
+    if (!session?.user?.id) return;
 
     try {
+      console.log('🔄 Loading real stats from database...');
       const stats = await getTutorStudentStats(session.user.id);
       setStatsFromAPI(stats);
+      console.log('✅ Loaded real stats:', stats);
     } catch (err: any) {
       console.error('Error loading stats:', err);
       // Don't set error for stats, they're not critical
@@ -158,7 +147,7 @@ export function StudentsProvider({ children }: StudentsProviderProps) {
 
   // Use stats from API if available, otherwise compute from local data
   const totalStudents = statsFromAPI.totalStudents || students.length;
-  const activeStudents = statsFromAPI.activeStudents || students.filter(s => s.student_is_active).length;
+  const activeStudents = statsFromAPI.activeStudents || students.filter(s => s.is_active).length;
   const pendingInvitations = statsFromAPI.pendingInvitations || invitations.filter(inv => 
     inv.status === 'pending' && new Date(inv.expires_at) > new Date()
   ).length;
