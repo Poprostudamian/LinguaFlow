@@ -24,21 +24,24 @@ export function TutorStudentsPage() {
 
   // Convert TutorStudent to Student format - PRAWDZIWE DANE Z BAZY
 const convertToStudentFormat = (tutorStudent: any) => {
-  console.log('🔍 ULTRA SIMPLE CONVERT - Raw input:', tutorStudent);
+  console.log('🔍 Converting student with smart fallbacks:', tutorStudent);
   
   const result = {
     id: tutorStudent.student_id,
     name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
     email: tutorStudent.student_email,
-    // USE EXACTLY what comes from the data
-    level: tutorStudent.level || 'DEFAULT LEVEL',
-    progress: tutorStudent.progress || 999,  // High number to see it
-    lessonsCompleted: tutorStudent.lessonsCompleted || 888,
-    totalHours: tutorStudent.totalHours || 777,
-    joinedDate: tutorStudent.relationship_created
+    
+    // Smart fallbacks for stats
+    level: tutorStudent.level || 'Not set',
+    progress: tutorStudent.progress !== undefined ? tutorStudent.progress : 0,
+    lessonsCompleted: tutorStudent.lessonsCompleted !== undefined ? tutorStudent.lessonsCompleted : 0,
+    totalHours: tutorStudent.totalHours !== undefined ? tutorStudent.totalHours : 0,
+    
+    joinedDate: tutorStudent.relationship_created,
+    avatar_url: tutorStudent.avatar_url
   };
   
-  console.log('🔍 ULTRA SIMPLE CONVERT - Final result:', result);
+  console.log('✅ Smart converted result:', result);
   return result;
 };
 
