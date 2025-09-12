@@ -930,10 +930,7 @@ export const createLessonExercises = async (lessonId: string, exercises: any[]) 
     .from('lesson_exercises')
     .insert(exercisesData);
 
-  if (error) {
-    console.error('Error creating exercises:', error);
-    throw error;
-  }
+  if (error) throw error;
 };
 
 // Funkcja do pobierania ćwiczeń lekcji
