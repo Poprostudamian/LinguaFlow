@@ -989,10 +989,10 @@ export const getLessonExercises = async (lessonId: string): Promise<LessonExerci
     options: exercise.options ? JSON.parse(exercise.options) : null
   }));
 };
-// Dodaj te interfejsy i funkcje do swojego pliku src/lib/supabase.ts
 
-// Messages interfaces (dodaj po istniejących interfejsach)
-// Add these interfaces and functions to src/lib/supabase.ts
+// ================================================================================
+// MESSAGING SYSTEM
+// ================================================================================
 
 // Messaging types
 export interface Conversation {
@@ -1003,7 +1003,7 @@ export interface Conversation {
   updated_at: string;
   last_message_at: string;
   last_message: string | null;
-  unread_count: number;
+  unread_count?: number;
   student?: AuthUser;
   tutor?: AuthUser;
 }
@@ -1025,7 +1025,6 @@ export const getUserConversations = async (): Promise<Conversation[]> => {
 
   console.log('🔍 Getting conversations for user:', user.id);
 
-  // First check if conversations table exists, if not create mock data
   const { data: conversations, error } = await supabase
     .from('conversations')
     .select(`
@@ -1038,13 +1037,6 @@ export const getUserConversations = async (): Promise<Conversation[]> => {
 
   if (error) {
     console.error('❌ Error fetching conversations:', error);
-    
-    // Return empty array if table doesn't exist yet (for development)
-    if (error.code === '42P01') { // relation does not exist
-      console.log('📝 Conversations table does not exist, returning empty array');
-      return [];
-    }
-    
     throw error;
   }
 
@@ -1056,8 +1048,8 @@ export const getUserConversations = async (): Promise<Conversation[]> => {
     
     return {
       ...conv,
-      student: user.role === 'tutor' ? otherUser : undefined,
-      tutor: user.role === 'student' ? otherUser : undefined,
+      student: user.user_metadata?.role === 'tutor' ? otherUser : undefined,
+      tutor: user.user_metadata?.role === 'student' ? otherUser : undefined,
       unread_count: 0 // TODO: Implement proper unread count
     };
   }) || [];
@@ -1133,15 +1125,6 @@ export const sendMessage = async (conversationId: string, content: string): Prom
     throw error;
   }
 
-  // Update conversation's last_message_at
-  await supabase
-    .from('conversations')
-    .update({
-      last_message_at: new Date().toISOString(),
-      last_message: content.trim()
-    })
-    .eq('id', conversationId);
-
   console.log('✅ Message sent successfully');
   return message;
 };
@@ -1206,7 +1189,7 @@ export const createOrGetConversation = async (otherUserId: string): Promise<stri
 
   console.log('🤝 Creating/getting conversation with user:', otherUserId);
 
-  // Check if conversation already exists
+  // Check if conversation already exists (in either direction)
   const { data: existingConversation, error: searchError } = await supabase
     .from('conversations')
     .select('id')
@@ -1308,34 +1291,4 @@ export const subscribeToConversationUpdates = (onUpdate: () => void) => {
       }
     )
     .subscribe();
-};
-
-// Fallback functions for development when tables don't exist yet
-export const createMockConversation = async (studentId: string): Promise<string> => {
-  // This is a fallback for development - in production you'd create the actual conversation
-  console.log('🚧 Creating mock conversation with student:', studentId);
-  return `mock-conversation-${Date.now()}`;
-};
-
-export const sendMockMessage = async (conversationId: string, content: string): Promise<Message> => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-
-  console.log('🚧 Sending mock message');
-  
-  return {
-    id: `mock-message-${Date.now()}`,
-    conversation_id: conversationId,
-    sender_id: user.id,
-    content,
-    created_at: new Date().toISOString(),
-    read_at: null,
-    sender: {
-      id: user.id,
-      email: user.email || '',
-      role: user.user_metadata?.role || 'tutor',
-      first_name: user.user_metadata?.first_name || 'User',
-      last_name: user.user_metadata?.last_name || ''
-    }
-  };
 };
