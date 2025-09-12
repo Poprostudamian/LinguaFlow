@@ -32,7 +32,8 @@ export function TutorLessonManagementPage() {
     status: 'published'
   });
   const [isCreating, setIsCreating] = useState(false);
-
+  const [exercises, setExercises] = useState<any[]>([]);
+  
   const { session } = useAuth();
   const { students } = useTutorStudents();
 
@@ -361,6 +362,37 @@ const handleUnassignStudents = async (lessonId: string, studentIds: string[]) =>
                 Cancel
               </button>
             </div>
+
+// Dodaj funkcje zarządzania ćwiczeniami:
+const addExercise = () => {
+  setExercises(prev => [...prev, {
+    type: 'multiple_choice',
+    title: '',
+    question: '',
+    correct_answer: '',
+    options: ['', '', '', ''],
+    explanation: '',
+    points: 1
+  }]);
+};
+
+const updateExercise = (index: number, field: string, value: any) => {
+  setExercises(prev => prev.map((exercise, i) => 
+    i === index ? { ...exercise, [field]: value } : exercise
+  ));
+};
+
+const removeExercise = (index: number) => {
+  setExercises(prev => prev.filter((_, i) => i !== index));
+};
+
+const updateExerciseOption = (exerciseIndex: number, optionIndex: number, value: string) => {
+  setExercises(prev => prev.map((exercise, i) => 
+    i === exerciseIndex 
+      ? { ...exercise, options: exercise.options.map((opt: string, j: number) => j === optionIndex ? value : opt) }
+      : exercise
+  ));
+};
           </form>
         </div>
       )}
