@@ -23,25 +23,21 @@ export function TutorStudentsPage() {
   } = useTutorStudents();
 
   // Convert TutorStudent to Student format - PRAWDZIWE DANE Z BAZY
-const convertToStudentFormat = (tutorStudent: any) => {
-  console.log('🔍 Converting student with real stats:', tutorStudent);
-  
-  const converted = {
-    id: tutorStudent.student_id,
-    name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
-    email: tutorStudent.student_email,
-    // Use REAL stats from the same system as Dashboard
-    level: tutorStudent.level || 'Not set',
-    progress: tutorStudent.progress || 0,
-    lessonsCompleted: tutorStudent.lessonsCompleted || 0,
-    totalHours: tutorStudent.totalHours || 0,
-    joinedDate: tutorStudent.relationship_created,
-    avatar_url: tutorStudent.avatar_url
-  };
-  
-  console.log('✅ Final converted with REAL stats:', converted);
-  return converted;
-};
+ const convertToStudentFormat = (tutorStudent: any) => {
+    console.log('🔍 Converting student with data:', tutorStudent);
+    
+    const converted = {
+      id: tutorStudent.student_id,
+      name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
+      email: tutorStudent.student_email,
+      // ✅ Use real data from database instead of fake calculations
+      level: tutorStudent.level || 'Not set',
+      progress: tutorStudent.progress || 0,
+      lessonsCompleted: tutorStudent.lessonsCompleted || 0,
+      totalHours: tutorStudent.totalHours || 0,
+      joinedDate: tutorStudent.relationship_created,
+      avatar_url: tutorStudent.avatar_url
+    };
 
   // Filter students based on search
   const filteredStudents = searchStudents(searchTerm);
