@@ -64,24 +64,41 @@ export function StudentsProvider({ children }: { children: React.ReactNode }) {
 
   try {
     setError(null);
-    console.log('🔄 Loading students with real statistics...');
+    console.log('🔄 Loading students using SAME system as Dashboard...');
     
-    // Try to get students with real stats
-    try {
-      // Import the function dynamically
-      const { getTutorStudentsWithRealStats } = await import('../lib/supabase');
+    // Import the SAME function that Dashboard uses
+    const { getTutorStudentsWithRealStats } = await import('../lib/studentStats');
+    
+    if (typeof getTutorStudentsWithRealStats === 'function') {
+      console.log('✅ Using getTutorStudentsWithRealStats from studentStats.ts');
+      const studentsWithStats = await getTutorStudentsWithRealStats(session.user.id);
       
-      if (typeof getTutorStudentsWithRealStats === 'function') {
-        const studentsWithStats = await getTutorStudentsWithRealStats();
-        setStudents(studentsWithStats);
-        console.log('✅ Loaded students with real stats:', studentsWithStats);
-        return;
-      }
-    } catch (importError) {
-      console.log('⚠️ Real stats function not available, using basic data');
+      // Convert format to match TutorStudent interface
+      const convertedStudents = studentsWithStats.map(student => ({
+        relationship_id: student.id, // Use student ID as relationship ID
+        tutor_id: session.user.id,
+        tutor_first_name: '',
+        tutor_last_name: '',
+        student_id: student.id,
+        student_first_name: student.name.split(' ')[0] || 'Student',
+        student_last_name: student.name.split(' ').slice(1).join(' ') || '',
+        student_email: student.email,
+        relationship_created: student.joinedDate,
+        is_active: true,
+        // Add the real stats
+        level: student.level,
+        progress: student.progress,
+        lessonsCompleted: student.lessonsCompleted,
+        totalHours: student.totalHours
+      }));
+      
+      setStudents(convertedStudents);
+      console.log('✅ Loaded students with REAL stats from same system as Dashboard:', convertedStudents);
+      return;
     }
     
-    // Fallback to basic students data
+    // Fallback to old system if new function doesn't exist
+    console.log('⚠️ Fallback to old system');
     const studentsData = await getTutorStudents(session.user.id);
     
     // Remove duplicates
@@ -89,7 +106,6 @@ export function StudentsProvider({ children }: { children: React.ReactNode }) {
       index === self.findIndex(s => s.student_id === student.student_id)
     );
     
-    console.log('✅ Loaded basic students (no duplicates):', uniqueStudents);
     setStudents(uniqueStudents);
     
   } catch (err: any) {
