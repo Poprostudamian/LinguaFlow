@@ -59,7 +59,7 @@ export function StudentsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [session.isAuthenticated, session.user?.role, session.user?.id]);
 
- const refreshStudents = async () => {
+const refreshStudents = async () => {
   if (!session.user?.id) {
     throw new Error('No authenticated user');
   }
@@ -69,40 +69,16 @@ export function StudentsProvider({ children }: { children: React.ReactNode }) {
     console.log('🔄 DEBUG: Starting refreshStudents...');
     console.log('🔄 User ID:', session.user.id);
     
-    // Test 1: Try basic students
-    console.log('📊 Step 1: Getting basic students from getTutorStudents...');
+    // Step 1: Get basic students
+    console.log('📊 Step 1: Getting basic students...');
     const basicStudents = await getTutorStudents(session.user.id);
     console.log('📊 Basic students result:', basicStudents);
     
-    // Test 2: Check what tables exist
-    console.log('📊 Step 2: Testing tutor_students table...');
-    const { data: tutorStudentsTest, error: tutorStudentsError } = await supabase
-      .from('tutor_students')
-      .select('*')
-      .eq('tutor_id', session.user.id)
-      .limit(5);
-    
-    console.log('📊 tutor_students test result:', tutorStudentsTest, 'error:', tutorStudentsError);
-    
-    // Test 3: Check student_lessons table
-    if (tutorStudentsTest && tutorStudentsTest.length > 0) {
-      const studentId = tutorStudentsTest[0].student_id;
-      console.log('📊 Step 3: Testing student_lessons for student:', studentId);
-      
-      const { data: studentLessonsTest, error: studentLessonsError } = await supabase
-        .from('student_lessons')
-        .select('*')
-        .eq('student_id', studentId)
-        .limit(5);
-      
-      console.log('📊 student_lessons test result:', studentLessonsTest, 'error:', studentLessonsError);
-    }
-    
-    // Test 4: Try to use studentStats
-    console.log('📊 Step 4: Trying to import studentStats...');
+    // Step 2: Try to use studentStats
+    console.log('📊 Step 2: Trying to import and use studentStats...');
     try {
       const { getTutorStudentsWithRealStats } = await import('../lib/studentStats');
-      console.log('📊 studentStats import successful, function exists:', typeof getTutorStudentsWithRealStats);
+      console.log('📊 studentStats import successful');
       
       if (typeof getTutorStudentsWithRealStats === 'function') {
         console.log('📊 Calling getTutorStudentsWithRealStats...');
@@ -133,25 +109,25 @@ export function StudentsProvider({ children }: { children: React.ReactNode }) {
         return;
       }
     } catch (importError) {
-      console.log('📊 Import error:', importError);
+      console.log('📊 Import error, using fallback:', importError);
     }
     
-    // Fallback: Use basic students but add some fake stats for testing
-    console.log('📊 Step 5: Using fallback with basic students...');
+    // Fallback: Use basic students with some test stats
+    console.log('📊 Step 3: Using fallback with basic students...');
     const uniqueStudents = basicStudents.filter((student, index, self) => 
       index === self.findIndex(s => s.student_id === student.student_id)
     );
     
-    // Add some test stats
+    // Add test stats that are different from the hash-based ones
     const studentsWithTestStats = uniqueStudents.map((student, index) => ({
       ...student,
-      level: ['Beginner', 'Intermediate', 'Advanced'][index % 3],
-      progress: 25 + (index * 20),
-      lessonsCompleted: index + 1,
-      totalHours: (index + 1) * 2
+      level: ['Advanced', 'Intermediate', 'Expert'][index % 3], // Different from original
+      progress: 75 + (index * 5), // High progress
+      lessonsCompleted: 8 + index, // Multiple lessons
+      totalHours: 12 + (index * 3) // Significant hours
     }));
     
-    console.log('📊 Final fallback students:', studentsWithTestStats);
+    console.log('📊 Final fallback students with test stats:', studentsWithTestStats);
     setStudents(studentsWithTestStats);
     
   } catch (err: any) {
