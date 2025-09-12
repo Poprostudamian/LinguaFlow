@@ -989,3 +989,390 @@ export const getLessonExercises = async (lessonId: string): Promise<LessonExerci
     options: exercise.options ? JSON.parse(exercise.options) : null
   }));
 };
+// Dodaj te interfejsy i funkcje do swojego pliku src/lib/supabase.ts
+
+// Messages interfaces (dodaj po istniejących interfejsach)
+export interface Conversation {
+  id: string
+  tutor_id: string
+  student_id: string
+  created_at: string
+  updated_at: string
+  last_message_at: string
+  tutor_last_read_at: string
+  student_last_read_at: string
+  is_active: boolean
+  tutor?: AuthUser
+  student?: AuthUser
+  last_message?: Message
+  unread_count?: number
+}
+
+export interface Message {
+  id: string
+  conversation_id: string
+  sender_id: string
+  content: string
+  message_type: 'text' | 'system'
+  created_at: string
+  updated_at: string
+  is_edited: boolean
+  sender?: AuthUser
+}
+
+export interface ConversationWithMessages {
+  conversation: Conversation
+  messages: Message[]
+}
+
+// Messages functions (dodaj na końcu pliku)
+
+/**
+ * Get all conversations for current user (tutor or student)
+ */
+export const getUserConversations = async (): Promise<Conversation[]> => {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) throw new Error('User not authenticated')
+
+    console.log('🔍 Getting conversations for user:', currentUser.email, 'role:', currentUser.role)
+
+    const { data, error } = await supabase
+      .from('conversations')
+      .select(`
+        *,
+        tutor:users!conversations_tutor_id_fkey(id, email, first_name, last_name, avatar_url, role),
+        student:users!conversations_student_id_fkey(id, email, first_name, last_name, avatar_url, role),
+        messages(id, content, created_at, sender_id)
+      `)
+      .order('last_message_at', { ascending: false })
+
+    if (error) {
+      console.error('❌ Error fetching conversations:', error)
+      throw error
+    }
+
+    console.log('✅ Found', data?.length || 0, 'conversations')
+
+    // Process conversations to add unread count and last message
+    const processedConversations: Conversation[] = (data || []).map(conv => {
+      // Get the most recent message
+      const lastMessage = conv.messages && conv.messages.length > 0 
+        ? conv.messages[conv.messages.length - 1] 
+        : undefined
+
+      // Calculate unread count based on user role
+      const lastReadAt = currentUser.role === 'tutor' 
+        ? conv.tutor_last_read_at 
+        : conv.student_last_read_at
+
+      return {
+        id: conv.id,
+        tutor_id: conv.tutor_id,
+        student_id: conv.student_id,
+        created_at: conv.created_at,
+        updated_at: conv.updated_at,
+        last_message_at: conv.last_message_at,
+        tutor_last_read_at: conv.tutor_last_read_at,
+        student_last_read_at: conv.student_last_read_at,
+        is_active: conv.is_active,
+        tutor: conv.tutor,
+        student: conv.student,
+        last_message: lastMessage,
+        unread_count: 0 // TODO: Calculate actual unread count
+      }
+    })
+
+    return processedConversations
+  } catch (error) {
+    console.error('❌ Error in getUserConversations:', error)
+    throw error
+  }
+}
+
+/**
+ * Get conversation with messages by conversation ID
+ */
+export const getConversationWithMessages = async (
+  conversationId: string,
+  limit: number = 50
+): Promise<ConversationWithMessages> => {
+  try {
+    console.log('🔍 Getting conversation with messages:', conversationId)
+
+    // Get conversation details
+    const { data: conversation, error: convError } = await supabase
+      .from('conversations')
+      .select(`
+        *,
+        tutor:users!conversations_tutor_id_fkey(id, email, first_name, last_name, avatar_url, role),
+        student:users!conversations_student_id_fkey(id, email, first_name, last_name, avatar_url, role)
+      `)
+      .eq('id', conversationId)
+      .single()
+
+    if (convError) {
+      console.error('❌ Error fetching conversation:', convError)
+      throw convError
+    }
+
+    // Get messages for this conversation
+    const { data: messages, error: messagesError } = await supabase
+      .from('messages')
+      .select(`
+        *,
+        sender:users(id, email, first_name, last_name, avatar_url, role)
+      `)
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true })
+      .limit(limit)
+
+    if (messagesError) {
+      console.error('❌ Error fetching messages:', messagesError)
+      throw messagesError
+    }
+
+    console.log('✅ Found conversation with', messages?.length || 0, 'messages')
+
+    return {
+      conversation,
+      messages: messages || []
+    }
+  } catch (error) {
+    console.error('❌ Error in getConversationWithMessages:', error)
+    throw error
+  }
+}
+
+/**
+ * Create or get conversation between current user and another user
+ */
+export const createOrGetConversation = async (otherUserId: string): Promise<string> => {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) throw new Error('User not authenticated')
+
+    console.log('🔍 Creating/getting conversation between', currentUser.email, 'and user', otherUserId)
+
+    // Determine who is tutor and who is student
+    let tutorId: string, studentId: string
+
+    if (currentUser.role === 'tutor') {
+      tutorId = currentUser.id
+      studentId = otherUserId
+    } else {
+      tutorId = otherUserId
+      studentId = currentUser.id
+    }
+
+    // Use the database function to create or get conversation
+    const { data: conversationId, error } = await supabase.rpc('get_or_create_conversation', {
+      p_tutor_id: tutorId,
+      p_student_id: studentId
+    })
+
+    if (error) {
+      console.error('❌ Error creating/getting conversation:', error)
+      throw error
+    }
+
+    console.log('✅ Conversation ID:', conversationId)
+    return conversationId
+  } catch (error) {
+    console.error('❌ Error in createOrGetConversation:', error)
+    throw error
+  }
+}
+
+/**
+ * Send a message in a conversation
+ */
+export const sendMessage = async (
+  conversationId: string,
+  content: string,
+  messageType: 'text' | 'system' = 'text'
+): Promise<Message> => {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) throw new Error('User not authenticated')
+
+    console.log('📤 Sending message to conversation:', conversationId)
+
+    const { data, error } = await supabase
+      .from('messages')
+      .insert({
+        conversation_id: conversationId,
+        sender_id: currentUser.id,
+        content: content.trim(),
+        message_type: messageType
+      })
+      .select(`
+        *,
+        sender:users(id, email, first_name, last_name, avatar_url, role)
+      `)
+      .single()
+
+    if (error) {
+      console.error('❌ Error sending message:', error)
+      throw error
+    }
+
+    console.log('✅ Message sent successfully')
+    return data
+  } catch (error) {
+    console.error('❌ Error in sendMessage:', error)
+    throw error
+  }
+}
+
+/**
+ * Mark conversation as read for current user
+ */
+export const markConversationAsRead = async (conversationId: string): Promise<void> => {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) throw new Error('User not authenticated')
+
+    console.log('📖 Marking conversation as read:', conversationId)
+
+    const updateField = currentUser.role === 'tutor' 
+      ? 'tutor_last_read_at' 
+      : 'student_last_read_at'
+
+    const { error } = await supabase
+      .from('conversations')
+      .update({ [updateField]: new Date().toISOString() })
+      .eq('id', conversationId)
+
+    if (error) {
+      console.error('❌ Error marking conversation as read:', error)
+      throw error
+    }
+
+    console.log('✅ Conversation marked as read')
+  } catch (error) {
+    console.error('❌ Error in markConversationAsRead:', error)
+    throw error
+  }
+}
+
+/**
+ * Get users available for new conversation (based on relationships)
+ */
+export const getAvailableUsersForChat = async (): Promise<AuthUser[]> => {
+  try {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) throw new Error('User not authenticated')
+
+    console.log('🔍 Getting available users for chat for:', currentUser.email, 'role:', currentUser.role)
+
+    if (currentUser.role === 'tutor') {
+      // Tutor can chat with their students
+      const students = await getTutorStudents()
+      return students.map(student => ({
+        id: student.student_id,
+        email: student.student_email,
+        role: 'student' as const,
+        first_name: student.student_first_name,
+        last_name: student.student_last_name
+      }))
+    } else {
+      // Student can chat with their tutors
+      const { data, error } = await supabase
+        .from('user_relationships')
+        .select(`
+          tutor_id,
+          tutor:users!user_relationships_tutor_id_fkey(id, email, first_name, last_name, avatar_url, role)
+        `)
+        .eq('student_id', currentUser.id)
+        .eq('is_active', true)
+
+      if (error) {
+        console.error('❌ Error fetching tutors:', error)
+        throw error
+      }
+
+      return (data || []).map(rel => rel.tutor).filter(Boolean)
+    }
+  } catch (error) {
+    console.error('❌ Error in getAvailableUsersForChat:', error)
+    throw error
+  }
+}
+
+/**
+ * Subscribe to new messages in a conversation (real-time)
+ */
+export const subscribeToConversationMessages = (
+  conversationId: string,
+  onNewMessage: (message: Message) => void
+) => {
+  console.log('🔔 Subscribing to messages for conversation:', conversationId)
+
+  return supabase
+    .channel(`conversation:${conversationId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `conversation_id=eq.${conversationId}`
+      },
+      async (payload) => {
+        console.log('🔔 New message received:', payload.new)
+        
+        // Fetch complete message data with sender info
+        const { data: message, error } = await supabase
+          .from('messages')
+          .select(`
+            *,
+            sender:users(id, email, first_name, last_name, avatar_url, role)
+          `)
+          .eq('id', payload.new.id)
+          .single()
+
+        if (!error && message) {
+          onNewMessage(message)
+        }
+      }
+    )
+    .subscribe()
+}
+
+/**
+ * Subscribe to conversation list updates (real-time)
+ */
+export const subscribeToConversationUpdates = (
+  onConversationUpdate: () => void
+) => {
+  console.log('🔔 Subscribing to conversation updates')
+
+  return supabase
+    .channel('conversations-updates')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'conversations'
+      },
+      () => {
+        console.log('🔔 Conversation list updated')
+        onConversationUpdate()
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages'
+      },
+      () => {
+        console.log('🔔 New message - updating conversation list')
+        onConversationUpdate()
+      }
+    )
+    .subscribe()
+}
