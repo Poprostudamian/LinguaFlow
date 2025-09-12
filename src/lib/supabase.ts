@@ -1294,67 +1294,6 @@ export const subscribeToConversationUpdates = (onUpdate: () => void) => {
 };
 
 // Get real student statistics (lessons, progress, etc.)
-export const getStudentRealStats = async (studentId: string) => {
-  try {
-    // Get completed lessons count
-    const { count: lessonsCompleted, error: lessonsError } = await supabase
-      .from('student_lessons')
-      .select('*', { count: 'exact', head: true })
-      .eq('student_id', studentId)
-      .eq('status', 'completed');
-
-    if (lessonsError) throw lessonsError;
-
-    // Get total assigned lessons
-    const { count: totalLessons, error: totalError } = await supabase
-      .from('student_lessons')
-      .select('*', { count: 'exact', head: true })
-      .eq('student_id', studentId);
-
-    if (totalError) throw totalError;
-
-    // Calculate average progress
-    const { data: progressData, error: progressError } = await supabase
-      .from('student_lessons')
-      .select('progress')
-      .eq('student_id', studentId);
-
-    if (progressError) throw progressError;
-
-    const averageProgress = progressData && progressData.length > 0
-      ? Math.round(progressData.reduce((sum, lesson) => sum + (lesson.progress || 0), 0) / progressData.length)
-      : 0;
-
-    // Get total time spent (sum of time_spent in minutes, convert to hours)
-    const { data: timeData, error: timeError } = await supabase
-      .from('student_lessons')
-      .select('time_spent')
-      .eq('student_id', studentId);
-
-    if (timeError) throw timeError;
-
-    const totalMinutes = timeData?.reduce((sum, lesson) => sum + (lesson.time_spent || 0), 0) || 0;
-    const totalHours = Math.round((totalMinutes / 60) * 10) / 10; // Round to 1 decimal
-
-    return {
-      lessonsCompleted: lessonsCompleted || 0,
-      totalLessons: totalLessons || 0,
-      progress: averageProgress,
-      totalHours,
-      level: averageProgress >= 80 ? 'Advanced' : averageProgress >= 50 ? 'Intermediate' : 'Beginner'
-    };
-  } catch (error) {
-    console.error('Error getting student stats:', error);
-    return {
-      lessonsCompleted: 0,
-      totalLessons: 0,
-      progress: 0,
-      totalHours: 0,
-      level: 'Beginner'
-    };
-  }
-};
-
 // Enhanced getTutorStudents with real statistics
 export const getStudentRealStats = async (studentId: string) => {
   try {
