@@ -992,325 +992,263 @@ export const getLessonExercises = async (lessonId: string): Promise<LessonExerci
 // Dodaj te interfejsy i funkcje do swojego pliku src/lib/supabase.ts
 
 // Messages interfaces (dodaj po istniejących interfejsach)
+// Add these interfaces and functions to src/lib/supabase.ts
+
+// Messaging types
 export interface Conversation {
-  id: string
-  tutor_id: string
-  student_id: string
-  created_at: string
-  updated_at: string
-  last_message_at: string
-  tutor_last_read_at: string
-  student_last_read_at: string
-  is_active: boolean
-  tutor?: AuthUser
-  student?: AuthUser
-  last_message?: Message
-  unread_count?: number
+  id: string;
+  participant1_id: string;
+  participant2_id: string;
+  created_at: string;
+  updated_at: string;
+  last_message_at: string;
+  last_message: string | null;
+  unread_count: number;
+  student?: AuthUser;
+  tutor?: AuthUser;
 }
 
 export interface Message {
-  id: string
-  conversation_id: string
-  sender_id: string
-  content: string
-  message_type: 'text' | 'system'
-  created_at: string
-  updated_at: string
-  is_edited: boolean
-  sender?: AuthUser
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+  read_at: string | null;
+  sender?: AuthUser;
 }
 
-export interface ConversationWithMessages {
-  conversation: Conversation
-  messages: Message[]
-}
-
-// Messages functions (dodaj na końcu pliku)
-
-/**
- * Get all conversations for current user (tutor or student)
- */
+// Get all conversations for current user
 export const getUserConversations = async (): Promise<Conversation[]> => {
-  try {
-    const currentUser = await getCurrentUser()
-    if (!currentUser) throw new Error('User not authenticated')
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
 
-    console.log('🔍 Getting conversations for user:', currentUser.email, 'role:', currentUser.role)
+  console.log('🔍 Getting conversations for user:', user.id);
 
-    const { data, error } = await supabase
-      .from('conversations')
-      .select(`
-        *,
-        tutor:users!conversations_tutor_id_fkey(id, email, first_name, last_name, avatar_url, role),
-        student:users!conversations_student_id_fkey(id, email, first_name, last_name, avatar_url, role),
-        messages(id, content, created_at, sender_id)
-      `)
-      .order('last_message_at', { ascending: false })
+  // First check if conversations table exists, if not create mock data
+  const { data: conversations, error } = await supabase
+    .from('conversations')
+    .select(`
+      *,
+      participant1:users!participant1_id(id, first_name, last_name, email, avatar_url),
+      participant2:users!participant2_id(id, first_name, last_name, email, avatar_url)
+    `)
+    .or(`participant1_id.eq.${user.id},participant2_id.eq.${user.id}`)
+    .order('last_message_at', { ascending: false });
 
-    if (error) {
-      console.error('❌ Error fetching conversations:', error)
-      throw error
+  if (error) {
+    console.error('❌ Error fetching conversations:', error);
+    
+    // Return empty array if table doesn't exist yet (for development)
+    if (error.code === '42P01') { // relation does not exist
+      console.log('📝 Conversations table does not exist, returning empty array');
+      return [];
     }
-
-    console.log('✅ Found', data?.length || 0, 'conversations')
-
-    // Process conversations to add unread count and last message
-    const processedConversations: Conversation[] = (data || []).map(conv => {
-      // Get the most recent message
-      const lastMessage = conv.messages && conv.messages.length > 0 
-        ? conv.messages[conv.messages.length - 1] 
-        : undefined
-
-      // Calculate unread count based on user role
-      const lastReadAt = currentUser.role === 'tutor' 
-        ? conv.tutor_last_read_at 
-        : conv.student_last_read_at
-
-      return {
-        id: conv.id,
-        tutor_id: conv.tutor_id,
-        student_id: conv.student_id,
-        created_at: conv.created_at,
-        updated_at: conv.updated_at,
-        last_message_at: conv.last_message_at,
-        tutor_last_read_at: conv.tutor_last_read_at,
-        student_last_read_at: conv.student_last_read_at,
-        is_active: conv.is_active,
-        tutor: conv.tutor,
-        student: conv.student,
-        last_message: lastMessage,
-        unread_count: 0 // TODO: Calculate actual unread count
-      }
-    })
-
-    return processedConversations
-  } catch (error) {
-    console.error('❌ Error in getUserConversations:', error)
-    throw error
+    
+    throw error;
   }
-}
 
-/**
- * Get conversation with messages by conversation ID
- */
-export const getConversationWithMessages = async (
-  conversationId: string,
-  limit: number = 50
-): Promise<ConversationWithMessages> => {
-  try {
-    console.log('🔍 Getting conversation with messages:', conversationId)
+  console.log('✅ Found', conversations?.length || 0, 'conversations');
 
-    // Get conversation details
-    const { data: conversation, error: convError } = await supabase
+  // Transform data to include other user info
+  const transformedConversations = conversations?.map(conv => {
+    const otherUser = conv.participant1_id === user.id ? conv.participant2 : conv.participant1;
+    
+    return {
+      ...conv,
+      student: user.role === 'tutor' ? otherUser : undefined,
+      tutor: user.role === 'student' ? otherUser : undefined,
+      unread_count: 0 // TODO: Implement proper unread count
+    };
+  }) || [];
+
+  return transformedConversations;
+};
+
+// Get conversation with messages
+export const getConversationWithMessages = async (conversationId: string): Promise<{ conversation: Conversation; messages: Message[] }> => {
+  console.log('📨 Getting conversation messages:', conversationId);
+
+  const [conversationResult, messagesResult] = await Promise.all([
+    supabase
       .from('conversations')
       .select(`
         *,
-        tutor:users!conversations_tutor_id_fkey(id, email, first_name, last_name, avatar_url, role),
-        student:users!conversations_student_id_fkey(id, email, first_name, last_name, avatar_url, role)
+        participant1:users!participant1_id(id, first_name, last_name, email, avatar_url),
+        participant2:users!participant2_id(id, first_name, last_name, email, avatar_url)
       `)
       .eq('id', conversationId)
-      .single()
-
-    if (convError) {
-      console.error('❌ Error fetching conversation:', convError)
-      throw convError
-    }
-
-    // Get messages for this conversation
-    const { data: messages, error: messagesError } = await supabase
+      .single(),
+    
+    supabase
       .from('messages')
       .select(`
         *,
-        sender:users(id, email, first_name, last_name, avatar_url, role)
+        sender:users!sender_id(id, first_name, last_name, email, avatar_url)
       `)
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
-      .limit(limit)
+  ]);
 
-    if (messagesError) {
-      console.error('❌ Error fetching messages:', messagesError)
-      throw messagesError
-    }
-
-    console.log('✅ Found conversation with', messages?.length || 0, 'messages')
-
-    return {
-      conversation,
-      messages: messages || []
-    }
-  } catch (error) {
-    console.error('❌ Error in getConversationWithMessages:', error)
-    throw error
+  if (conversationResult.error) {
+    console.error('❌ Error fetching conversation:', conversationResult.error);
+    throw conversationResult.error;
   }
-}
 
-/**
- * Create or get conversation between current user and another user
- */
-export const createOrGetConversation = async (otherUserId: string): Promise<string> => {
-  try {
-    const currentUser = await getCurrentUser()
-    if (!currentUser) throw new Error('User not authenticated')
+  if (messagesResult.error) {
+    console.error('❌ Error fetching messages:', messagesResult.error);
+    throw messagesResult.error;
+  }
 
-    console.log('🔍 Creating/getting conversation between', currentUser.email, 'and user', otherUserId)
+  console.log('✅ Found', messagesResult.data?.length || 0, 'messages');
 
-    // Determine who is tutor and who is student
-    let tutorId: string, studentId: string
+  return {
+    conversation: conversationResult.data,
+    messages: messagesResult.data || []
+  };
+};
 
-    if (currentUser.role === 'tutor') {
-      tutorId = currentUser.id
-      studentId = otherUserId
-    } else {
-      tutorId = otherUserId
-      studentId = currentUser.id
-    }
+// Send a message
+export const sendMessage = async (conversationId: string, content: string): Promise<Message> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
 
-    // Use the database function to create or get conversation
-    const { data: conversationId, error } = await supabase.rpc('get_or_create_conversation', {
-      p_tutor_id: tutorId,
-      p_student_id: studentId
+  console.log('📤 Sending message to conversation:', conversationId);
+
+  const { data: message, error } = await supabase
+    .from('messages')
+    .insert({
+      conversation_id: conversationId,
+      sender_id: user.id,
+      content: content.trim()
     })
+    .select(`
+      *,
+      sender:users!sender_id(id, first_name, last_name, email, avatar_url)
+    `)
+    .single();
 
-    if (error) {
-      console.error('❌ Error creating/getting conversation:', error)
-      throw error
-    }
-
-    console.log('✅ Conversation ID:', conversationId)
-    return conversationId
-  } catch (error) {
-    console.error('❌ Error in createOrGetConversation:', error)
-    throw error
+  if (error) {
+    console.error('❌ Error sending message:', error);
+    throw error;
   }
-}
 
-/**
- * Send a message in a conversation
- */
-export const sendMessage = async (
-  conversationId: string,
-  content: string,
-  messageType: 'text' | 'system' = 'text'
-): Promise<Message> => {
-  try {
-    const currentUser = await getCurrentUser()
-    if (!currentUser) throw new Error('User not authenticated')
+  // Update conversation's last_message_at
+  await supabase
+    .from('conversations')
+    .update({
+      last_message_at: new Date().toISOString(),
+      last_message: content.trim()
+    })
+    .eq('id', conversationId);
 
-    console.log('📤 Sending message to conversation:', conversationId)
+  console.log('✅ Message sent successfully');
+  return message;
+};
 
-    const { data, error } = await supabase
-      .from('messages')
-      .insert({
-        conversation_id: conversationId,
-        sender_id: currentUser.id,
-        content: content.trim(),
-        message_type: messageType
-      })
-      .select(`
-        *,
-        sender:users(id, email, first_name, last_name, avatar_url, role)
-      `)
-      .single()
-
-    if (error) {
-      console.error('❌ Error sending message:', error)
-      throw error
-    }
-
-    console.log('✅ Message sent successfully')
-    return data
-  } catch (error) {
-    console.error('❌ Error in sendMessage:', error)
-    throw error
-  }
-}
-
-/**
- * Mark conversation as read for current user
- */
+// Mark conversation as read
 export const markConversationAsRead = async (conversationId: string): Promise<void> => {
-  try {
-    const currentUser = await getCurrentUser()
-    if (!currentUser) throw new Error('User not authenticated')
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
 
-    console.log('📖 Marking conversation as read:', conversationId)
+  console.log('👁️ Marking conversation as read:', conversationId);
 
-    const updateField = currentUser.role === 'tutor' 
-      ? 'tutor_last_read_at' 
-      : 'student_last_read_at'
+  const { error } = await supabase
+    .from('messages')
+    .update({ read_at: new Date().toISOString() })
+    .eq('conversation_id', conversationId)
+    .neq('sender_id', user.id)
+    .is('read_at', null);
 
-    const { error } = await supabase
-      .from('conversations')
-      .update({ [updateField]: new Date().toISOString() })
-      .eq('id', conversationId)
-
-    if (error) {
-      console.error('❌ Error marking conversation as read:', error)
-      throw error
-    }
-
-    console.log('✅ Conversation marked as read')
-  } catch (error) {
-    console.error('❌ Error in markConversationAsRead:', error)
-    throw error
+  if (error) {
+    console.error('❌ Error marking conversation as read:', error);
+    throw error;
   }
-}
 
-/**
- * Get users available for new conversation (based on relationships)
- */
+  console.log('✅ Conversation marked as read');
+};
+
+// Get available users for chat (students for tutors, tutors for students)
 export const getAvailableUsersForChat = async (): Promise<AuthUser[]> => {
-  try {
-    const currentUser = await getCurrentUser()
-    if (!currentUser) throw new Error('User not authenticated')
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
 
-    console.log('🔍 Getting available users for chat for:', currentUser.email, 'role:', currentUser.role)
+  console.log('👥 Getting available users for chat, current user role:', user.user_metadata?.role);
 
-    if (currentUser.role === 'tutor') {
-      // Tutor can chat with their students
-      const students = await getTutorStudents()
-      return students.map(student => ({
-        id: student.student_id,
-        email: student.student_email,
-        role: 'student' as const,
-        first_name: student.student_first_name,
-        last_name: student.student_last_name
-      }))
-    } else {
-      // Student can chat with their tutors
-      const { data, error } = await supabase
-        .from('user_relationships')
-        .select(`
-          tutor_id,
-          tutor:users!user_relationships_tutor_id_fkey(id, email, first_name, last_name, avatar_url, role)
-        `)
-        .eq('student_id', currentUser.id)
-        .eq('is_active', true)
-
-      if (error) {
-        console.error('❌ Error fetching tutors:', error)
-        throw error
-      }
-
-      return (data || []).map(rel => rel.tutor).filter(Boolean)
-    }
-  } catch (error) {
-    console.error('❌ Error in getAvailableUsersForChat:', error)
-    throw error
+  if (user.user_metadata?.role === 'tutor') {
+    // Tutors can chat with their students
+    const tutorStudents = await getTutorStudents();
+    return tutorStudents.map(student => ({
+      id: student.student_id,
+      email: student.student_email,
+      role: 'student' as const,
+      first_name: student.student_first_name,
+      last_name: student.student_last_name
+    }));
+  } else {
+    // Students can chat with their tutors
+    const studentTutors = await getStudentTutors();
+    return studentTutors?.map(rel => ({
+      id: rel.tutors.id,
+      email: rel.tutors.email,
+      role: 'tutor' as const,
+      first_name: rel.tutors.first_name,
+      last_name: rel.tutors.last_name,
+      avatar_url: rel.tutors.avatar_url
+    })) || [];
   }
-}
+};
 
-/**
- * Subscribe to new messages in a conversation (real-time)
- */
-export const subscribeToConversationMessages = (
-  conversationId: string,
-  onNewMessage: (message: Message) => void
-) => {
-  console.log('🔔 Subscribing to messages for conversation:', conversationId)
+// Create or get existing conversation between two users
+export const createOrGetConversation = async (otherUserId: string): Promise<string> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  console.log('🤝 Creating/getting conversation with user:', otherUserId);
+
+  // Check if conversation already exists
+  const { data: existingConversation, error: searchError } = await supabase
+    .from('conversations')
+    .select('id')
+    .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${otherUserId}),and(participant1_id.eq.${otherUserId},participant2_id.eq.${user.id})`)
+    .maybeSingle();
+
+  if (searchError && searchError.code !== 'PGRST116') {
+    console.error('❌ Error searching for existing conversation:', searchError);
+    throw searchError;
+  }
+
+  if (existingConversation) {
+    console.log('✅ Found existing conversation:', existingConversation.id);
+    return existingConversation.id;
+  }
+
+  // Create new conversation
+  const { data: newConversation, error: createError } = await supabase
+    .from('conversations')
+    .insert({
+      participant1_id: user.id,
+      participant2_id: otherUserId,
+      last_message_at: new Date().toISOString()
+    })
+    .select('id')
+    .single();
+
+  if (createError) {
+    console.error('❌ Error creating conversation:', createError);
+    throw createError;
+  }
+
+  console.log('✅ Created new conversation:', newConversation.id);
+  return newConversation.id;
+};
+
+// Real-time subscriptions
+export const subscribeToConversationMessages = (conversationId: string, onNewMessage: (message: Message) => void) => {
+  console.log('🔴 Subscribing to messages for conversation:', conversationId);
 
   return supabase
-    .channel(`conversation:${conversationId}`)
+    .channel(`conversation-${conversationId}`)
     .on(
       'postgres_changes',
       {
@@ -1320,33 +1258,28 @@ export const subscribeToConversationMessages = (
         filter: `conversation_id=eq.${conversationId}`
       },
       async (payload) => {
-        console.log('🔔 New message received:', payload.new)
+        console.log('📨 New message received:', payload.new);
         
         // Fetch complete message data with sender info
-        const { data: message, error } = await supabase
+        const { data: messageWithSender, error } = await supabase
           .from('messages')
           .select(`
             *,
-            sender:users(id, email, first_name, last_name, avatar_url, role)
+            sender:users!sender_id(id, first_name, last_name, email, avatar_url)
           `)
           .eq('id', payload.new.id)
-          .single()
+          .single();
 
-        if (!error && message) {
-          onNewMessage(message)
+        if (!error && messageWithSender) {
+          onNewMessage(messageWithSender);
         }
       }
     )
-    .subscribe()
-}
+    .subscribe();
+};
 
-/**
- * Subscribe to conversation list updates (real-time)
- */
-export const subscribeToConversationUpdates = (
-  onConversationUpdate: () => void
-) => {
-  console.log('🔔 Subscribing to conversation updates')
+export const subscribeToConversationUpdates = (onUpdate: () => void) => {
+  console.log('🔴 Subscribing to conversation updates');
 
   return supabase
     .channel('conversations-updates')
@@ -1358,8 +1291,8 @@ export const subscribeToConversationUpdates = (
         table: 'conversations'
       },
       () => {
-        console.log('🔔 Conversation list updated')
-        onConversationUpdate()
+        console.log('📝 Conversation updated');
+        onUpdate();
       }
     )
     .on(
@@ -1370,9 +1303,39 @@ export const subscribeToConversationUpdates = (
         table: 'messages'
       },
       () => {
-        console.log('🔔 New message - updating conversation list')
-        onConversationUpdate()
+        console.log('📨 New message in any conversation');
+        onUpdate();
       }
     )
-    .subscribe()
-}
+    .subscribe();
+};
+
+// Fallback functions for development when tables don't exist yet
+export const createMockConversation = async (studentId: string): Promise<string> => {
+  // This is a fallback for development - in production you'd create the actual conversation
+  console.log('🚧 Creating mock conversation with student:', studentId);
+  return `mock-conversation-${Date.now()}`;
+};
+
+export const sendMockMessage = async (conversationId: string, content: string): Promise<Message> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  console.log('🚧 Sending mock message');
+  
+  return {
+    id: `mock-message-${Date.now()}`,
+    conversation_id: conversationId,
+    sender_id: user.id,
+    content,
+    created_at: new Date().toISOString(),
+    read_at: null,
+    sender: {
+      id: user.id,
+      email: user.email || '',
+      role: user.user_metadata?.role || 'tutor',
+      first_name: user.user_metadata?.first_name || 'User',
+      last_name: user.user_metadata?.last_name || ''
+    }
+  };
+};
