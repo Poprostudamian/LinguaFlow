@@ -951,3 +951,43 @@ export const getLessonExercises = async (lessonId: string): Promise<LessonExerci
     options: exercise.options ? JSON.parse(exercise.options) : null
   }));
 };
+
+export const assignLessonToStudents = async (lessonId: string, studentIds: string[]) => {
+  try {
+    // 1. Najpierw sprawdź które studenci już są przypisani do tej lekcji
+    const { data: existingAssignments, error: checkError } = await supabase
+      .from('student_lessons')
+      .select('student_id')
+      .eq('lesson_id', lessonId)
+      .in('student_id', studentIds);
+
+    if (checkError) throw checkError;
+
+    // 2. Odfiltruj studentów, którzy już są przypisani
+    const existingStudentIds = existingAssignments?.map(row => row.student_id) || [];
+    const newStudentIds = studentIds.filter(id => !existingStudentIds.includes(id));
+
+    // 3. Jeśli są nowi studenci do przypisania, dodaj ich
+    if (newStudentIds.length > 0) {
+      const assignmentsToCreate = newStudentIds.map(studentId => ({
+        lesson_id: lessonId,
+        student_id: studentId,
+        assigned_at: new Date().toISOString(),
+        status: 'assigned'
+      }));
+
+      const { data, error } = await supabase
+        .from('student_lessons')
+        .insert(assignmentsToCreate)
+        .select();
+
+      if (error) throw error;
+      return { data, newAssignments: newStudentIds.length, skipped: existingStudentIds.length };
+    }
+
+    return { data: null, newAssignments: 0, skipped: existingStudentIds.length };
+  } catch (error) {
+    console.error('Error assigning lesson to students:', error);
+    throw error;
+  }
+};
