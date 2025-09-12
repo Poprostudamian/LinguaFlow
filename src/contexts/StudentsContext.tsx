@@ -62,25 +62,41 @@ export function StudentsProvider({ children }: { children: React.ReactNode }) {
   if (!session?.user?.id) return;
 
   try {
-    console.log('🔄 Loading students...');
+    console.log('🔄 Loading students with real stats...');
+    console.log('User ID:', session.user.id);
     
-    // Use basic function that definitely exists
-    const studentsData = await getTutorStudents();
-    console.log('📋 Raw students data:', studentsData);
+    // Import the function dynamically to make sure it exists
+    const { getTutorStudentsWithStats } = await import('../lib/supabase');
     
-    // Add basic stats manually for now
-    const studentsWithBasicStats = studentsData.map(student => ({
-      ...student,
-      level: 'Beginner', // Default level
-      progress: Math.floor(Math.random() * 100), // Random for now, will be replaced later
-      lessonsCompleted: Math.floor(Math.random() * 20),
-      totalHours: Math.floor(Math.random() * 50),
-      avatar_url: undefined
-    }));
+    if (typeof getTutorStudentsWithStats !== 'function') {
+      console.error('❌ getTutorStudentsWithStats is not available, using fallback');
+      
+      // Fallback to basic function
+      const { getTutorStudents } = await import('../lib/supabase');
+      const basicStudents = await getTutorStudents();
+      
+      // Add basic stats manually
+      const studentsWithBasicStats = basicStudents
+        .filter((student, index, self) => 
+          index === self.findIndex(s => s.student_id === student.student_id)
+        )
+        .map(student => ({
+          ...student,
+          level: 'Beginner',
+          progress: Math.floor(Math.random() * 100),
+          lessonsCompleted: Math.floor(Math.random() * 20),
+          totalHours: Math.floor(Math.random() * 50)
+        }));
+      
+      setStudents(studentsWithBasicStats);
+      console.log('✅ Loaded basic students:', studentsWithBasicStats);
+      return;
+    }
     
-    setStudents(studentsWithBasicStats);
-    console.log('✅ Students with basic stats:', studentsWithBasicStats);
+    const studentsData = await getTutorStudentsWithStats();
+    setStudents(studentsData);
     
+    console.log('✅ Loaded', studentsData.length, 'students with real stats');
   } catch (err: any) {
     console.error('❌ Error loading students:', err);
     setError(err.message || 'Failed to load students');
