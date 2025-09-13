@@ -64,112 +64,64 @@ export function StudentsProvider({ children }: { children: React.ReactNode }) {
 }, [session.isAuthenticated, session.user?.role, session.user?.id]);
 
 const refreshStudents = async () => {
+  console.log('🚀 refreshStudents START');
+  
   if (!session.user?.id) {
+    console.log('❌ No user ID');
     throw new Error('No authenticated user');
   }
+  
+  console.log('✅ User ID:', session.user.id);
 
   try {
     setError(null);
-    console.log('🔄 Loading students with REAL stats calculation...');
+    console.log('🔄 Step 1: Starting refresh...');
     
-    // Get basic students
+    // Test basic function
+    console.log('🔄 Step 2: Calling getTutorStudents...');
     const basicStudents = await getTutorStudents(session.user.id);
-    console.log('📊 Basic students:', basicStudents);
+    console.log('📊 Step 3: getTutorStudents result:', basicStudents);
+    console.log('📊 Step 3: Number of students:', basicStudents?.length);
     
-    // Remove duplicates
+    if (!basicStudents || basicStudents.length === 0) {
+      console.log('❌ No students found, setting empty array');
+      setStudents([]);
+      return;
+    }
+    
+    console.log('🔄 Step 4: Removing duplicates...');
     const uniqueStudents = basicStudents.filter((student, index, self) => 
       index === self.findIndex(s => s.student_id === student.student_id)
     );
+    console.log('📊 Step 5: Unique students:', uniqueStudents.length);
     
-    // Calculate REAL stats for each student
-    const studentsWithRealStats = await Promise.all(
-      uniqueStudents.map(async (student) => {
-        try {
-          console.log('📊 Calculating stats for student:', student.student_id);
-          
-          // Import supabase inside the function to avoid import issues
-          const { supabase } = await import('../lib/supabase');
-          
-          // Get student lessons from database
-          const { data: studentLessons, error: lessonsError } = await supabase
-            .from('student_lessons')
-            .select('status, progress, time_spent, score')
-            .eq('student_id', student.student_id);
-          
-          if (lessonsError) {
-            console.warn('⚠️ Error getting lessons for student:', student.student_id, lessonsError);
-            return {
-              ...student,
-              level: 'Not set',
-              progress: 0,
-              lessonsCompleted: 0,
-              totalHours: 0
-            };
-          }
-          
-          console.log('📚 Student lessons for', student.student_id, ':', studentLessons);
-          
-          if (!studentLessons || studentLessons.length === 0) {
-            console.log('📭 No lessons found for student:', student.student_id);
-            return {
-              ...student,
-              level: 'Beginner',
-              progress: 0,
-              lessonsCompleted: 0,
-              totalHours: 0
-            };
-          }
-          
-          // Calculate real statistics
-          const totalLessons = studentLessons.length;
-          const completedLessons = studentLessons.filter(l => l.status === 'completed').length;
-          
-          // Calculate average progress
-          const avgProgress = Math.round(
-            studentLessons.reduce((sum, l) => sum + (l.progress || 0), 0) / totalLessons
-          );
-          
-          // Calculate total hours (time_spent is in minutes)
-          const totalMinutes = studentLessons.reduce((sum, l) => sum + (l.time_spent || 0), 0);
-          const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
-          
-          // Determine level based on progress and completed lessons
-          let level = 'Beginner';
-          if (completedLessons >= 3 && avgProgress >= 80) level = 'Advanced';
-          else if (completedLessons >= 2 && avgProgress >= 60) level = 'Intermediate';
-          
-          const calculatedStats = {
-            ...student,
-            level,
-            progress: avgProgress,
-            lessonsCompleted: completedLessons,
-            totalHours
-          };
-          
-          console.log('✅ Calculated stats for', student.student_first_name, ':', calculatedStats);
-          return calculatedStats;
-          
-        } catch (error) {
-          console.error('❌ Error calculating stats for student:', student.student_id, error);
-          return {
-            ...student,
-            level: 'Error',
-            progress: 0,
-            lessonsCompleted: 0,
-            totalHours: 0
-          };
-        }
-      })
-    );
+    // SUPER SIMPLE VERSION - just set students with basic info first
+    console.log('🔄 Step 6: Creating students with basic stats...');
+    const studentsWithBasicStats = uniqueStudents.map((student, index) => {
+      const basic = {
+        ...student,
+        level: `Test Level ${index + 1}`,
+        progress: 50 + (index * 10),
+        lessonsCompleted: index + 1,
+        totalHours: (index + 1) * 2
+      };
+      console.log(`📊 Student ${index + 1}:`, basic);
+      return basic;
+    });
     
-    console.log('✅ Final students with REAL calculated stats:', studentsWithRealStats);
-    setStudents(studentsWithRealStats);
+    console.log('🔄 Step 7: Setting students state...');
+    console.log('📊 Final students array:', studentsWithBasicStats);
+    setStudents(studentsWithBasicStats);
+    console.log('✅ Step 8: setStudents called successfully');
     
   } catch (err: any) {
-    console.error('❌ Error in refreshStudents:', err);
+    console.error('❌ ERROR in refreshStudents:', err);
+    console.error('❌ Error stack:', err.stack);
     setError(err.message || 'Failed to load students');
     throw err;
   }
+  
+  console.log('🏁 refreshStudents END');
 };
 
   const refreshInvitations = async () => {
