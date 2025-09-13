@@ -64,6 +64,8 @@ export function StudentsProvider({ children }: { children: React.ReactNode }) {
 }, [session.isAuthenticated, session.user?.role, session.user?.id]);
 
 const refreshStudents = async () => {
+  console.log('🚀 refreshStudents CALLED!');
+console.log('🚀 session.user?.id:', session.user?.id);
   if (!session.user?.id) {
     throw new Error('No authenticated user');
   }
