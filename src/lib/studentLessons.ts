@@ -319,6 +319,8 @@ export async function searchStudentLessons(
 /**
  * Hook do używania w React komponencie
  */
+import React from 'react';
+
 export function useStudentLessons(studentId: string | undefined) {
   const [lessons, setLessons] = React.useState<StudentLesson[]>([]);
   const [stats, setStats] = React.useState<StudentLessonStats | null>(null);
