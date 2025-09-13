@@ -205,13 +205,38 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
 // STEP 2 FUNCTIONS
 
 // Get all students for a tutor
-export const getTutorStudents = async () => {
-  console.log('🔍 Getting tutor students...');
+export const getTutorStudents = async (): Promise<TutorStudent[]> => {
+  console.log('🔍 Getting tutor students with progress data...');
   
-  // Krok 1: Pobierz relacje
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    throw new Error('Not authenticated');
+  }
+
+  // Pobierz relacje z danymi studentów
   const { data: relationships, error: relError } = await supabase
     .from('user_relationships')
-    .select('id, tutor_id, student_id, created_at, status, is_active, notes')
+    .select(`
+      id,
+      tutor_id,
+      student_id,
+      created_at,
+      status,
+      is_active,
+      notes,
+      student:users!student_id (
+        id,
+        email,
+        first_name,
+        last_name,
+        is_active
+      ),
+      tutor:users!tutor_id (
+        first_name,
+        last_name
+      )
+    `)
+    .eq('tutor_id', user.id)
     .eq('status', 'accepted')
     .eq('is_active', true);
 
@@ -220,51 +245,94 @@ export const getTutorStudents = async () => {
     throw relError;
   }
 
-  console.log('Relationships:', relationships);
-
   if (!relationships || relationships.length === 0) {
+    console.log('ℹ️ No students found for tutor');
     return [];
   }
 
-  // Krok 2: Pobierz dane studentów
-  const studentIds = relationships.map(r => r.student_id);
-  
-  const { data: students, error: studentsError } = await supabase
-    .from('users')
-    .select('id, first_name, last_name, email')
-    .in('id', studentIds);
+  console.log('✅ Found', relationships.length, 'student relationships');
 
-  if (studentsError) {
-    console.error('❌ Error getting students:', studentsError);
-    throw studentsError;
-  }
+  // Pobierz dane o lekcjach dla każdego studenta
+  const studentsWithProgress: TutorStudent[] = await Promise.all(
+    relationships.map(async (rel) => {
+      const studentId = rel.student_id;
+      
+      // Pobierz dane o przypisanych lekcjach studenta
+      const { data: studentLessons, error: lessonsError } = await supabase
+        .from('student_lessons')
+        .select(`
+          id,
+          lesson_id,
+          status,
+          progress,
+          assigned_at,
+          completed_at,
+          lessons:lessons!lesson_id (
+            title,
+            created_at
+          )
+        `)
+        .eq('student_id', studentId);
 
-  console.log('Students:', students);
+      if (lessonsError) {
+        console.warn('⚠️ Error getting lessons for student', studentId, lessonsError);
+      }
 
-  // Krok 3: Połącz dane
-  const transformedData = relationships.map(rel => {
-    const student = students?.find(s => s.id === rel.student_id);
-    console.log(`Matching student for ${rel.student_id}:`, student);
-    
-    return {
-      relationship_id: rel.id,
-      tutor_id: rel.tutor_id,
-      tutor_first_name: '',
-      tutor_last_name: '',
-      student_id: rel.student_id,
-      student_first_name: student?.first_name || 'Unknown',
-      student_last_name: student?.last_name || 'Student',
-      student_email: student?.email || '',
-      relationship_created: rel.created_at,
-      status: rel.status,
-      notes: rel.notes,
-      is_active: rel.is_active
-    };
-  });
+      // Oblicz statystyki postępów
+      const lessons = studentLessons || [];
+      const totalLessonsAssigned = lessons.length;
+      const completedLessons = lessons.filter(l => l.status === 'completed');
+      const lessonsCompleted = completedLessons.length;
+      
+      // Oblicz średni postęp
+      const totalProgress = lessons.reduce((sum, lesson) => sum + (lesson.progress || 0), 0);
+      const averageProgress = totalLessonsAssigned > 0 ? Math.round(totalProgress / totalLessonsAssigned) : 0;
+      
+      // Oszacuj całkowite godziny (zakładając 1 godzinę na lekcję)
+      const totalHours = lessonsCompleted;
+      
+      // Określ poziom na podstawie liczby ukończonych lekcji
+      let level = 'Beginner';
+      if (lessonsCompleted >= 10) {
+        level = 'Advanced';
+      } else if (lessonsCompleted >= 5) {
+        level = 'Intermediate';
+      }
 
-  console.log('Final transformed data:', transformedData);
-  return transformedData as TutorStudent[];
-}
+      // Znajdź ostatnią aktywność
+      const lastActivity = lessons
+        .filter(l => l.completed_at)
+        .sort((a, b) => new Date(b.completed_at!).getTime() - new Date(a.completed_at!).getTime())[0]?.completed_at;
+
+      return {
+        // Relationship data
+        relationship_id: rel.id,
+        tutor_id: rel.tutor_id,
+        tutor_first_name: rel.tutor.first_name || '',
+        tutor_last_name: rel.tutor.last_name || '',
+        student_id: rel.student_id,
+        
+        // Student data
+        student_email: rel.student.email,
+        student_first_name: rel.student.first_name || '',
+        student_last_name: rel.student.last_name || '',
+        student_is_active: rel.student.is_active ?? true,
+        relationship_created: rel.created_at,
+        
+        // Progress data (computed from student_lessons)
+        level,
+        progress: averageProgress,
+        lessonsCompleted,
+        totalHours,
+        totalLessonsAssigned,
+        lastActivity
+      };
+    })
+  );
+
+  console.log('✅ Loaded progress data for', studentsWithProgress.length, 'students');
+  return studentsWithProgress;
+};
 
 // Get all invitations sent by tutor
 export const getTutorInvitations = async () => {
