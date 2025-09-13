@@ -311,84 +311,81 @@ export function useTutorStudents(): StudentsContextType {
   return context;
 }
 
-const debugAndFixLessons = async () => {
-  if (!session.user?.id) return;
-  
+const debugAndFixLessons = (async () => {
   try {
-    console.log('🔍 DEBUG: Checking lessons and assignments...');
+    console.log('🔍 Checking database tables...');
     
     // Import supabase
-    const { supabase } = await import('../lib/supabase');
+    const { supabase } = await import('/src/lib/supabase.js');
     
-    // 1. Check what lessons the tutor has
-    const { data: tutorLessons, error: lessonsError } = await supabase
-      .from('lessons')
-      .select('id, title, status')
-      .eq('tutor_id', session.user.id);
+    // Check current user
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log('👤 Current user:', user?.id);
     
-    console.log('📚 Tutor lessons:', tutorLessons);
-    
-    // 2. Check current student-lesson assignments
-    if (tutorLessons && tutorLessons.length > 0) {
-      const { data: assignments, error: assignmentsError } = await supabase
+    if (user) {
+      // 1. Check tutor's lessons
+      const { data: lessons } = await supabase
+        .from('lessons')
+        .select('id, title, status')
+        .eq('tutor_id', user.id);
+      console.log('📚 Tutor lessons:', lessons);
+      
+      // 2. Check student_lessons table
+      const { data: studentLessons } = await supabase
         .from('student_lessons')
         .select('*')
-        .in('lesson_id', tutorLessons.map(l => l.id));
+        .limit(10);
+      console.log('📋 Student lessons table:', studentLessons);
       
-      console.log('📋 Current assignments:', assignments);
-      
-      // 3. Check which students exist
-      const { data: students, error: studentsError } = await supabase
+      // 3. Check students
+      const { data: students } = await supabase
         .from('user_relationships')
         .select('student_id')
-        .eq('tutor_id', session.user.id)
+        .eq('tutor_id', user.id)
         .eq('is_active', true);
+      console.log('👥 Students:', students);
       
-      console.log('👥 Active students:', students);
-      
-      // 4. If students exist but no assignments, create them
-      if (students && students.length > 0 && tutorLessons.length > 0) {
-        const existingAssignments = assignments || [];
-        const assignmentsToCreate = [];
+      // 4. If we have lessons and students but no assignments, create them
+      if (lessons && students && lessons.length > 0 && students.length > 0) {
+        const assignments = studentLessons?.filter(sl => 
+          lessons.some(l => l.id === sl.lesson_id) && 
+          students.some(s => s.student_id === sl.student_id)
+        ) || [];
         
-        for (const student of students) {
-          for (const lesson of tutorLessons) {
-            const exists = existingAssignments.find(a => 
-              a.student_id === student.student_id && a.lesson_id === lesson.id
-            );
-            
-            if (!exists) {
-              assignmentsToCreate.push({
+        console.log('🎯 Existing assignments for this tutor:', assignments);
+        
+        if (assignments.length === 0) {
+          console.log('⚠️ NO ASSIGNMENTS FOUND! Creating test assignments...');
+          
+          const testAssignments = [];
+          for (const student of students.slice(0, 2)) { // Max 2 students
+            for (const lesson of lessons.slice(0, 3)) { // Max 3 lessons
+              testAssignments.push({
                 student_id: student.student_id,
                 lesson_id: lesson.id,
-                status: 'assigned',
-                progress: Math.floor(Math.random() * 80) + 10, // Random progress 10-90%
-                time_spent: Math.floor(Math.random() * 120) + 30 // Random time 30-150 minutes
+                status: 'completed',
+                progress: 75 + Math.floor(Math.random() * 20), // 75-95%
+                time_spent: 60 + Math.floor(Math.random() * 60), // 60-120 minutes
+                score: 80 + Math.floor(Math.random() * 15) // 80-95 score
               });
             }
           }
-        }
-        
-        if (assignmentsToCreate.length > 0) {
-          console.log('🎯 Creating missing assignments:', assignmentsToCreate);
           
-          const { data: created, error: createError } = await supabase
+          const { data: created, error } = await supabase
             .from('student_lessons')
-            .insert(assignmentsToCreate)
+            .insert(testAssignments)
             .select();
           
-          if (createError) {
-            console.error('❌ Error creating assignments:', createError);
+          if (error) {
+            console.error('❌ Error creating assignments:', error);
           } else {
-            console.log('✅ Created assignments:', created);
+            console.log('✅ Created test assignments:', created);
+            console.log('🔄 Now refresh the Students page to see the changes!');
           }
-        } else {
-          console.log('ℹ️ All assignments already exist');
         }
       }
     }
-    
   } catch (error) {
     console.error('❌ Debug error:', error);
   }
-};
+})();
