@@ -63,144 +63,110 @@ export function StudentsProvider({ children }: { children: React.ReactNode }) {
   }
 }, [session.isAuthenticated, session.user?.role, session.user?.id]);
 
-// const refreshStudents = async () => {
-//   console.log('🚀 refreshStudents CALLED!');
-// console.log('🚀 session.user?.id:', session.user?.id);
-//   if (!session.user?.id) {
-//     throw new Error('No authenticated user');
-//   }
-
-//   try {
-//     setError(null);
-//     console.log('🔄 Loading students with REAL data from database...');
-    
-//     // Get basic students
-//     const basicStudents = await getTutorStudents(session.user.id);
-//     console.log('📊 Basic students from DB:', basicStudents);
-    
-//     // Remove duplicates
-//     const uniqueStudents = basicStudents.filter((student, index, self) => 
-//       index === self.findIndex(s => s.student_id === student.student_id)
-//     );
-    
-//     // Try to get real statistics from the same system as Dashboard
-//     try {
-//       console.log('📊 Attempting to get real stats using Dashboard system...');
-//       const { getTutorStudentsWithRealStats } = await import('../lib/studentStats');
-      
-//       if (typeof getTutorStudentsWithRealStats === 'function') {
-//         const studentsWithRealStats = await getTutorStudentsWithRealStats(session.user.id);
-//         console.log('📊 Real stats from Dashboard system:', studentsWithRealStats);
-        
-//         if (studentsWithRealStats && studentsWithRealStats.length > 0) {
-//           // Convert Dashboard format to StudentsContext format
-//           const convertedStudents = studentsWithRealStats.map(student => ({
-//             relationship_id: student.id,
-//             tutor_id: session.user.id,
-//             tutor_first_name: '',
-//             tutor_last_name: '',
-//             student_id: student.id,
-//             student_first_name: student.name.split(' ')[0] || 'Student',
-//             student_last_name: student.name.split(' ').slice(1).join(' ') || '',
-//             student_email: student.email,
-//             relationship_created: student.joinedDate,
-//             is_active: true,
-//             // REAL STATS from Dashboard system
-//             level: student.level,
-//             progress: student.progress,
-//             lessonsCompleted: student.lessonsCompleted,
-//             totalHours: student.totalHours
-//           }));
-          
-//           console.log('✅ SUCCESS: Using real stats from Dashboard system:', convertedStudents);
-//           setStudents(convertedStudents);
-//           return;
-//         }
-//       }
-//     } catch (statsError) {
-//       console.log('⚠️ Could not get stats from Dashboard system:', statsError);
-//     }
-    
-//     // Fallback: Calculate basic stats from lesson assignments
-//     console.log('📊 Fallback: Calculating basic stats from student_lessons...');
-//     const studentsWithCalculatedStats = await Promise.all(
-//       uniqueStudents.map(async (student) => {
-//         try {
-//           // Try to get lessons assigned to this student
-//           const { supabase } = await import('../lib/supabase');
-//           const { data: studentLessons } = await supabase
-//             .from('student_lessons')
-//             .select('status, progress, time_spent')
-//             .eq('student_id', student.student_id);
-          
-//           if (studentLessons && studentLessons.length > 0) {
-//             const completedLessons = studentLessons.filter(l => l.status === 'completed').length;
-//             const avgProgress = Math.round(
-//               studentLessons.reduce((sum, l) => sum + (l.progress || 0), 0) / studentLessons.length
-//             );
-//             const totalMinutes = studentLessons.reduce((sum, l) => sum + (l.time_spent || 0), 0);
-//             const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
-            
-//             return {
-//               ...student,
-//               level: avgProgress >= 80 ? 'Advanced' : avgProgress >= 50 ? 'Intermediate' : 'Beginner',
-//               progress: avgProgress,
-//               lessonsCompleted: completedLessons,
-//               totalHours: totalHours
-//             };
-//           }
-//         } catch (lessonError) {
-//           console.log('⚠️ Could not get lessons for student:', student.student_id, lessonError);
-//         }
-        
-//         // Default stats if no lessons found
-//         return {
-//           ...student,
-//           level: 'Not set',
-//           progress: 0,
-//           lessonsCompleted: 0,
-//           totalHours: 0
-//         };
-//       })
-//     );
-    
-//     console.log('✅ Final students with calculated stats:', studentsWithCalculatedStats);
-//     setStudents(studentsWithCalculatedStats);
-    
-//   } catch (err: any) {
-//     console.error('❌ Error loading students:', err);
-//     setError(err.message || 'Failed to load students');
-//     throw err;
-//   }
-// };
-  const refreshStudents = async () => {
+const refreshStudents = async () => {
   if (!session.user?.id) {
     throw new Error('No authenticated user');
   }
 
   try {
     setError(null);
-    console.log('🔄 FORCE REFRESH with manual data...');
+    console.log('🔄 Loading students with REAL stats calculation...');
     
-    // TYMCZASOWO: Wymusz prawdziwe dane z bazy
+    // Get basic students
     const basicStudents = await getTutorStudents(session.user.id);
     console.log('📊 Basic students:', basicStudents);
     
-    // WYMUSZ prawdziwe statystyki - zastąp swoimi prawdziwymi danymi z bazy:
-    const studentsWithManualStats = basicStudents.map((student, index) => ({
-      ...student,
-      // WSTAW PRAWDZIWE DANE Z SUPABASE DASHBOARD:
-      level: 'Advanced',        // ← Zobacz w bazie jaką mają level
-      progress: 85,             // ← Zobacz w bazie jaki mają progress  
-      lessonsCompleted: 3,      // ← Policz ile completed w student_lessons
-      totalHours: 5.2           // ← Oblicz z time_spent (minuty / 60)
-    }));
+    // Remove duplicates
+    const uniqueStudents = basicStudents.filter((student, index, self) => 
+      index === self.findIndex(s => s.student_id === student.student_id)
+    );
     
-    console.log('✅ FORCED students with manual stats:', studentsWithManualStats);
-    setStudents(studentsWithManualStats);
+    // Calculate REAL stats for each student
+    const studentsWithRealStats = await Promise.all(
+      uniqueStudents.map(async (student) => {
+        try {
+          console.log('📊 Calculating stats for student:', student.student_id);
+          
+          // Import supabase inside the function to avoid import issues
+          const { supabase } = await import('../lib/supabase');
+          
+          // Get student lessons from database
+          const { data: studentLessons, error: lessonsError } = await supabase
+            .from('student_lessons')
+            .select('status, progress, time_spent, score')
+            .eq('student_id', student.student_id);
+          
+          if (lessonsError) {
+            console.warn('⚠️ Error getting lessons for student:', student.student_id, lessonsError);
+            return {
+              ...student,
+              level: 'Not set',
+              progress: 0,
+              lessonsCompleted: 0,
+              totalHours: 0
+            };
+          }
+          
+          console.log('📚 Student lessons for', student.student_id, ':', studentLessons);
+          
+          if (!studentLessons || studentLessons.length === 0) {
+            console.log('📭 No lessons found for student:', student.student_id);
+            return {
+              ...student,
+              level: 'Beginner',
+              progress: 0,
+              lessonsCompleted: 0,
+              totalHours: 0
+            };
+          }
+          
+          // Calculate real statistics
+          const totalLessons = studentLessons.length;
+          const completedLessons = studentLessons.filter(l => l.status === 'completed').length;
+          
+          // Calculate average progress
+          const avgProgress = Math.round(
+            studentLessons.reduce((sum, l) => sum + (l.progress || 0), 0) / totalLessons
+          );
+          
+          // Calculate total hours (time_spent is in minutes)
+          const totalMinutes = studentLessons.reduce((sum, l) => sum + (l.time_spent || 0), 0);
+          const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
+          
+          // Determine level based on progress and completed lessons
+          let level = 'Beginner';
+          if (completedLessons >= 3 && avgProgress >= 80) level = 'Advanced';
+          else if (completedLessons >= 2 && avgProgress >= 60) level = 'Intermediate';
+          
+          const calculatedStats = {
+            ...student,
+            level,
+            progress: avgProgress,
+            lessonsCompleted: completedLessons,
+            totalHours
+          };
+          
+          console.log('✅ Calculated stats for', student.student_first_name, ':', calculatedStats);
+          return calculatedStats;
+          
+        } catch (error) {
+          console.error('❌ Error calculating stats for student:', student.student_id, error);
+          return {
+            ...student,
+            level: 'Error',
+            progress: 0,
+            lessonsCompleted: 0,
+            totalHours: 0
+          };
+        }
+      })
+    );
+    
+    console.log('✅ Final students with REAL calculated stats:', studentsWithRealStats);
+    setStudents(studentsWithRealStats);
     
   } catch (err: any) {
-    console.error('❌ Error in FORCE refresh:', err);
+    console.error('❌ Error in refreshStudents:', err);
     setError(err.message || 'Failed to load students');
     throw err;
   }
