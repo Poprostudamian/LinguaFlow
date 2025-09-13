@@ -1453,3 +1453,19 @@ export const subscribeToStudentLessons = (studentId: string, callback: (payload:
 // ===== EXPORT ALIASES FOR COMPATIBILITY =====
 export const inviteStudentByEmail = sendStudentInvitation;
 export const getStudentLessonStats = getStudentStats;
+
+// Legacy function name for backward compatibility
+export const getStudentDashboardData = async (studentId: string) => {
+  const [stats, lessons] = await Promise.all([
+    getStudentStats(studentId),
+    getStudentLessons(studentId)
+  ]);
+  
+  return {
+    stats,
+    lessons,
+    kpis: stats.kpis,
+    upcomingLessons: stats.upcomingLessons,
+    recentActivity: stats.recentActivity
+  };
+};
