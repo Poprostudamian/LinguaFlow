@@ -1,4 +1,4 @@
-// src/lib/supabase.ts - KOMPLETNIE NAPRAWIONY
+// src/lib/supabase.ts
 
 import { createClient } from '@supabase/supabase-js'
 
