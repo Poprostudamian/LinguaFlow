@@ -51,11 +51,17 @@ export function StudentsProvider({ children }: { children: React.ReactNode }) {
   });
 
   // Auto-load data when authenticated as tutor
-  useEffect(() => {
+useEffect(() => {
+  console.log('🎯 useEffect TRIGGERED');
+  console.log('🎯 session.isAuthenticated:', session.isAuthenticated);
+  console.log('🎯 session.user?.role:', session.user?.role);
+  console.log('🎯 session.user?.id:', session.user?.id);
+  
   if (session.isAuthenticated && session.user?.role === 'tutor') {
+    console.log('✅ Conditions met, calling refreshAll...');
     refreshAll();
   } else {
-    // Clear data when not authenticated or not a tutor
+    console.log('❌ Conditions not met, clearing data');
     setStudents([]);
     setInvitations([]);
     setStatsFromAPI({ totalStudents: 0, activeStudents: 0, pendingInvitations: 0 });
