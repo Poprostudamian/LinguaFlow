@@ -352,5 +352,4 @@ export function TutorLessonCard({
   );
 }onClick={handleSaveEdit}
                 disabled={isLoading || !editData.title.trim()}
-                className="flex items-center space-x-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-sm"
-              >
+                className="flex items-center space-x-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-sm">
