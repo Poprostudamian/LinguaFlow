@@ -1606,3 +1606,47 @@ export const getTutorTeachingStats = async (tutorId: string) => {
     };
   }
 };
+
+export const debugGetAllInvitations = async () => {
+  console.log('🐛 DEBUG: Checking all invitations in database...');
+  
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    throw new Error('Not authenticated');
+  }
+
+  // Pobierz wszystkie zaproszenia dla tego tutora
+  const { data, error } = await supabase
+    .from('relationship_invitations')
+    .select('*')
+    .eq('tutor_id', user.id)
+    .order('invited_at', { ascending: false });
+
+  if (error) {
+    console.error('❌ Error getting debug invitations:', error);
+    throw error;
+  }
+
+  console.log('🐛 DEBUG RESULTS:');
+  console.log('📊 Total invitations found:', data?.length || 0);
+  
+  data?.forEach((invitation, index) => {
+    console.log(`\n📧 Invitation ${index + 1}:`);
+    console.log('   ID:', invitation.id);
+    console.log('   Email:', invitation.student_email);
+    console.log('   Status:', invitation.status);
+    console.log('   Created:', new Date(invitation.invited_at).toLocaleString());
+    console.log('   Expires:', new Date(invitation.expires_at).toLocaleString());
+    console.log('   Token:', invitation.invitation_token?.substring(0, 10) + '...');
+    console.log('   Message:', invitation.message || 'No message');
+  });
+
+  return data;
+};
+
+// ✅ FUNKCJA DEBUG: Generuj link zaproszenia dla testów
+export const generateInvitationLink = (invitation: RelationshipInvitation): string => {
+  // W przyszłości można to podpiąć pod rzeczywisty system akceptacji zaproszeń
+  const baseUrl = window.location.origin;
+  return `${baseUrl}/accept-invitation?token=${invitation.invitation_token}`;
+};
