@@ -24,24 +24,35 @@ export function TutorStudentsPage() {
 
   // Convert TutorStudent to Student format - PRAWDZIWE DANE Z BAZY
 const convertToStudentFormat = (tutorStudent: any) => {
-  console.log('🔍 Converting student with smart fallbacks:', tutorStudent);
+  console.log('🔄 CONVERT START');
+  console.log('🔄 Raw input:', tutorStudent);
+  console.log('🔄 Input level:', tutorStudent.level);
+  console.log('🔄 Input progress:', tutorStudent.progress);
+  console.log('🔄 Input lessonsCompleted:', tutorStudent.lessonsCompleted);
+  console.log('🔄 Input totalHours:', tutorStudent.totalHours);
   
   const result = {
     id: tutorStudent.student_id,
     name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
     email: tutorStudent.student_email,
     
-    // Smart fallbacks for stats
-    level: tutorStudent.level || 'Not set',
-    progress: tutorStudent.progress !== undefined ? tutorStudent.progress : 0,
-    lessonsCompleted: tutorStudent.lessonsCompleted !== undefined ? tutorStudent.lessonsCompleted : 0,
-    totalHours: tutorStudent.totalHours !== undefined ? tutorStudent.totalHours : 0,
+    // VERY explicit conversion - log each step
+    level: tutorStudent.level || 'FALLBACK LEVEL',
+    progress: tutorStudent.progress !== undefined ? tutorStudent.progress : 999,
+    lessonsCompleted: tutorStudent.lessonsCompleted !== undefined ? tutorStudent.lessonsCompleted : 888,
+    totalHours: tutorStudent.totalHours !== undefined ? tutorStudent.totalHours : 777,
     
     joinedDate: tutorStudent.relationship_created,
     avatar_url: tutorStudent.avatar_url
   };
   
-  console.log('✅ Smart converted result:', result);
+  console.log('✅ CONVERT RESULT:');
+  console.log('✅ result.level:', result.level);
+  console.log('✅ result.progress:', result.progress);
+  console.log('✅ result.lessonsCompleted:', result.lessonsCompleted);
+  console.log('✅ result.totalHours:', result.totalHours);
+  console.log('✅ Full result:', result);
+  
   return result;
 };
 
