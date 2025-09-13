@@ -11,6 +11,35 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+export interface StudentLesson {
+  lesson_id: string;
+  student_id: string;
+  status: 'assigned' | 'in_progress' | 'completed';
+  progress: number;
+  assigned_at: string;
+  completed_at?: string | null;
+  updated_at: string;
+  title: string;
+  description?: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  estimated_duration_minutes: number;
+  content?: string | null;
+  exercises?: any[];
+  tutor_id: string;
+  lesson_created_at?: string | null;
+  lesson_updated_at?: string | null;
+}
+
+export interface StudentStats {
+  student_id: string;
+  total_lessons: number;
+  completed_lessons: number;
+  in_progress_lessons: number;
+  total_study_time_minutes: number;
+  average_progress: number;
+  last_activity: string | null;
+}
+
 // Authentication types
 export interface AuthUser {
   id: string
