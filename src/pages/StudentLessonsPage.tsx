@@ -1,5 +1,5 @@
-// src/pages/StudentLessonsPage.tsx - Z PRAWDZIWYMI DANYMI
-import React, { useState, useMemo } from 'react';
+// src/pages/StudentLessonsPage.tsx - BEZ HOOKA, proste rozwiązanie
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Search, 
   Filter, 
@@ -14,21 +14,185 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useStudentLessons, searchStudentLessons } from '../lib/studentLessons';
+import { supabase } from '../lib/supabase';
 import { StudentLessonCard } from '../components/StudentLessonCard';
 import { KPICard } from '../components/KPICard';
+
+interface SimpleStudentLesson {
+  id: string;
+  student_id: string;
+  lesson_id: string;
+  assigned_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  status: 'assigned' | 'in_progress' | 'completed';
+  score: number | null;
+  time_spent: number;
+  progress: number;
+  updated_at: string;
+  lesson: {
+    id: string;
+    title: string;
+    description: string | null;
+    content: string;
+    created_at: string;
+    tutor_id: string;
+    tutor: {
+      first_name: string;
+      last_name: string;
+      email: string;
+    };
+  };
+}
+
+interface SimpleStats {
+  totalLessons: number;
+  completedLessons: number;
+  inProgressLessons: number;
+  assignedLessons: number;
+  averageScore: number;
+  totalStudyTime: number;
+  averageProgress: number;
+}
 
 export function StudentLessonsPage() {
   const { session } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  
+  // State dla danych
+  const [lessons, setLessons] = useState<SimpleStudentLesson[]>([]);
+  const [stats, setStats] = useState<SimpleStats | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Pobierz dane z bazy danych
-  const { lessons, stats, isLoading, error, refreshLessons } = useStudentLessons(
-    session.user?.id
-  );
+  // Funkcja ładowania danych
+  const loadLessons = async () => {
+    if (!session.user?.id) {
+      console.log('⚠️ No user ID available');
+      return;
+    }
 
-  // Filtruj lekcje na podstawie wyszukiwania i statusu
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      console.log('🔍 Loading lessons for student:', session.user.id);
+
+      // Proste zapytanie do bazy danych
+      const { data, error: queryError } = await supabase
+        .from('student_lessons')
+        .select(`
+          id,
+          student_id,
+          lesson_id,
+          assigned_at,
+          started_at,
+          completed_at,
+          status,
+          score,
+          time_spent,
+          progress,
+          updated_at,
+          lessons!inner (
+            id,
+            title,
+            description,
+            content,
+            created_at,
+            tutor_id,
+            users!lessons_tutor_id_fkey (
+              first_name,
+              last_name,
+              email
+            )
+          )
+        `)
+        .eq('student_id', session.user.id)
+        .order('assigned_at', { ascending: false });
+
+      if (queryError) {
+        console.error('❌ Query error:', queryError);
+        throw queryError;
+      }
+
+      console.log('📚 Raw data from database:', data);
+
+      // Przekształć dane
+      const transformedLessons: SimpleStudentLesson[] = (data || []).map((item: any) => ({
+        id: item.id,
+        student_id: item.student_id,
+        lesson_id: item.lesson_id,
+        assigned_at: item.assigned_at,
+        started_at: item.started_at,
+        completed_at: item.completed_at,
+        status: item.status,
+        score: item.score,
+        time_spent: item.time_spent || 0,
+        progress: item.progress || 0,
+        updated_at: item.updated_at,
+        lesson: {
+          id: item.lessons.id,
+          title: item.lessons.title,
+          description: item.lessons.description,
+          content: item.lessons.content || '',
+          created_at: item.lessons.created_at,
+          tutor_id: item.lessons.tutor_id,
+          tutor: {
+            first_name: item.lessons.users?.first_name || 'Unknown',
+            last_name: item.lessons.users?.last_name || 'Tutor',
+            email: item.lessons.users?.email || ''
+          }
+        }
+      }));
+
+      console.log('✅ Transformed lessons:', transformedLessons);
+
+      // Oblicz statystyki
+      const totalLessons = transformedLessons.length;
+      const completedLessons = transformedLessons.filter(l => l.status === 'completed').length;
+      const inProgressLessons = transformedLessons.filter(l => l.status === 'in_progress').length;
+      const assignedLessons = transformedLessons.filter(l => l.status === 'assigned').length;
+      
+      const completedWithScores = transformedLessons.filter(l => l.status === 'completed' && l.score !== null);
+      const averageScore = completedWithScores.length > 0 
+        ? Math.round(completedWithScores.reduce((sum, l) => sum + (l.score || 0), 0) / completedWithScores.length)
+        : 0;
+      
+      const totalStudyTime = transformedLessons.reduce((sum, l) => sum + l.time_spent, 0);
+      const averageProgress = totalLessons > 0 
+        ? Math.round(transformedLessons.reduce((sum, l) => sum + l.progress, 0) / totalLessons)
+        : 0;
+
+      const calculatedStats: SimpleStats = {
+        totalLessons,
+        completedLessons,
+        inProgressLessons,
+        assignedLessons,
+        averageScore,
+        totalStudyTime,
+        averageProgress
+      };
+
+      console.log('📊 Calculated stats:', calculatedStats);
+
+      setLessons(transformedLessons);
+      setStats(calculatedStats);
+
+    } catch (err: any) {
+      console.error('💥 Error loading lessons:', err);
+      setError(err.message || 'Failed to load lessons');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Załaduj dane przy starcie
+  useEffect(() => {
+    loadLessons();
+  }, [session.user?.id]);
+
+  // Filtruj lekcje
   const filteredLessons = useMemo(() => {
     let filtered = lessons;
 
@@ -50,39 +214,25 @@ export function StudentLessonsPage() {
     return filtered;
   }, [lessons, statusFilter, searchTerm]);
 
-  // Pogrupuj lekcje według statusu
+  // Pogrupuj lekcje
   const upcomingLessons = filteredLessons.filter(l => l.status === 'assigned');
   const inProgressLessons = filteredLessons.filter(l => l.status === 'in_progress');
   const completedLessons = filteredLessons.filter(l => l.status === 'completed');
 
-  // Obsługa akcji na lekcjach
+  // Obsługa akcji
   const handleStartLesson = async (lessonId: string) => {
-    try {
-      // Tutaj dodamy logikę rozpoczynania lekcji
-      console.log('Starting lesson:', lessonId);
-      // Można dodać nawigację do strony lekcji
-      // navigate(`/student/lesson/${lessonId}`)
-    } catch (error) {
-      console.error('Error starting lesson:', error);
-    }
+    console.log('🚀 Starting lesson:', lessonId);
+    // TODO: Implementuj logikę rozpoczynania lekcji
   };
 
   const handleContinueLesson = async (lessonId: string) => {
-    try {
-      console.log('Continuing lesson:', lessonId);
-      // Nawigacja do kontynuowania lekcji
-    } catch (error) {
-      console.error('Error continuing lesson:', error);
-    }
+    console.log('▶️ Continuing lesson:', lessonId);
+    // TODO: Implementuj logikę kontynuowania lekcji
   };
 
   const handleViewLesson = async (lessonId: string) => {
-    try {
-      console.log('Viewing completed lesson:', lessonId);
-      // Nawigacja do przeglądu ukończonej lekcji
-    } catch (error) {
-      console.error('Error viewing lesson:', error);
-    }
+    console.log('👁️ Viewing lesson:', lessonId);
+    // TODO: Implementuj logikę przeglądania ukończonej lekcji
   };
 
   // Loading state
@@ -131,7 +281,7 @@ export function StudentLessonsPage() {
             </div>
           </div>
           <button
-            onClick={refreshLessons}
+            onClick={loadLessons}
             className="mt-3 inline-flex items-center space-x-2 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
           >
             <RefreshCw className="h-4 w-4" />
@@ -152,6 +302,13 @@ export function StudentLessonsPage() {
           Track your learning journey and upcoming sessions
         </p>
       </div>
+
+      {/* Debug info - usuń to w produkcji */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm">
+          <strong>Debug:</strong> Found {lessons.length} lessons for user {session.user?.id}
+        </div>
+      )}
 
       {/* Stats Overview */}
       {stats && (
@@ -211,7 +368,7 @@ export function StudentLessonsPage() {
             </select>
           </div>
           <button
-            onClick={refreshLessons}
+            onClick={loadLessons}
             className="inline-flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
           >
             <RefreshCw className="h-4 w-4" />
@@ -287,7 +444,6 @@ export function StudentLessonsPage() {
       {filteredLessons.length === 0 && !isLoading && (
         <div className="text-center py-12">
           {lessons.length === 0 ? (
-            // No lessons at all
             <div>
               <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -297,7 +453,7 @@ export function StudentLessonsPage() {
                 Your tutor hasn't assigned any lessons yet. Check back later or contact your tutor.
               </p>
               <button
-                onClick={refreshLessons}
+                onClick={loadLessons}
                 className="inline-flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
               >
                 <RefreshCw className="h-4 w-4" />
@@ -305,7 +461,6 @@ export function StudentLessonsPage() {
               </button>
             </div>
           ) : (
-            // No lessons match filters
             <div>
               <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -325,33 +480,6 @@ export function StudentLessonsPage() {
               </button>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Quick Stats Footer */}
-      {stats && lessons.length > 0 && (
-        <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg p-4">
-          <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-1">
-                <BarChart3 className="h-4 w-4 text-purple-600" />
-                <span className="text-gray-700 dark:text-gray-300">
-                  Average Progress: {stats.averageProgress}%
-                </span>
-              </div>
-              {stats.currentStreak > 0 && (
-                <div className="flex items-center space-x-1">
-                  <Flame className="h-4 w-4 text-orange-500" />
-                  <span className="text-gray-700 dark:text-gray-300">
-                    Current Streak: {stats.currentStreak} days
-                  </span>
-                </div>
-              )}
-            </div>
-            <div className="text-gray-600 dark:text-gray-400">
-              Last updated: {new Date().toLocaleTimeString()}
-            </div>
-          </div>
         </div>
       )}
     </div>
