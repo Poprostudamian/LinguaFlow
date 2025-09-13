@@ -2018,8 +2018,7 @@ export const getLessonsForStudent = getStudentLessons;
 export const assignStudentsToLesson = assignLessonToStudents;
 export const removeStudentsFromLesson = unassignLessonFromStudents;
 
-// Real-time subscription aliases
-export const subscribeToConversationUpdates = subscribeToConversations;
+// Real-time subscription aliases (subscribeToConversationUpdates already defined above)
 export const subscribeToMessageUpdates = subscribeToMessages;
 export const subscribeToStudentLessonUpdates = subscribeToStudentLessons;
 
