@@ -259,7 +259,6 @@ export function StudentLessonsPage() {
   // Error state
   if (error) {
     return (
-      
       <div className="space-y-6">
         <div>
           {process.env.NODE_ENV === 'development' && <DebugDataChecker />}
