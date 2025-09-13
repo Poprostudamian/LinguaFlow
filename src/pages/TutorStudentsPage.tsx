@@ -10,11 +10,6 @@ export function TutorStudentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'students' | 'invitations' | 'invite'>('students');
   
-  // 🐛 DEBUG: Sprawdź ile razy komponent się renderuje
-  console.log('🔥 COMPONENT RENDER START - TutorStudentsPage');
-  console.log('🔥 Current searchTerm:', searchTerm);
-  console.log('🔥 Current activeTab:', activeTab);
-  
   // Use global students context (PRAWDZIWE DANE)
   const {
     students,
