@@ -335,12 +335,20 @@ export const getTutorStudents = async (): Promise<TutorStudent[]> => {
 };
 
 // Get all invitations sent by tutor
-export const getTutorInvitations = async () => {
+export const getTutorInvitations = async (): Promise<RelationshipInvitation[]> => {
   console.log('🔍 Getting tutor invitations...');
   
+  // ✅ DODAJ: Pobierz aktualnego użytkownika
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    throw new Error('Not authenticated');
+  }
+  
+  // ✅ POPRAW: Dodaj filter na tutor_id
   const { data, error } = await supabase
     .from('relationship_invitations')
     .select('*')
+    .eq('tutor_id', user.id) // ✅ DODAJ: Filter tylko zaproszenia tego tutora
     .order('invited_at', { ascending: false });
 
   if (error) {
@@ -348,17 +356,62 @@ export const getTutorInvitations = async () => {
     throw error;
   }
   
-  console.log('✅ Found', data?.length || 0, 'invitations');
+  console.log('✅ Found', data?.length || 0, 'invitations for tutor');
   return data as RelationshipInvitation[];
-}
+};
 
 // Send invitation to student by email
 export const sendStudentInvitation = async (studentEmail: string, message?: string) => {
   console.log('📧 Sending invitation to:', studentEmail);
   
+  // ✅ DODAJ: Pobierz aktualnego użytkownika aby uzyskać tutor_id
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    console.error('❌ User not authenticated:', userError);
+    throw new Error('Not authenticated');
+  }
+
+  // ✅ DODAJ: Sprawdź czy użytkownik to tutor
+  const { data: userData, error: roleError } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (roleError) {
+    console.error('❌ Error checking user role:', roleError);
+    throw new Error('Unable to verify user permissions');
+  }
+
+  if (userData?.role !== 'tutor') {
+    console.error('❌ User is not a tutor:', userData?.role);
+    throw new Error('Only tutors can send invitations');
+  }
+
+  // ✅ SPRAWDŹ: Czy zaproszenie już istnieje dla tego tutora i studenta
+  const { data: existingInvitation } = await supabase
+    .from('relationship_invitations')
+    .select('id, status, expires_at')
+    .eq('tutor_id', user.id)  // ✅ DODAJ tutor_id filter
+    .eq('student_email', studentEmail.toLowerCase().trim())
+    .eq('status', 'pending')
+    .maybeSingle();
+
+  if (existingInvitation) {
+    // Check if invitation is still valid
+    const expiresAt = new Date(existingInvitation.expires_at);
+    const now = new Date();
+    
+    if (expiresAt > now) {
+      throw new Error('Active invitation already exists for this email address');
+    }
+  }
+
+  // ✅ NAPRAW: INSERT z poprawnym tutor_id
   const { data, error } = await supabase
     .from('relationship_invitations')
     .insert({
+      tutor_id: user.id, // ✅ DODAJ: Kluczowe pole wymagane przez RLS policy
       student_email: studentEmail.toLowerCase().trim(),
       message: message?.trim() || null
     })
@@ -367,12 +420,20 @@ export const sendStudentInvitation = async (studentEmail: string, message?: stri
 
   if (error) {
     console.error('❌ Error sending invitation:', error);
-    throw error;
+    
+    // Provide more helpful error messages
+    if (error.message?.includes('row-level security')) {
+      throw new Error('Permission denied: Unable to send invitation');
+    } else if (error.message?.includes('duplicate')) {
+      throw new Error('An invitation to this email already exists');
+    } else {
+      throw new Error(`Failed to send invitation: ${error.message}`);
+    }
   }
   
-  console.log('✅ Invitation sent successfully');
+  console.log('✅ Invitation sent successfully:', data.id);
   return data;
-}
+};
 
 // Check if email is already a student
 export const findStudentByEmail = async (email: string) => {
@@ -907,6 +968,7 @@ export interface InviteStudentData {
  * Alias for sendStudentInvitation to match StudentsContext expectations
  */
 export const inviteStudent = async (tutorId: string, inviteData: InviteStudentData) => {
+  // tutorId jest przekazywane ale nie używane - sendStudentInvitation pobiera to z auth
   return sendStudentInvitation(inviteData.studentEmail, inviteData.message);
 };
 
