@@ -1469,3 +1469,41 @@ export const getStudentDashboardData = async (studentId: string) => {
     recentActivity: stats.recentActivity
   };
 };
+
+// Missing function for messaging compatibility
+export const getConversationWithMessages = async (conversationId: string) => {
+  try {
+    console.log('💬 Getting conversation with messages:', conversationId);
+    
+    // Get conversation details
+    const { data: conversation, error: convError } = await supabase
+      .from('conversations')
+      .select(`
+        *,
+        participant1:users!participant1_id(id, first_name, last_name, email, avatar_url),
+        participant2:users!participant2_id(id, first_name, last_name, email, avatar_url)
+      `)
+      .eq('id', conversationId)
+      .single();
+
+    if (convError) {
+      console.error('❌ Error fetching conversation:', convError);
+      throw convError;
+    }
+
+    // Get messages for this conversation
+    const messages = await getMessages(conversationId);
+
+    const result = {
+      ...conversation,
+      messages
+    };
+
+    console.log('✅ Retrieved conversation with', messages.length, 'messages');
+    return result;
+
+  } catch (error) {
+    console.error('❌ Error in getConversationWithMessages:', error);
+    throw error;
+  }
+};
