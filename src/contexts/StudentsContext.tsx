@@ -59,14 +59,14 @@ export function StudentsProvider({ children }: { children: React.ReactNode }) {
   //   }
   // }, [session.isAuthenticated, session.user?.role, session.user?.id]);
 
-  React.useEffect(() => {
-  if (session.isAuthenticated && session.user?.role === 'tutor') {
-    refreshAll().then(() => {
-      // After loading students, debug lessons
-      debugAndFixLessons();
-    });
-  }
-}, [session.isAuthenticated, session.user?.role, session.user?.id]);
+//   React.useEffect(() => {
+//   if (session.isAuthenticated && session.user?.role === 'tutor') {
+//     refreshAll().then(() => {
+//       // After loading students, debug lessons
+//       debugAndFixLessons();
+//     });
+//   }
+// }, [session.isAuthenticated, session.user?.role, session.user?.id]);
 
 const refreshStudents = async () => {
   if (!session.user?.id) {
@@ -311,81 +311,81 @@ export function useTutorStudents(): StudentsContextType {
   return context;
 }
 
-const debugAndFixLessons = (async () => {
-  try {
-    console.log('🔍 Checking database tables...');
+// const debugAndFixLessons = (async () => {
+//   try {
+//     console.log('🔍 Checking database tables...');
     
-    // Import supabase
-    const { supabase } = await import('/src/lib/supabase.js');
+//     // Import supabase
+//     const { supabase } = await import('/src/lib/supabase.js');
     
-    // Check current user
-    const { data: { user } } = await supabase.auth.getUser();
-    console.log('👤 Current user:', user?.id);
+//     // Check current user
+//     const { data: { user } } = await supabase.auth.getUser();
+//     console.log('👤 Current user:', user?.id);
     
-    if (user) {
-      // 1. Check tutor's lessons
-      const { data: lessons } = await supabase
-        .from('lessons')
-        .select('id, title, status')
-        .eq('tutor_id', user.id);
-      console.log('📚 Tutor lessons:', lessons);
+//     if (user) {
+//       // 1. Check tutor's lessons
+//       const { data: lessons } = await supabase
+//         .from('lessons')
+//         .select('id, title, status')
+//         .eq('tutor_id', user.id);
+//       console.log('📚 Tutor lessons:', lessons);
       
-      // 2. Check student_lessons table
-      const { data: studentLessons } = await supabase
-        .from('student_lessons')
-        .select('*')
-        .limit(10);
-      console.log('📋 Student lessons table:', studentLessons);
+//       // 2. Check student_lessons table
+//       const { data: studentLessons } = await supabase
+//         .from('student_lessons')
+//         .select('*')
+//         .limit(10);
+//       console.log('📋 Student lessons table:', studentLessons);
       
-      // 3. Check students
-      const { data: students } = await supabase
-        .from('user_relationships')
-        .select('student_id')
-        .eq('tutor_id', user.id)
-        .eq('is_active', true);
-      console.log('👥 Students:', students);
+//       // 3. Check students
+//       const { data: students } = await supabase
+//         .from('user_relationships')
+//         .select('student_id')
+//         .eq('tutor_id', user.id)
+//         .eq('is_active', true);
+//       console.log('👥 Students:', students);
       
-      // 4. If we have lessons and students but no assignments, create them
-      if (lessons && students && lessons.length > 0 && students.length > 0) {
-        const assignments = studentLessons?.filter(sl => 
-          lessons.some(l => l.id === sl.lesson_id) && 
-          students.some(s => s.student_id === sl.student_id)
-        ) || [];
+//       // 4. If we have lessons and students but no assignments, create them
+//       if (lessons && students && lessons.length > 0 && students.length > 0) {
+//         const assignments = studentLessons?.filter(sl => 
+//           lessons.some(l => l.id === sl.lesson_id) && 
+//           students.some(s => s.student_id === sl.student_id)
+//         ) || [];
         
-        console.log('🎯 Existing assignments for this tutor:', assignments);
+//         console.log('🎯 Existing assignments for this tutor:', assignments);
         
-        if (assignments.length === 0) {
-          console.log('⚠️ NO ASSIGNMENTS FOUND! Creating test assignments...');
+//         if (assignments.length === 0) {
+//           console.log('⚠️ NO ASSIGNMENTS FOUND! Creating test assignments...');
           
-          const testAssignments = [];
-          for (const student of students.slice(0, 2)) { // Max 2 students
-            for (const lesson of lessons.slice(0, 3)) { // Max 3 lessons
-              testAssignments.push({
-                student_id: student.student_id,
-                lesson_id: lesson.id,
-                status: 'completed',
-                progress: 75 + Math.floor(Math.random() * 20), // 75-95%
-                time_spent: 60 + Math.floor(Math.random() * 60), // 60-120 minutes
-                score: 80 + Math.floor(Math.random() * 15) // 80-95 score
-              });
-            }
-          }
+//           const testAssignments = [];
+//           for (const student of students.slice(0, 2)) { // Max 2 students
+//             for (const lesson of lessons.slice(0, 3)) { // Max 3 lessons
+//               testAssignments.push({
+//                 student_id: student.student_id,
+//                 lesson_id: lesson.id,
+//                 status: 'completed',
+//                 progress: 75 + Math.floor(Math.random() * 20), // 75-95%
+//                 time_spent: 60 + Math.floor(Math.random() * 60), // 60-120 minutes
+//                 score: 80 + Math.floor(Math.random() * 15) // 80-95 score
+//               });
+//             }
+//           }
           
-          const { data: created, error } = await supabase
-            .from('student_lessons')
-            .insert(testAssignments)
-            .select();
+//           const { data: created, error } = await supabase
+//             .from('student_lessons')
+//             .insert(testAssignments)
+//             .select();
           
-          if (error) {
-            console.error('❌ Error creating assignments:', error);
-          } else {
-            console.log('✅ Created test assignments:', created);
-            console.log('🔄 Now refresh the Students page to see the changes!');
-          }
-        }
-      }
-    }
-  } catch (error) {
-    console.error('❌ Debug error:', error);
-  }
-})();
+//           if (error) {
+//             console.error('❌ Error creating assignments:', error);
+//           } else {
+//             console.log('✅ Created test assignments:', created);
+//             console.log('🔄 Now refresh the Students page to see the changes!');
+//           }
+//         }
+//       }
+//     }
+//   } catch (error) {
+//     console.error('❌ Debug error:', error);
+//   }
+// })();
