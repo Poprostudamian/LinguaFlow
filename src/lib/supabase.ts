@@ -1402,7 +1402,7 @@ export const findStudentByEmail = async (email: string) => {
 };
 
 // ===== REAL-TIME SUBSCRIPTIONS =====
-export const subscribeToConversationsMessages = (userId: string, callback: (payload: any) => void) => {
+export const subscribeToConversationMessages = (userId: string, callback: (payload: any) => void) => {
   return supabase
     .channel('conversations')
     .on(
