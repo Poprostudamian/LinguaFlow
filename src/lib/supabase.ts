@@ -1992,37 +1992,3 @@ export const getTutorTeachingStats = async (tutorId: string) => {
     };
   }
 };
-
-// ===== BACKWARD COMPATIBILITY ALIASES =====
-
-// Authentication aliases
-export const inviteStudentByEmail = sendStudentInvitation;
-export const getStudentLessonStats = getStudentStats;
-
-// Messaging function aliases for backward compatibility
-export const getUserConversations = getConversations;
-export const getConversationMessages = getMessages;
-export const createConversation = createOrGetConversation;
-export const sendMessageToConversation = sendMessage;
-export const markMessagesAsRead = markConversationAsRead;
-
-// Student/Tutor relationship aliases
-export const getTutorStudentList = getTutorStudents;
-export const getStudentTutorList = getStudentTutors;
-export const inviteStudentToTutor = sendStudentInvitation;
-export const getTutorInvitationList = getTutorInvitations;
-
-// Lesson management aliases
-export const getLessonsForTutor = getTutorLessons;
-export const getLessonsForStudent = getStudentLessons;
-export const assignStudentsToLesson = assignLessonToStudents;
-export const removeStudentsFromLesson = unassignLessonFromStudents;
-
-// Real-time subscription aliases
-export const subscribeToConversationUpdates = subscribeToConversations;
-export const subscribeToMessageUpdates = subscribeToMessages;
-export const subscribeToStudentLessonUpdates = subscribeToStudentLessons;
-
-// Additional subscription aliases that might be needed
-export const subscribeToUserConversations = subscribeToConversations;
-export const subscribeToLessonProgress = subscribeToStudentLessons;
