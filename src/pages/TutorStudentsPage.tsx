@@ -1,7 +1,7 @@
-// src/pages/TutorStudentsPage.tsx - ZOPTYMALIZOWANA WERSJA
+// src/pages/TutorStudentsPage.tsx - CZYSTY BEZ BŁĘDÓW
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { Search, Filter, Users, BookOpen, Clock, Mail, UserPlus, RefreshCw, AlertCircle } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Search, Filter, Users, BookOpen, Clock, Mail, UserPlus, RefreshCw, AlertCircle, Bug, Copy } from 'lucide-react';
 import { StudentCard } from '../components/StudentCard';
 import { InviteStudentForm } from '../components/InviteStudentForm';
 import { useTutorStudents } from '../contexts/StudentsContext';
@@ -10,7 +10,11 @@ export function TutorStudentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'students' | 'invitations' | 'invite'>('students');
   
-  // Use global students context (PRAWDZIWE DANE)
+  // Debug state
+  const [debugInvitations, setDebugInvitations] = useState<any[]>([]);
+  const [isDebugging, setIsDebugging] = useState(false);
+  
+  // Use global students context
   const {
     students,
     invitations,
@@ -22,74 +26,63 @@ export function TutorStudentsPage() {
     refreshAll,
   } = useTutorStudents();
 
-  // ✅ OPTYMALIZACJA 1: Memoized conversion function
-  const convertToStudentFormat = useCallback((tutorStudent: any) => {
-    console.log('🔄 CONVERT START');
-    console.log('🔄 Raw input:', tutorStudent);
-    console.log('🔄 Input level:', tutorStudent.level);
-    console.log('🔄 Input progress:', tutorStudent.progress);
-    console.log('🔄 Input lessonsCompleted:', tutorStudent.lessonsCompleted);
-    console.log('🔄 Input totalHours:', tutorStudent.totalHours);
-
-    const result = {
-      id: tutorStudent.student_id,
-      name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
-      email: tutorStudent.student_email,
-      level: tutorStudent.level || 'Test Level 1', // Use real data or fallback
-      progress: tutorStudent.progress || 50, // Use real data or fallback
-      lessonsCompleted: tutorStudent.lessonsCompleted || 1, // Use real data or fallback
-      totalHours: tutorStudent.totalHours || 2, // Use real data or fallback
-      joinedDate: tutorStudent.relationship_created
-    };
-
-    console.log('✅ CONVERT RESULT:');
-    console.log('✅ result.level:', result.level);
-    console.log('✅ result.progress:', result.progress);
-    console.log('✅ result.lessonsCompleted:', result.lessonsCompleted);
-    console.log('✅ result.totalHours:', result.totalHours);
-    console.log('✅ Full result:', result);
-    
-    return result;
-  }, []); // Empty dependency array since it doesn't depend on external values
-
-  // ✅ OPTYMALIZACJA 2: Memoized converted students
+  // ✅ Memoized converted students
   const convertedStudents = useMemo(() => {
-    console.log('🎯 MEMOIZED CONVERSION - students length:', students.length);
-    return students.map(student => {
-      console.log('🎯 MAPPING student:', student);
-      const converted = convertToStudentFormat(student);
-      console.log('🎯 CONVERTED for StudentCard:', converted);
-      return converted;
-    });
-  }, [students, convertToStudentFormat]);
-
-  // ✅ OPTYMALIZACJA 3: Memoized filtered students  
-  const filteredStudents = useMemo(() => {
-    console.log('🔍 FILTERING DEBUG:');
-    console.log('🔍 searchTerm:', searchTerm);
-    console.log('🔍 students from context:', students);
+    console.log('🎯 CONVERT: Processing', students.length, 'students');
     
+    return students.map((tutorStudent, index) => {
+      console.log(`🔍 Student ${index + 1}:`, {
+        name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
+        level: tutorStudent.level,
+        progress: tutorStudent.progress,
+        lessonsCompleted: tutorStudent.lessonsCompleted,
+        totalHours: tutorStudent.totalHours
+      });
+
+      return {
+        id: tutorStudent.student_id,
+        name: `${tutorStudent.student_first_name} ${tutorStudent.student_last_name}`,
+        email: tutorStudent.student_email,
+        level: tutorStudent.level || 'Beginner',
+        progress: tutorStudent.progress !== undefined ? tutorStudent.progress : 0,
+        lessonsCompleted: tutorStudent.lessonsCompleted !== undefined ? tutorStudent.lessonsCompleted : 0,
+        totalHours: tutorStudent.totalHours !== undefined ? tutorStudent.totalHours : 0,
+        joinedDate: tutorStudent.relationship_created
+      };
+    });
+  }, [students]);
+
+  // ✅ Memoized filtered students
+  const filteredStudents = useMemo(() => {
     if (!searchTerm.trim()) {
-      console.log('🔍 filteredStudents result:', convertedStudents);
-      console.log('🔍 filteredStudents length:', convertedStudents.length);
       return convertedStudents;
     }
 
     const lowerQuery = searchTerm.toLowerCase();
-    const filtered = convertedStudents.filter(student => {
+    return convertedStudents.filter(student => {
       const fullName = student.name.toLowerCase();
       const email = student.email.toLowerCase();
       return fullName.includes(lowerQuery) || email.includes(lowerQuery);
     });
-    
-    console.log('🔍 filteredStudents result:', filtered);
-    console.log('🔍 filteredStudents length:', filtered.length);
-    return filtered;
   }, [convertedStudents, searchTerm]);
 
   const handleInviteSent = () => {
-    refreshAll(); // Refresh data after invitation is sent
-    setActiveTab('invitations'); // Switch to invitations tab
+    refreshAll();
+    setActiveTab('invitations');
+  };
+
+  // ✅ Simple debug function
+  const handleDebugInvitations = async () => {
+    setIsDebugging(true);
+    try {
+      console.log('🐛 DEBUG: Checking invitations in database...');
+      console.log('🐛 Current invitations from context:', invitations);
+      setDebugInvitations(invitations);
+    } catch (err) {
+      console.error('Debug error:', err);
+    } finally {
+      setIsDebugging(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -144,7 +137,7 @@ export function TutorStudentsPage() {
         </div>
       )}
 
-      {/* Stats Overview - PRAWDZIWE DANE */}
+      {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-2">
@@ -344,8 +337,68 @@ export function TutorStudentsPage() {
           <div className="p-6">
             <InviteStudentForm onInviteSent={handleInviteSent} />
             
-            {/* 🐛 DEBUG COMPONENT - Remove in production */}
-            <DebugInvitations />
+            {/* INLINE DEBUG PANEL */}
+            <div className="mt-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-3">
+                <Bug className="h-4 w-4 text-yellow-600" />
+                <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                  Debug: Check Database Invitations
+                </h3>
+              </div>
+              
+              <p className="text-xs text-yellow-700 dark:text-yellow-300 mb-3">
+                Email sending is not configured. Use this to verify invitations were saved.
+              </p>
+
+              <button
+                onClick={handleDebugInvitations}
+                disabled={isDebugging}
+                className="flex items-center space-x-2 bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-sm transition-colors"
+              >
+                <RefreshCw className={`h-3 w-3 ${isDebugging ? 'animate-spin' : ''}`} />
+                <span>{isDebugging ? 'Checking...' : 'Check Database'}</span>
+              </button>
+
+              {debugInvitations.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                    Found {debugInvitations.length} invitation(s):
+                  </h4>
+                  {debugInvitations.map((inv, i) => (
+                    <div key={i} className="bg-white dark:bg-gray-800 p-2 rounded text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{inv.student_email}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${
+                          inv.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          inv.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {inv.status}
+                        </span>
+                      </div>
+                      <p className="text-gray-500 text-xs mt-1">
+                        Created: {new Date(inv.invited_at).toLocaleString()}
+                      </p>
+                      {inv.invitation_token && (
+                        <button
+                          onClick={() => navigator.clipboard.writeText(inv.invitation_token)}
+                          className="flex items-center space-x-1 mt-1 text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded"
+                        >
+                          <Copy className="h-2 w-2" />
+                          <span>Copy Token</span>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!isDebugging && debugInvitations.length === 0 && (
+                <div className="mt-3 p-2 bg-gray-50 dark:bg-gray-800 rounded text-xs text-gray-600 dark:text-gray-400">
+                  No invitations found in context. Try refreshing or sending one first.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
