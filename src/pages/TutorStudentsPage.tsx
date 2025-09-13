@@ -343,6 +343,9 @@ export function TutorStudentsPage() {
           </div>
           <div className="p-6">
             <InviteStudentForm onInviteSent={handleInviteSent} />
+            
+            {/* 🐛 DEBUG COMPONENT - Remove in production */}
+            <DebugInvitations />
           </div>
         </div>
       )}
