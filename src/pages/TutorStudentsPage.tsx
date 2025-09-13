@@ -59,6 +59,27 @@ const convertToStudentFormat = (tutorStudent: any) => {
   // Filter students based on search
   const filteredStudents = searchStudents(searchTerm);
 
+// DODAJ TEN DEBUG:
+console.log('🔍 FILTERING DEBUG:');
+console.log('🔍 searchTerm:', searchTerm);
+console.log('🔍 students from context:', students);
+console.log('🔍 filteredStudents result:', filteredStudents);
+console.log('🔍 filteredStudents length:', filteredStudents?.length);
+
+// I dodaj debug w mapowaniu:
+{filteredStudents.map((student) => {
+  console.log('🎯 MAPPING student:', student);
+  const converted = convertToStudentFormat(student);
+  console.log('🎯 CONVERTED for StudentCard:', converted);
+  
+  return (
+    <StudentCard 
+      key={student.student_id} 
+      student={converted} 
+    />
+  );
+})}
+  
   const handleInviteSent = () => {
     refreshAll(); // Refresh data after invitation is sent
     setActiveTab('invitations'); // Switch to invitations tab
