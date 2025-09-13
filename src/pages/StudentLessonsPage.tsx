@@ -17,6 +17,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { StudentLessonCard } from '../components/StudentLessonCard';
 import { KPICard } from '../components/KPICard';
+import { DebugDataChecker } from '../components/DebugDataChecker';
 
 interface SimpleStudentLesson {
   id: string;
