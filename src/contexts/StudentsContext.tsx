@@ -51,22 +51,17 @@ export function StudentsProvider({ children }: { children: React.ReactNode }) {
   });
 
   // Auto-load data when authenticated as tutor
-  // useEffect(() => {
-  //   if (session.isAuthenticated && session.user?.role === 'tutor' && session.user?.id) {
-  //     refreshAll();
-  //   } else {
-  //     setIsLoading(false);
-  //   }
-  // }, [session.isAuthenticated, session.user?.role, session.user?.id]);
-
-//   React.useEffect(() => {
-//   if (session.isAuthenticated && session.user?.role === 'tutor') {
-//     refreshAll().then(() => {
-//       // After loading students, debug lessons
-//       debugAndFixLessons();
-//     });
-//   }
-// }, [session.isAuthenticated, session.user?.role, session.user?.id]);
+  useEffect(() => {
+  if (session.isAuthenticated && session.user?.role === 'tutor') {
+    refreshAll();
+  } else {
+    // Clear data when not authenticated or not a tutor
+    setStudents([]);
+    setInvitations([]);
+    setStatsFromAPI({ totalStudents: 0, activeStudents: 0, pendingInvitations: 0 });
+    setError(null);
+  }
+}, [session.isAuthenticated, session.user?.role, session.user?.id]);
 
 const refreshStudents = async () => {
   if (!session.user?.id) {
