@@ -1,5 +1,5 @@
-// src/contexts/StudentsContext.tsx - NAPRAWIONY z stabilną referencją tablicy
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback, ReactNode } from 'react';
+// src/contexts/StudentsContext.tsx - FIXED VERSION
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { 
   getTutorStudents, 
@@ -43,7 +43,7 @@ interface StudentsProviderProps {
 
 export function StudentsProvider({ children }: StudentsProviderProps) {
   const { session } = useAuth();
-  const [studentsData, setStudentsData] = useState<TutorStudent[]>([]);
+  const [students, setStudents] = useState<TutorStudent[]>([]);
   const [invitations, setInvitations] = useState<RelationshipInvitation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,96 +55,118 @@ export function StudentsProvider({ children }: StudentsProviderProps) {
     pendingInvitations: 0
   });
 
-  // ✅ STABILIZUJ referencję tablicy students
-  const students = useMemo(() => {
-    console.log('🔄 CONTEXT: Stabilizing students array reference');
-    console.log('🔄 CONTEXT: studentsData length:', studentsData.length);
-    console.log('🔄 CONTEXT: studentsData reference:', studentsData);
-    return studentsData;
-  }, [studentsData]);
-
-  // ✅ STABILIZUJ funkcje callback
-  const refreshStudents = useCallback(async () => {
-    console.log('🔄 CONTEXT: refreshStudents called');
-    if (!session.user?.id) {
-      throw new Error('No authenticated user');
-    }
-
-    try {
-      setError(null);
-      const newStudentsData = await getTutorStudents(session.user.id);
-      console.log('📥 CONTEXT: New students data loaded:', newStudentsData.length, 'students');
-      setStudentsData(newStudentsData);
-    } catch (err: any) {
-      console.error('Error loading students:', err);
-      setError(err.message || 'Failed to load students');
-      throw err;
-    }
-  }, [session.user?.id]);
-
-  const refreshInvitations = useCallback(async () => {
-    if (!session.user?.id) {
-      throw new Error('No authenticated user');
-    }
-
-    try {
-      setError(null);
-      const invitationsData = await getTutorInvitations(session.user.id);
-      setInvitations(invitationsData);
-    } catch (err: any) {
-      console.error('Error loading invitations:', err);
-      setError(err.message || 'Failed to load invitations');
-      throw err;
-    }
-  }, [session.user?.id]);
-
-  const refreshStats = useCallback(async () => {
-    if (!session.user?.id) {
+  // ✅ FIX: Only load data for tutors, not students
+  const refreshStudents = async () => {
+    // Don't load tutor data for student users
+    if (!session.isAuthenticated || session.user?.role !== 'tutor') {
       return;
     }
 
-    try {
-      const stats = await getTutorStudentStats(session.user.id);
-      setStatsFromAPI(stats);
-    } catch (err: any) {
-      console.error('Error loading stats:', err);
-      // Don't set error for stats, they're not critical
-    }
-  }, [session.user?.id]);
-
-  const refreshAll = useCallback(async () => {
-    console.log('🔄 CONTEXT: refreshAll called');
-    if (!session.isAuthenticated || session.user?.role !== 'tutor' || !session.user?.id) {
+    if (!session.user?.id) {
+      setError('No authenticated user');
       return;
     }
 
     setIsLoading(true);
     setError(null);
-
+    
     try {
-      await Promise.all([
-        refreshStudents(),
-        refreshInvitations(),
-        refreshStats()
-      ]);
+      const studentsData = await getTutorStudents();
+      setStudents(studentsData || []);
     } catch (err: any) {
-      console.error('Error loading students data:', err);
-      setError(err.message || 'Failed to load students data');
+      console.error('Error fetching students:', err);
+      setError(err.message || 'Failed to load students');
     } finally {
       setIsLoading(false);
     }
-  }, [refreshStudents, refreshInvitations, refreshStats, session.isAuthenticated, session.user?.role, session.user?.id]);
+  };
 
-  // ✅ STABILIZUJ utility functions
-  const getStudentById = useCallback((id: string): TutorStudent | undefined => {
+  const refreshInvitations = async () => {
+    // Don't load tutor data for student users
+    if (!session.isAuthenticated || session.user?.role !== 'tutor') {
+      return;
+    }
+
+    if (!session.user?.id) {
+      setError('No authenticated user');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const invitationsData = await getTutorInvitations();
+      setInvitations(invitationsData || []);
+    } catch (err: any) {
+      console.error('Error fetching invitations:', err);
+      setError(err.message || 'Failed to load invitations');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const refreshAll = async () => {
+    // Don't load tutor data for student users
+    if (!session.isAuthenticated || session.user?.role !== 'tutor') {
+      return;
+    }
+
+    if (!session.user?.id) return;
+
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const [studentsData, invitationsData, statsData] = await Promise.all([
+        getTutorStudents().catch(() => []),
+        getTutorInvitations().catch(() => []),
+        getTutorStudentStats(session.user.id).catch(() => ({
+          totalStudents: 0,
+          activeStudents: 0,
+          pendingInvitations: 0
+        }))
+      ]);
+
+      setStudents(studentsData || []);
+      setInvitations(invitationsData || []);
+      setStatsFromAPI(statsData);
+    } catch (err: any) {
+      console.error('Error fetching data:', err);
+      setError(err.message || 'Failed to load data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ✅ FIX: Only trigger data loading for tutors
+  useEffect(() => {
+    if (session.isAuthenticated && session.user?.role === 'tutor') {
+      refreshAll();
+    } else {
+      // Reset data for non-tutor users
+      setStudents([]);
+      setInvitations([]);
+      setStatsFromAPI({
+        totalStudents: 0,
+        activeStudents: 0,
+        pendingInvitations: 0
+      });
+      setIsLoading(false);
+      setError(null);
+    }
+  }, [session.isAuthenticated, session.user?.role, session.user?.id]);
+
+  // Utility functions
+  const getStudentById = (id: string): TutorStudent | undefined => {
     return students.find(student => student.student_id === id);
-  }, [students]);
+  };
 
-  const getStudentsByIds = useCallback((ids: string[]): TutorStudent[] => {
+  const getStudentsByIds = (ids: string[]): TutorStudent[] => {
     return students.filter(student => ids.includes(student.student_id));
-  }, [students]);
+  };
 
-  const searchStudents = useCallback((query: string): TutorStudent[] => {
+  const searchStudents = (query: string): TutorStudent[] => {
     if (!query.trim()) return students;
     
     const lowerQuery = query.toLowerCase();
@@ -153,36 +175,16 @@ export function StudentsProvider({ children }: StudentsProviderProps) {
       const email = student.student_email.toLowerCase();
       return fullName.includes(lowerQuery) || email.includes(lowerQuery);
     });
-  }, [students]);
+  };
 
-  // Load data when tutor logs in
-  useEffect(() => {
-    console.log('🔄 CONTEXT: useEffect triggered', {
-      isAuthenticated: session.isAuthenticated,
-      role: session.user?.role,
-      userId: session.user?.id
-    });
-    
-    if (session.isAuthenticated && session.user?.role === 'tutor') {
-      refreshAll();
-    } else {
-      // Clear data when not authenticated or not a tutor
-      setStudentsData([]);
-      setInvitations([]);
-      setStatsFromAPI({ totalStudents: 0, activeStudents: 0, pendingInvitations: 0 });
-      setError(null);
-    }
-  }, [session.isAuthenticated, session.user?.role, session.user?.id, refreshAll]);
-
-  // Use stats from API if available, otherwise compute from local data
+  // Calculate stats (fallback to computed values if API fails)
   const totalStudents = statsFromAPI.totalStudents || students.length;
   const activeStudents = statsFromAPI.activeStudents || students.filter(s => s.student_is_active).length;
   const pendingInvitations = statsFromAPI.pendingInvitations || invitations.filter(inv => 
     inv.status === 'pending' && new Date(inv.expires_at) > new Date()
   ).length;
 
-  // ✅ STABILIZUJ cały value object
-  const value = useMemo<StudentsContextType>(() => ({
+  const value: StudentsContextType = {
     // Data
     students,
     invitations,
@@ -205,21 +207,7 @@ export function StudentsProvider({ children }: StudentsProviderProps) {
     getStudentById,
     getStudentsByIds,
     searchStudents,
-  }), [
-    students,
-    invitations,
-    isLoading,
-    error,
-    totalStudents,
-    activeStudents,
-    pendingInvitations,
-    refreshStudents,
-    refreshInvitations,
-    refreshAll,
-    getStudentById,
-    getStudentsByIds,
-    searchStudents,
-  ]);
+  };
 
   return (
     <StudentsContext.Provider value={value}>
@@ -247,7 +235,22 @@ export function useTutorStudents(): StudentsContextType {
   }
   
   if (!session.isAuthenticated || session.user?.role !== 'tutor') {
-    throw new Error('useTutorStudents can only be used by authenticated tutors');
+    // ✅ FIX: Return safe defaults for students instead of throwing error
+    return {
+      students: [],
+      invitations: [],
+      isLoading: false,
+      error: null,
+      totalStudents: 0,
+      activeStudents: 0,
+      pendingInvitations: 0,
+      refreshStudents: async () => {},
+      refreshInvitations: async () => {},
+      refreshAll: async () => {},
+      getStudentById: () => undefined,
+      getStudentsByIds: () => [],
+      searchStudents: () => [],
+    };
   }
   
   return context;
