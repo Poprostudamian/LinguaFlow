@@ -1650,3 +1650,223 @@ export const generateInvitationLink = (invitation: RelationshipInvitation): stri
   const baseUrl = window.location.origin;
   return `${baseUrl}/accept-invitation?token=${invitation.invitation_token}`;
 };
+
+// ===== STUDENT DATA FUNCTIONS =====
+
+export interface StudentKPIs {
+  lessonsCompleted: number;
+  studyStreak: number; 
+  totalHours: number;
+  totalLessonsAssigned: number;
+  averageProgress: number;
+  currentLevel: string;
+}
+
+export interface StudentUpcomingLesson {
+  id: string;
+  title: string;
+  description?: string;
+  tutor_name: string;
+  assigned_at: string;
+  status: 'assigned' | 'in_progress';
+  progress: number;
+  lesson_id: string;
+}
+
+export interface StudentStats {
+  kpis: StudentKPIs;
+  upcomingLessons: StudentUpcomingLesson[];
+  recentActivity: string | null;
+}
+
+/**
+ * Get comprehensive stats for current student
+ */
+export const getStudentDashboardData = async (): Promise<StudentStats> => {
+  try {
+    console.log('📊 Getting student dashboard data...');
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error('Not authenticated');
+    }
+
+    console.log('👤 Current student ID:', user.id);
+
+    // 1. Get student's lesson assignments with lesson and tutor details
+    const { data: studentLessons, error: lessonsError } = await supabase
+      .from('student_lessons')
+      .select(`
+        id,
+        lesson_id,
+        status,
+        progress,
+        assigned_at,
+        completed_at,
+        updated_at,
+        lessons:lessons!lesson_id (
+          id,
+          title,
+          description,
+          tutor_id,
+          created_at,
+          tutor:users!tutor_id (
+            first_name,
+            last_name
+          )
+        )
+      `)
+      .eq('student_id', user.id)
+      .order('assigned_at', { ascending: false });
+
+    if (lessonsError) {
+      console.error('❌ Error fetching student lessons:', lessonsError);
+      throw lessonsError;
+    }
+
+    console.log('📚 Student lessons found:', studentLessons?.length || 0);
+
+    const lessons = studentLessons || [];
+
+    // 2. Calculate KPIs
+    const totalLessonsAssigned = lessons.length;
+    const completedLessons = lessons.filter(l => l.status === 'completed');
+    const lessonsCompleted = completedLessons.length;
+
+    // Calculate total study time (estimate based on progress)
+    const totalProgressPoints = lessons.reduce((sum, l) => sum + l.progress, 0);
+    const totalHours = Math.round(totalProgressPoints / 100 * 1.5 * 10) / 10; // ~1.5 hours per 100% lesson
+
+    // Calculate average progress
+    const averageProgress = totalLessonsAssigned > 0 
+      ? Math.round(lessons.reduce((sum, l) => sum + l.progress, 0) / totalLessonsAssigned)
+      : 0;
+
+    // Determine current level
+    let currentLevel = 'Beginner';
+    if (lessonsCompleted >= 20) {
+      currentLevel = 'Advanced';
+    } else if (lessonsCompleted >= 8) {
+      currentLevel = 'Intermediate';  
+    }
+
+    // Calculate study streak (days with activity in last week)
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    
+    const recentActivities = lessons.filter(l => 
+      l.updated_at && new Date(l.updated_at) > oneWeekAgo
+    );
+
+    // Simple streak calculation - days with any lesson activity
+    const activeDays = new Set(
+      recentActivities.map(l => 
+        new Date(l.updated_at).toDateString()
+      )
+    );
+    const studyStreak = activeDays.size;
+
+    // 3. Get upcoming lessons (assigned or in progress, not completed)
+    const upcomingLessons: StudentUpcomingLesson[] = lessons
+      .filter(l => l.status === 'assigned' || l.status === 'in_progress')
+      .slice(0, 6) // Limit to 6 most recent
+      .map(l => ({
+        id: l.id,
+        title: l.lessons.title,
+        description: l.lessons.description || undefined,
+        tutor_name: l.lessons.tutor 
+          ? `${l.lessons.tutor.first_name} ${l.lessons.tutor.last_name}` 
+          : 'Unknown Tutor',
+        assigned_at: l.assigned_at,
+        status: l.status as 'assigned' | 'in_progress',
+        progress: l.progress,
+        lesson_id: l.lesson_id
+      }));
+
+    // 4. Get most recent activity
+    const recentActivity = lessons.length > 0 
+      ? lessons
+          .map(l => l.updated_at || l.assigned_at)
+          .sort()
+          .reverse()[0]
+      : null;
+
+    const kpis: StudentKPIs = {
+      lessonsCompleted,
+      studyStreak,
+      totalHours,
+      totalLessonsAssigned,
+      averageProgress,
+      currentLevel
+    };
+
+    console.log('✅ Student KPIs calculated:', kpis);
+    console.log('📅 Upcoming lessons:', upcomingLessons.length);
+
+    return {
+      kpis,
+      upcomingLessons,
+      recentActivity
+    };
+
+  } catch (error) {
+    console.error('❌ Error fetching student dashboard data:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update student lesson progress
+ */
+export const updateStudentLessonProgress = async (
+  lessonId: string, 
+  progress: number,
+  status?: 'assigned' | 'in_progress' | 'completed'
+): Promise<void> => {
+  try {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error('Not authenticated');
+    }
+
+    console.log('📈 Updating lesson progress:', { lessonId, progress, status });
+
+    const updateData: any = {
+      progress: Math.max(0, Math.min(100, progress)), // Clamp between 0-100
+      updated_at: new Date().toISOString()
+    };
+
+    // Auto-determine status based on progress if not provided
+    if (!status) {
+      if (progress >= 100) {
+        status = 'completed';
+      } else if (progress > 0) {
+        status = 'in_progress';
+      } else {
+        status = 'assigned';
+      }
+    }
+
+    updateData.status = status;
+
+    if (status === 'completed') {
+      updateData.completed_at = new Date().toISOString();
+    }
+
+    const { error } = await supabase
+      .from('student_lessons')
+      .update(updateData)
+      .eq('student_id', user.id)
+      .eq('lesson_id', lessonId);
+
+    if (error) {
+      console.error('❌ Error updating lesson progress:', error);
+      throw error;
+    }
+
+    console.log('✅ Lesson progress updated successfully');
+  } catch (error) {
+    console.error('❌ Error in updateStudentLessonProgress:', error);
+    throw error;
+  }
+};
