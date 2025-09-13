@@ -1735,16 +1735,16 @@ export const getStudentDashboardData = async (): Promise<StudentStats> => {
     );
     const studyStreak = activeDays.size;
 
-    // Get upcoming lessons (assigned or in progress, not completed)
+    // Get upcoming lessons (assigned or in progress, not completed) with safe null checks
     const upcomingLessons: StudentUpcomingLesson[] = lessons
-      .filter(l => l.status === 'assigned' || l.status === 'in_progress')
+      .filter(l => (l.status === 'assigned' || l.status === 'in_progress') && l.lessons)
       .slice(0, 6) // Limit to 6 most recent
       .map(l => ({
         id: l.id,
-        title: l.lessons.title,
-        description: l.lessons.description || undefined,
-        tutor_name: l.lessons.tutor 
-          ? `${l.lessons.tutor.first_name} ${l.lessons.tutor.last_name}` 
+        title: l.lessons?.title || 'Unknown Lesson',
+        description: l.lessons?.description || undefined,
+        tutor_name: l.lessons?.tutor 
+          ? `${l.lessons.tutor.first_name || ''} ${l.lessons.tutor.last_name || ''}`.trim()
           : 'Unknown Tutor',
         assigned_at: l.assigned_at,
         status: l.status as 'assigned' | 'in_progress',
