@@ -1130,7 +1130,7 @@ export const updateStudentLessonProgress = async (
 };
 
 // ===== MESSAGING FUNCTIONS =====
-export const getUserConversations = async (): Promise<Conversation[]> => {
+export const getConversations = async (): Promise<Conversation[]> => {
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
@@ -1175,7 +1175,7 @@ export const getUserConversations = async (): Promise<Conversation[]> => {
     return conversationsWithUnread;
 
   } catch (error) {
-    console.error('❌ Error in getUserConversations:', error);
+    console.error('❌ Error in getConversations:', error);
     throw error;
   }
 };
@@ -1402,7 +1402,7 @@ export const findStudentByEmail = async (email: string) => {
 };
 
 // ===== REAL-TIME SUBSCRIPTIONS =====
-export const subscribeToConversationMessages = (userId: string, callback: (payload: any) => void) => {
+export const subscribeToConversations = (userId: string, callback: (payload: any) => void) => {
   return supabase
     .channel('conversations')
     .on(
