@@ -1043,6 +1043,58 @@ export const startStudentLesson = async (studentId: string, lessonId: string): P
   }
 };
 
+/**
+ * Update lesson progress
+ */
+export const updateLessonProgress = async (
+  studentId: string, 
+  lessonId: string, 
+  progress: number, 
+  status?: 'assigned' | 'in_progress' | 'completed'
+): Promise<void> => {
+  try {
+    console.log('📊 Updating progress:', lessonId, 'to', progress + '%');
+    
+    // Sprawdź sesję
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || session.user.id !== studentId) {
+      throw new Error('Not authenticated or invalid student ID');
+    }
+    
+    const updateData: any = {
+      progress: Math.max(0, Math.min(100, progress)),
+      updated_at: new Date().toISOString()
+    };
+
+    if (status) {
+      updateData.status = status;
+    }
+
+    // If progress is 100%, mark as completed
+    if (progress >= 100) {
+      updateData.status = 'completed';
+      updateData.completed_at = new Date().toISOString();
+      updateData.score = progress; // Use progress as score for now
+    }
+
+    const { error } = await supabase
+      .from('student_lessons')
+      .update(updateData)
+      .eq('student_id', studentId)
+      .eq('lesson_id', lessonId);
+
+    if (error) {
+      console.error('❌ Error updating progress:', error);
+      throw new Error(`Failed to update progress: ${error.message}`);
+    }
+
+    console.log('✅ Progress updated successfully');
+  } catch (error) {
+    console.error('❌ Error in updateLessonProgress:', error);
+    throw error;
+  }
+};
+
 export interface StudentStats {
   student_id: string;
   total_lessons: number;
