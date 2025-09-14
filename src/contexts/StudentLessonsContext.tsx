@@ -115,6 +115,12 @@ export function StudentLessonsProvider({ children }: { children: React.ReactNode
         throw new Error(`Invalid role: ${session.user.role}. Expected: student`);
       }
 
+      // Test podstawowego dostępu
+      const hasAccess = await testStudentLessonsAccess(session.user.id);
+      if (!hasAccess) {
+        throw new Error('Cannot access student lessons table - check RLS policies');
+      }
+
       console.log('🔍 Loading lessons for student:', session.user.id);
       const studentLessons = await getStudentLessons(session.user.id);
       
@@ -133,8 +139,10 @@ export function StudentLessonsProvider({ children }: { children: React.ReactNode
       
       let errorMessage = 'Failed to load lessons';
       
-      if (err.message?.includes('RLS')) {
-        errorMessage = 'Access denied - please check your permissions';
+      if (err.message?.includes('infinite recursion')) {
+        errorMessage = 'Database configuration error - please run the RLS fix SQL';
+      } else if (err.message?.includes('RLS') || err.message?.includes('policies')) {
+        errorMessage = 'Access denied - database policies need to be fixed';
       } else if (err.message?.includes('not authenticated')) {
         errorMessage = 'Please log in again';
       } else if (err.message) {
