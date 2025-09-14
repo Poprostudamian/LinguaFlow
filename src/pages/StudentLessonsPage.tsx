@@ -151,6 +151,7 @@ export function StudentLessonsPage() {
               Lessons: {lessons.length} • Study Time: {Math.floor(kpis.totalStudyTime / 60)}h {kpis.totalStudyTime % 60}m • Progress: {kpis.averageProgress}%
             </div>
           </div>
+        </div>
 
       {/* Stats Overview - REAL DATA */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
