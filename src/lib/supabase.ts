@@ -697,7 +697,7 @@ export const createLesson = async (tutorId: string, lessonData: CreateLessonData
 /**
  * Update an existing lesson
  */
-export const updateLessonProgress = async (
+export const updateLesson = async (
   studentId: string, 
   lessonId: string, 
   progress: number, 
