@@ -1423,30 +1423,30 @@ export const createLessonExercises = async (lessonId: string, exercises: any[]) 
 export const getLessonExercises = async (lessonId: string): Promise<any[]> => {
   try {
     console.log('🎯 Getting exercises for lesson:', lessonId);
-    
+
     const { data, error } = await supabase
       .from('lesson_exercises')
       .select('*')
       .eq('lesson_id', lessonId)
-      .order('order_number');
+      .order('order_number', { ascending: true });
 
     if (error) {
-      console.error('❌ Error fetching lesson exercises:', error);
-      throw new Error(`Failed to fetch exercises: ${error.message}`);
+      console.error('❌ Error fetching exercises:', error);
+      throw error;
     }
 
     console.log('✅ Found', data?.length || 0, 'exercises');
-
-    // Parse JSON options for multiple choice questions
-    const exercises = (data || []).map(exercise => ({
+    
+    // Parsuj opcje JSON dla ćwiczeń ABCD
+    const formattedExercises = (data || []).map(exercise => ({
       ...exercise,
       options: exercise.options ? JSON.parse(exercise.options) : null
     }));
 
-    return exercises;
+    return formattedExercises;
 
-  } catch (error: any) {
-    console.error('💥 Error in getLessonExercises:', error);
+  } catch (error) {
+    console.error('Error getting lesson exercises:', error);
     throw error;
   }
 };
