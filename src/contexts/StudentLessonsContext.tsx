@@ -97,26 +97,51 @@ export function StudentLessonsProvider({ children }: { children: React.ReactNode
     };
   }, [lessons]);
 
-  // Load lessons from database
+  // Load lessons from database with enhanced debugging
   const refreshLessons = async () => {
     if (!session?.user?.id) {
-      console.log('No authenticated user, skipping lessons load');
+      console.log('❌ No authenticated user, skipping lessons load');
+      setError('Not authenticated');
       return;
     }
 
+    console.log('🔄 Starting lesson refresh for user:', session.user.id, 'role:', session.user.role);
     setIsLoading(true);
     setError(null);
 
     try {
+      // Sprawdź czy user ma rolę student
+      if (session.user.role !== 'student') {
+        throw new Error(`Invalid role: ${session.user.role}. Expected: student`);
+      }
+
       console.log('🔍 Loading lessons for student:', session.user.id);
       const studentLessons = await getStudentLessons(session.user.id);
       
       console.log('✅ Loaded', studentLessons.length, 'lessons');
+      
+      if (studentLessons.length === 0) {
+        console.log('ℹ️ No lessons found - this might be normal for new students');
+      } else {
+        console.log('📋 Sample lesson:', studentLessons[0]);
+      }
+      
       setLessons(studentLessons);
       setError(null);
     } catch (err: any) {
       console.error('❌ Error loading student lessons:', err);
-      setError(err.message || 'Failed to load lessons');
+      
+      let errorMessage = 'Failed to load lessons';
+      
+      if (err.message?.includes('RLS')) {
+        errorMessage = 'Access denied - please check your permissions';
+      } else if (err.message?.includes('not authenticated')) {
+        errorMessage = 'Please log in again';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
       setLessons([]);
     } finally {
       setIsLoading(false);
