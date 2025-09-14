@@ -1431,6 +1431,11 @@ export const getLessonExercises = async (lessonId: string): Promise<any[]> => {
       .order('order_number', { ascending: true });
 
     if (error) {
+      // Jeśli tabela nie istnieje, zwróć pustą tablicę
+      if (error.code === '42P01') {
+        console.log('ℹ️ lesson_exercises table does not exist yet');
+        return [];
+      }
       console.error('❌ Error fetching exercises:', error);
       throw error;
     }
@@ -1447,7 +1452,8 @@ export const getLessonExercises = async (lessonId: string): Promise<any[]> => {
 
   } catch (error) {
     console.error('Error getting lesson exercises:', error);
-    throw error;
+    // Zwróć pustą tablicę zamiast rzucać błąd
+    return [];
   }
 };
 
