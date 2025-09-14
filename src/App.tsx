@@ -22,6 +22,7 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <StudentsProvider>
+          <StudentLessonsProvider>
           <Router>
             <div className="App">
               <Routes>
@@ -63,6 +64,7 @@ function App() {
               </Routes>
             </div>
           </Router>
+            </StudentLessonsProvider>
         </StudentsProvider>
       </AuthProvider>
     </ThemeProvider>
