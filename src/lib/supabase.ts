@@ -834,178 +834,150 @@ export const unassignLessonFromStudents = async (lessonId: string, studentIds: s
  */
 export const getStudentLessons = async (studentId: string): Promise<any[]> => {
   try {
-    console.log('🔍 [DEBUG] Getting lessons for student:', studentId);
+    console.log('🔍 Getting lessons for student:', studentId);
     
-    // KROK 1: Sprawdź aktualną sesję i uprawnienia
+    // KROK 1: Sprawdź sesję
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      console.error('❌ [DEBUG] No active session');
-      throw new Error('Not authenticated');
-    }
-    
-    console.log('✅ [DEBUG] Session active, user ID:', session.user.id);
-    
-    // KROK 2: Sprawdź czy studentId to rzeczywiście aktualny użytkownik (bezpieczeństwo)
-    if (session.user.id !== studentId) {
-      console.warn('⚠️ [DEBUG] Student ID mismatch - using session user ID');
-      // Użyj ID z sesji dla bezpieczeństwa
-      studentId = session.user.id;
+    if (!session || session.user.id !== studentId) {
+      throw new Error('Not authenticated or invalid student ID');
     }
 
-    // KROK 3: Proste zapytanie do student_lessons bez JOIN
-    console.log('📚 [DEBUG] Step 1: Getting student lesson assignments...');
+    // KROK 2: Pobierz przypisania lekcji (proste zapytanie)
     const { data: assignments, error: assignmentsError } = await supabase
       .from('student_lessons')
-      .select(`
-        id,
-        student_id,
-        lesson_id,
-        assigned_at,
-        started_at,
-        completed_at,
-        status,
-        score,
-        time_spent,
-        progress,
-        updated_at
-      `)
+      .select('*')
       .eq('student_id', studentId)
       .order('assigned_at', { ascending: false });
 
     if (assignmentsError) {
-      console.error('❌ [DEBUG] Error fetching assignments:', assignmentsError);
-      
-      // Spróbuj diagnostykę
-      if (assignmentsError.code === 'PGRST301') {
-        console.error('💡 [DEBUG] RLS policy might be blocking access to student_lessons');
-      }
-      
-      throw new Error(`Failed to fetch lesson assignments: ${assignmentsError.message}`);
+      console.error('❌ Error fetching assignments:', assignmentsError);
+      throw new Error(`Failed to fetch assignments: ${assignmentsError.message}`);
     }
 
-    console.log('✅ [DEBUG] Found', assignments?.length || 0, 'lesson assignments');
+    console.log('✅ Found', assignments?.length || 0, 'assignments');
 
     if (!assignments || assignments.length === 0) {
-      console.log('ℹ️ [DEBUG] No lesson assignments found for student');
       return [];
     }
 
-    // KROK 4: Pobierz informacje o lekcjach
+    // KROK 3: Pobierz lekcje oddzielnie
     const lessonIds = assignments.map(a => a.lesson_id);
-    console.log('📖 [DEBUG] Step 2: Getting lesson details for IDs:', lessonIds);
-
     const { data: lessons, error: lessonsError } = await supabase
       .from('lessons')
-      .select(`
-        id,
-        title,
-        description,
-        content,
-        status,
-        created_at,
-        updated_at,
-        tutor_id
-      `)
+      .select('*')
       .in('id', lessonIds);
 
     if (lessonsError) {
-      console.error('❌ [DEBUG] Error fetching lessons:', lessonsError);
-      // Nie rzucaj błędu - pokaż assignments bez detali lekcji
+      console.error('❌ Error fetching lessons:', lessonsError);
+      // Kontynuuj bez detali lekcji
     }
 
-    console.log('✅ [DEBUG] Found', lessons?.length || 0, 'lesson details');
+    console.log('✅ Found', lessons?.length || 0, 'lessons');
 
-    // KROK 5: Pobierz informacje o tutorach
+    // KROK 4: Pobierz tutorów oddzielnie (tylko IDs)
     const tutorIds = lessons ? [...new Set(lessons.map(l => l.tutor_id))] : [];
-    console.log('👨‍🏫 [DEBUG] Step 3: Getting tutor details for IDs:', tutorIds);
+    let tutors: any[] = [];
+    
+    if (tutorIds.length > 0) {
+      const { data: tutorData, error: tutorError } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, email')
+        .in('id', tutorIds);
 
-    const { data: tutors, error: tutorsError } = await supabase
-      .from('users')
-      .select('id, first_name, last_name, email')
-      .in('id', tutorIds);
-
-    if (tutorsError) {
-      console.error('❌ [DEBUG] Error fetching tutors:', tutorsError);
-      // Nie rzucaj błędu - pokaż lekcje bez detali tutorów
+      if (tutorError) {
+        console.error('❌ Error fetching tutors:', tutorError);
+        // Kontynuuj bez danych tutorów
+      } else {
+        tutors = tutorData || [];
+      }
     }
 
-    console.log('✅ [DEBUG] Found', tutors?.length || 0, 'tutor details');
+    console.log('✅ Found', tutors.length, 'tutors');
 
-    // KROK 6: Połącz wszystkie dane
-    console.log('🔗 [DEBUG] Step 4: Combining all data...');
-
-    const enrichedData = assignments.map(assignment => {
-      // Znajdź lekcję
+    // KROK 5: Połącz dane ręcznie
+    const result = assignments.map(assignment => {
       const lesson = lessons?.find(l => l.id === assignment.lesson_id);
-      
-      // Znajdź tutora
-      const tutor = lesson && tutors ? tutors.find(t => t.id === lesson.tutor_id) : null;
+      const tutor = lesson ? tutors.find(t => t.id === lesson.tutor_id) : null;
 
-      const result = {
-        // Assignment data
+      return {
+        // Assignment fields
         id: assignment.id,
         student_id: assignment.student_id,
         lesson_id: assignment.lesson_id,
         assigned_at: assignment.assigned_at,
         started_at: assignment.started_at,
         completed_at: assignment.completed_at,
-        status: assignment.status,
+        status: assignment.status || 'assigned',
         score: assignment.score,
-        time_spent: assignment.time_spent,
-        progress: assignment.progress,
+        time_spent: assignment.time_spent || 0,
+        progress: assignment.progress || 0,
         updated_at: assignment.updated_at,
 
-        // Lesson data
+        // Lesson fields nested for compatibility
         lessons: {
           id: lesson?.id || assignment.lesson_id,
-          title: lesson?.title || 'Unknown Lesson',
-          description: lesson?.description || 'No description available',
+          title: lesson?.title || 'Loading...',
+          description: lesson?.description || '',
           content: lesson?.content || '',
-          status: lesson?.status || 'unknown',
+          status: lesson?.status || 'published',
           created_at: lesson?.created_at || assignment.assigned_at,
           updated_at: lesson?.updated_at || assignment.updated_at,
-          tutor_id: lesson?.tutor_id || 'unknown',
+          tutor_id: lesson?.tutor_id || '',
 
-          // Tutor data
+          // Tutor fields nested
           users: {
-            first_name: tutor?.first_name || 'Unknown',
-            last_name: tutor?.last_name || 'Tutor',
-            email: tutor?.email || 'unknown@example.com'
+            first_name: tutor?.first_name || 'Loading...',
+            last_name: tutor?.last_name || '',
+            email: tutor?.email || ''
           }
         }
       };
-
-      console.log(`📋 [DEBUG] Enriched assignment ${assignment.id}:`, {
-        lessonTitle: result.lessons.title,
-        tutorName: `${result.lessons.users.first_name} ${result.lessons.users.last_name}`,
-        status: result.status
-      });
-
-      return result;
     });
 
-    console.log('✅ [DEBUG] Final result:', enrichedData.length, 'enriched lesson assignments');
+    console.log('✅ Prepared', result.length, 'enriched assignments');
     
-    // Pokaż przykład pierwszej lekcji dla debugowania
-    if (enrichedData.length > 0) {
-      console.log('📝 [DEBUG] First lesson example:', {
-        title: enrichedData[0].lessons.title,
-        tutor: `${enrichedData[0].lessons.users.first_name} ${enrichedData[0].lessons.users.last_name}`,
-        status: enrichedData[0].status
+    // Debug pierwszej lekcji
+    if (result.length > 0) {
+      const first = result[0];
+      console.log('📋 First lesson:', {
+        title: first.lessons.title,
+        tutor: `${first.lessons.users.first_name} ${first.lessons.users.last_name}`,
+        status: first.status
       });
     }
 
-    return enrichedData;
+    return result;
 
   } catch (error: any) {
-    console.error('💥 [DEBUG] Critical error in getStudentLessons:', error);
-    console.error('💡 [DEBUG] Possible causes:');
-    console.error('1. RLS policies blocking access');
-    console.error('2. Student ID mismatch');
-    console.error('3. Missing data in database');
-    console.error('4. Network connectivity issues');
-    
+    console.error('💥 Error in getStudentLessons:', error);
     throw error;
+  }
+};
+
+/**
+ * Uproszczona funkcja testowa - sprawdza tylko podstawowy dostęp
+ */
+export const testStudentLessonsAccess = async (studentId: string) => {
+  try {
+    console.log('🧪 Testing basic access to student_lessons...');
+    
+    const { data, error } = await supabase
+      .from('student_lessons')
+      .select('id, lesson_id, status')
+      .eq('student_id', studentId)
+      .limit(1);
+
+    if (error) {
+      console.error('❌ Access test failed:', error);
+      return false;
+    }
+
+    console.log('✅ Access test passed. Found', data?.length || 0, 'records');
+    return true;
+
+  } catch (error) {
+    console.error('💥 Access test exception:', error);
+    return false;
   }
 };
 
