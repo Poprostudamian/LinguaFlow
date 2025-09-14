@@ -11,7 +11,7 @@ import {
   Star
 } from 'lucide-react';
 import { StudentLesson } from '../lib/studentLessons';
-console.log('Lesson data:', lesson);
+
 interface StudentLessonCardProps {
   lesson: StudentLesson;
   onStartLesson?: (lessonId: string) => void;
@@ -123,6 +123,7 @@ export function StudentLessonCard({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 overflow-hidden">
       {/* Header */}
+      console.log('Lesson data:', lesson);
       <div className="p-4 pb-3">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
