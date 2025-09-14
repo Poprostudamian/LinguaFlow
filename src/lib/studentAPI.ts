@@ -1,6 +1,7 @@
-// src/lib/studentAPI.ts - API dla studenta używające tego samego podejścia co tutor
+// src/lib/studentAPI.ts - NAPRAWIONA WERSJA z prawidłową obsługą błędów
+import React from 'react';
 import { supabase } from './supabase';
-import { getStudentStats } from './supabase'; // Używamy istniejącego API
+import { getStudentStats } from './supabase';
 
 export interface StudentLessonWithDetails {
   id: string;
@@ -35,18 +36,18 @@ export interface StudentKPIs {
   inProgressLessons: number;
   assignedLessons: number;
   averageScore: number;
-  totalStudyTime: number; // w minutach
+  totalStudyTime: number;
   averageProgress: number;
 }
 
 /**
- * Pobierz lekcje studenta - UŻYWAJĄC TEGO SAMEGO PODEJŚCIA CO W TUTOR DASHBOARD
+ * NAPRAWIONA wersja - pobiera lekcje studenta z prawidłową obsługą błędów
  */
-export async function getStudentLessonsReal(studentId: string): Promise<StudentLessonWithDetails[]> {
+export async function getStudentLessonsRobust(studentId: string): Promise<StudentLessonWithDetails[]> {
   try {
-    console.log('🔍 [STUDENT API] Loading lessons for:', studentId);
+    console.log('🔍 [ROBUST API] Loading lessons for:', studentId);
 
-    // KROK 1: Pobierz wszystkie przypisania studenta (tak jak w tutorze)
+    // KROK 1: Pobierz wszystkie przypisania studenta
     const { data: studentLessons, error: assignmentsError } = await supabase
       .from('student_lessons')
       .select('*')
@@ -54,100 +55,128 @@ export async function getStudentLessonsReal(studentId: string): Promise<StudentL
       .order('assigned_at', { ascending: false });
 
     if (assignmentsError) {
-      console.error('❌ [STUDENT API] Error fetching assignments:', assignmentsError);
+      console.error('❌ [ROBUST API] Error fetching assignments:', assignmentsError);
       throw assignmentsError;
     }
 
-    console.log('✅ [STUDENT API] Found', studentLessons?.length || 0, 'assignments');
+    console.log('✅ [ROBUST API] Found', studentLessons?.length || 0, 'assignments');
 
     if (!studentLessons || studentLessons.length === 0) {
+      console.log('ℹ️ [ROBUST API] No assignments found');
       return [];
     }
 
-    // KROK 2: Pobierz szczegóły lekcji (bez JOIN - tak jak w tutorze)
+    // KROK 2: Pobierz szczegóły lekcji (BEZ .single() - może nie być)
     const lessonIds = studentLessons.map(assignment => assignment.lesson_id);
+    console.log('🔍 [ROBUST API] Looking for lesson IDs:', lessonIds);
     
     const { data: lessons, error: lessonsError } = await supabase
       .from('lessons')
       .select('*')
       .in('id', lessonIds);
 
-    if (lessonsError) {
-      console.error('❌ [STUDENT API] Error fetching lessons:', lessonsError);
+    // NIE rzucaj błędu jeśli nie ma lekcji - to normalne w przypadku orphaned assignments
+    if (lessonsError && lessonsError.code !== 'PGRST116') {
+      console.error('❌ [ROBUST API] Error fetching lessons:', lessonsError);
       throw lessonsError;
     }
 
-    console.log('✅ [STUDENT API] Found', lessons?.length || 0, 'lessons');
+    console.log('✅ [ROBUST API] Found', lessons?.length || 0, 'lessons out of', lessonIds.length, 'requested');
 
-    // KROK 3: Pobierz dane tutorów (bez JOIN)
+    // KROK 3: Pobierz dane tutorów (tylko dla znalezionych lekcji)
     const tutorIds = lessons?.map(lesson => lesson.tutor_id) || [];
     const uniqueTutorIds = [...new Set(tutorIds)];
     
-    const { data: tutors, error: tutorsError } = await supabase
-      .from('users')
-      .select('id, first_name, last_name, email')
-      .in('id', uniqueTutorIds);
+    let tutors: any[] = [];
+    if (uniqueTutorIds.length > 0) {
+      console.log('🔍 [ROBUST API] Looking for tutor IDs:', uniqueTutorIds);
+      
+      const { data: tutorsData, error: tutorsError } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, email')
+        .in('id', uniqueTutorIds);
 
-    if (tutorsError) {
-      console.error('❌ [STUDENT API] Error fetching tutors:', tutorsError);
-      throw tutorsError;
+      if (tutorsError && tutorsError.code !== 'PGRST116') {
+        console.error('❌ [ROBUST API] Error fetching tutors:', tutorsError);
+        throw tutorsError;
+      }
+
+      tutors = tutorsData || [];
+      console.log('✅ [ROBUST API] Found', tutors.length, 'tutors');
     }
 
-    console.log('✅ [STUDENT API] Found', tutors?.length || 0, 'tutors');
+    // KROK 4: Połącz dane - TYLKO dla assignments które mają lekcje
+    const validLessons: StudentLessonWithDetails[] = [];
+    const invalidAssignments: any[] = [];
 
-    // KROK 4: Połącz wszystkie dane (tak jak w tutorze)
-    const result: StudentLessonWithDetails[] = studentLessons.map(assignment => {
+    for (const assignment of studentLessons) {
       const lesson = lessons?.find(l => l.id === assignment.lesson_id);
-      const tutor = tutors?.find(t => t.id === lesson?.tutor_id);
-
-      return {
-        id: assignment.id,
-        student_id: assignment.student_id,
-        lesson_id: assignment.lesson_id,
-        assigned_at: assignment.assigned_at,
-        started_at: assignment.started_at,
-        completed_at: assignment.completed_at,
-        status: assignment.status,
-        score: assignment.score,
-        time_spent: assignment.time_spent || 0,
-        progress: assignment.progress || 0,
-        updated_at: assignment.updated_at,
-        lesson: {
-          id: lesson?.id || assignment.lesson_id,
-          title: lesson?.title || 'Unknown Lesson',
-          description: lesson?.description,
-          content: lesson?.content || '',
-          created_at: lesson?.created_at || assignment.assigned_at,
-          tutor_id: lesson?.tutor_id || 'unknown',
-          tutor: {
-            first_name: tutor?.first_name || 'Unknown',
-            last_name: tutor?.last_name || 'Tutor',
-            email: tutor?.email || ''
+      
+      if (lesson) {
+        // Lekcja istnieje - znajdź tutora
+        const tutor = tutors.find(t => t.id === lesson.tutor_id);
+        
+        validLessons.push({
+          id: assignment.id,
+          student_id: assignment.student_id,
+          lesson_id: assignment.lesson_id,
+          assigned_at: assignment.assigned_at,
+          started_at: assignment.started_at,
+          completed_at: assignment.completed_at,
+          status: assignment.status,
+          score: assignment.score,
+          time_spent: assignment.time_spent || 0,
+          progress: assignment.progress || 0,
+          updated_at: assignment.updated_at,
+          lesson: {
+            id: lesson.id,
+            title: lesson.title,
+            description: lesson.description,
+            content: lesson.content || '',
+            created_at: lesson.created_at,
+            tutor_id: lesson.tutor_id,
+            tutor: {
+              first_name: tutor?.first_name || 'Unknown',
+              last_name: tutor?.last_name || 'Tutor',
+              email: tutor?.email || ''
+            }
           }
-        }
-      };
-    });
+        });
+      } else {
+        // Lekcja nie istnieje - dodaj do invalid
+        invalidAssignments.push(assignment);
+      }
+    }
 
-    console.log('✅ [STUDENT API] Successfully transformed', result.length, 'lessons');
-    return result;
+    // Pokaż wyniki
+    console.log('✅ [ROBUST API] Results:');
+    console.log(`  - Valid lessons: ${validLessons.length}`);
+    console.log(`  - Invalid assignments (orphaned): ${invalidAssignments.length}`);
+    
+    if (invalidAssignments.length > 0) {
+      console.warn('⚠️ [ROBUST API] Found orphaned assignments:', invalidAssignments.map(a => a.lesson_id));
+      console.warn('💡 These assignments reference lessons that no longer exist');
+    }
+
+    return validLessons;
 
   } catch (error) {
-    console.error('💥 [STUDENT API] Complete failure:', error);
+    console.error('💥 [ROBUST API] Complete failure:', error);
     throw error;
   }
 }
 
 /**
- * Pobierz statystyki studenta - UŻYWAJĄC ISTNIEJĄCEGO API
+ * Pobierz statystyki studenta - używając istniejącego API
  */
-export async function getStudentKPIsReal(studentId: string): Promise<StudentKPIs> {
+export async function getStudentKPIsRobust(studentId: string): Promise<StudentKPIs> {
   try {
-    console.log('📊 [STUDENT API] Calculating KPIs for:', studentId);
+    console.log('📊 [ROBUST API] Calculating KPIs for:', studentId);
 
     // Użyj istniejącego API z supabase.ts
     const stats = await getStudentStats(studentId);
     
-    console.log('📈 [STUDENT API] Raw stats:', stats);
+    console.log('📈 [ROBUST API] Raw stats:', stats);
 
     // Przekształć na format potrzebny dla UI
     const kpis: StudentKPIs = {
@@ -155,40 +184,51 @@ export async function getStudentKPIsReal(studentId: string): Promise<StudentKPIs
       completedLessons: stats.completed_lessons,
       inProgressLessons: stats.in_progress_lessons,
       assignedLessons: stats.total_lessons - stats.completed_lessons - stats.in_progress_lessons,
-      averageScore: 0, // Obliczamy poniżej
+      averageScore: 0,
       totalStudyTime: stats.total_study_time_minutes,
       averageProgress: stats.average_progress
     };
 
-    // Oblicz średni score z ukończonych lekcji
+    // Oblicz średni score z ukończonych lekcji (tylko dla valid lessons)
     if (stats.completed_lessons > 0) {
-      const { data: completedLessons } = await supabase
-        .from('student_lessons')
-        .select('score')
-        .eq('student_id', studentId)
-        .eq('status', 'completed')
-        .not('score', 'is', null);
+      try {
+        const { data: completedLessons } = await supabase
+          .from('student_lessons')
+          .select('score')
+          .eq('student_id', studentId)
+          .eq('status', 'completed')
+          .not('score', 'is', null);
 
-      if (completedLessons && completedLessons.length > 0) {
-        const totalScore = completedLessons.reduce((sum, lesson) => sum + (lesson.score || 0), 0);
-        kpis.averageScore = Math.round(totalScore / completedLessons.length);
+        if (completedLessons && completedLessons.length > 0) {
+          const totalScore = completedLessons.reduce((sum, lesson) => sum + (lesson.score || 0), 0);
+          kpis.averageScore = Math.round(totalScore / completedLessons.length);
+        }
+      } catch (scoreError) {
+        console.warn('⚠️ Could not calculate average score:', scoreError);
       }
     }
 
-    console.log('✅ [STUDENT API] Final KPIs:', kpis);
+    console.log('✅ [ROBUST API] Final KPIs:', kpis);
     return kpis;
 
   } catch (error) {
-    console.error('💥 [STUDENT API] Error calculating KPIs:', error);
-    throw error;
+    console.error('💥 [ROBUST API] Error calculating KPIs:', error);
+    // Return zero stats instead of throwing
+    return {
+      totalLessons: 0,
+      completedLessons: 0,
+      inProgressLessons: 0,
+      assignedLessons: 0,
+      averageScore: 0,
+      totalStudyTime: 0,
+      averageProgress: 0
+    };
   }
 }
 
 /**
- * Hook dla studenta - UŻYWAJĄCY TEGO SAMEGO PODEJŚCIA CO TUTOR
+ * Hook dla studenta - NAPRAWIONA WERSJA
  */
-import React from 'react';
-
 export function useStudentData(studentId: string | undefined) {
   const [lessons, setLessons] = React.useState<StudentLessonWithDetails[]>([]);
   const [kpis, setKpis] = React.useState<StudentKPIs>({
@@ -216,12 +256,16 @@ export function useStudentData(studentId: string | undefined) {
 
       console.log('🔄 [STUDENT HOOK] Loading data for:', studentId);
 
-      // TYMCZASOWO: Użyj debug wersji żeby zobaczyć co się dzieje
-      const { getStudentLessonsRealWithDebug } = await import('../lib/debugUnknownData');
-      const lessonsData = await getStudentLessonsRealWithDebug(studentId);
-      const kpisData = await getStudentKPIsReal(studentId);
+      // Użyj naprawionej wersji API
+      const [lessonsData, kpisData] = await Promise.all([
+        getStudentLessonsRobust(studentId),
+        getStudentKPIsRobust(studentId)
+      ]);
 
-      console.log('✅ [STUDENT HOOK] Data loaded successfully');
+      console.log('✅ [STUDENT HOOK] Data loaded successfully:');
+      console.log('  - Lessons:', lessonsData.length);
+      console.log('  - KPIs:', kpisData);
+
       setLessons(lessonsData);
       setKpis(kpisData);
 
