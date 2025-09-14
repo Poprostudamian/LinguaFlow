@@ -877,106 +877,82 @@ export const unassignLessonFromStudents = async (lessonId: string, studentIds: s
 /**
  * Get detailed information about a specific lesson for a student
  */
-export const getLessonDetails = async (studentId: string, lessonId: string): Promise<any> => {
+export const getLessonDetails = async (lessonId: string, studentId: string): Promise<any> => {
   try {
-    console.log('🔍 Getting lesson details for student:', studentId, 'lesson:', lessonId);
-    
-    // Sprawdź sesję
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session || session.user.id !== studentId) {
-      throw new Error('Not authenticated');
-    }
+    console.log('🔍 Getting lesson details for:', { lessonId, studentId });
 
-    // KROK 1: Pobierz przypisanie lekcji studenta
-    const { data: assignment, error: assignmentError } = await supabase
+    // Pobierz informacje o lekcji wraz z przypisaniem studenta
+    const { data, error } = await supabase
       .from('student_lessons')
-      .select('*')
-      .eq('student_id', studentId)
+      .select(`
+        id,
+        student_id,
+        lesson_id,
+        assigned_at,
+        started_at,
+        completed_at,
+        status,
+        score,
+        time_spent,
+        progress,
+        lessons!inner (
+          id,
+          title,
+          description,
+          content,
+          status,
+          created_at,
+          updated_at,
+          tutor_id,
+          users!lessons_tutor_id_fkey (
+            id,
+            first_name,
+            last_name,
+            email
+          )
+        )
+      `)
       .eq('lesson_id', lessonId)
-      .maybeSingle();
+      .eq('student_id', studentId)
+      .single();
 
-    if (assignmentError) {
-      console.error('❌ Error fetching assignment:', assignmentError);
-      throw new Error(`Failed to fetch lesson assignment: ${assignmentError.message}`);
+    if (error) {
+      console.error('❌ Error fetching lesson details:', error);
+      throw error;
     }
 
-    if (!assignment) {
-      throw new Error('Lesson not found or not assigned to this student');
+    if (!data) {
+      console.log('ℹ️ Lesson not found or not assigned to student');
+      return null;
     }
 
-    console.log('✅ Found assignment:', assignment);
-
-    // KROK 2: Pobierz szczegóły lekcji
-    const { data: lesson, error: lessonError } = await supabase
-      .from('lessons')
-      .select('*')
-      .eq('id', lessonId)
-      .maybeSingle();
-
-    if (lessonError) {
-      console.error('❌ Error fetching lesson:', lessonError);
-      throw new Error(`Failed to fetch lesson details: ${lessonError.message}`);
-    }
-
-    if (!lesson) {
-      throw new Error('Lesson not found');
-    }
-
-    console.log('✅ Found lesson:', lesson);
-
-    // KROK 3: Pobierz informacje o tutorze
-    const { data: tutor, error: tutorError } = await supabase
-      .from('users')
-      .select('id, first_name, last_name, email')
-      .eq('id', lesson.tutor_id)
-      .maybeSingle();
-
-    if (tutorError) {
-      console.error('❌ Error fetching tutor:', tutorError);
-      // Nie rzucamy błędu - możemy pokazać lekcję bez danych tutora
-    }
-
-    console.log('✅ Found tutor:', tutor);
-
-    // KROK 4: Połącz wszystkie dane
-    const result = {
-      // Assignment fields
-      id: assignment.id,
-      student_id: assignment.student_id,
-      lesson_id: assignment.lesson_id,
-      assigned_at: assignment.assigned_at,
-      started_at: assignment.started_at,
-      completed_at: assignment.completed_at,
-      status: assignment.status || 'assigned',
-      score: assignment.score,
-      time_spent: assignment.time_spent || 0,
-      progress: assignment.progress || 0,
-      updated_at: assignment.updated_at,
-
-      // Lesson details
-      lesson: {
-        id: lesson.id,
-        title: lesson.title,
-        description: lesson.description,
-        content: lesson.content || 'No content available for this lesson.',
-        status: lesson.status,
-        created_at: lesson.created_at,
-        updated_at: lesson.updated_at,
-        
-        // Tutor info
-        tutor: {
-          first_name: tutor?.first_name || 'Unknown',
-          last_name: tutor?.last_name || 'Tutor',
-          email: tutor?.email || 'unknown@example.com'
-        }
+    // Formatuj dane dla komponentu
+    const formattedData = {
+      id: data.lessons.id,
+      title: data.lessons.title,
+      description: data.lessons.description,
+      content: data.lessons.content,
+      created_at: data.lessons.created_at,
+      tutor: {
+        first_name: data.lessons.users.first_name,
+        last_name: data.lessons.users.last_name,
+        email: data.lessons.users.email
+      },
+      student_lesson: {
+        status: data.status,
+        progress: data.progress,
+        score: data.score,
+        time_spent: data.time_spent,
+        started_at: data.started_at,
+        completed_at: data.completed_at
       }
     };
 
-    console.log('✅ Prepared lesson details:', result);
-    return result;
+    console.log('✅ Lesson details retrieved successfully');
+    return formattedData;
 
-  } catch (error: any) {
-    console.error('💥 Error in getLessonDetails:', error);
+  } catch (error) {
+    console.error('Error getting lesson details:', error);
     throw error;
   }
 };
