@@ -22,7 +22,7 @@ import {
   getLessonExercises,
   completeStudentLesson
 } from '../lib/supabase';
-import { ExerciseViewer, Exercise, StudentAnswer } from '../components/ExerciseViewer';
+import { ExerciseViewer, type Exercise, type StudentAnswer } from '../components/ExerciseViewer';
 
 interface LessonDetails {
   // Assignment info
