@@ -271,7 +271,7 @@ export async function getStudentLessons(studentId: string): Promise<any[]> {
     created_at,
     updated_at,
     tutor_id,
-    users!lessons_tutor_id_fkey(
+    users!lessons_tutor_id_fkey(  // This is the tutor information
       first_name,
       last_name,
       email
