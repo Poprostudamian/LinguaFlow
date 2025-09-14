@@ -990,6 +990,43 @@ export const updateLessonProgress = async (
   }
 };
 
+/**
+ * Complete a lesson with score
+ */
+export const completeStudentLesson = async (
+  studentId: string,
+  lessonId: string,
+  score: number,
+  timeSpent?: number
+): Promise<void> => {
+  try {
+    console.log('🎯 Completing lesson:', lessonId, 'with score:', score);
+    
+    const { error } = await supabase
+      .from('student_lessons')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        score: Math.max(0, Math.min(100, score)),
+        progress: 100,
+        time_spent: timeSpent || 0,
+        updated_at: new Date().toISOString()
+      })
+      .eq('student_id', studentId)
+      .eq('lesson_id', lessonId);
+
+    if (error) {
+      console.error('❌ Error completing lesson:', error);
+      throw error;
+    }
+
+    console.log('✅ Lesson completed successfully');
+  } catch (error) {
+    console.error('❌ Error in completeStudentLesson:', error);
+    throw error;
+  }
+};
+
 export interface StudentStats {
   student_id: string;
   total_lessons: number;
