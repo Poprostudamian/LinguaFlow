@@ -875,6 +875,113 @@ export const unassignLessonFromStudents = async (lessonId: string, studentIds: s
 };
 
 /**
+ * Get detailed information about a specific lesson for a student
+ */
+export const getLessonDetails = async (studentId: string, lessonId: string): Promise<any> => {
+  try {
+    console.log('🔍 Getting lesson details for student:', studentId, 'lesson:', lessonId);
+    
+    // Sprawdź sesję
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || session.user.id !== studentId) {
+      throw new Error('Not authenticated');
+    }
+
+    // KROK 1: Pobierz przypisanie lekcji studenta
+    const { data: assignment, error: assignmentError } = await supabase
+      .from('student_lessons')
+      .select('*')
+      .eq('student_id', studentId)
+      .eq('lesson_id', lessonId)
+      .maybeSingle();
+
+    if (assignmentError) {
+      console.error('❌ Error fetching assignment:', assignmentError);
+      throw new Error(`Failed to fetch lesson assignment: ${assignmentError.message}`);
+    }
+
+    if (!assignment) {
+      throw new Error('Lesson not found or not assigned to this student');
+    }
+
+    console.log('✅ Found assignment:', assignment);
+
+    // KROK 2: Pobierz szczegóły lekcji
+    const { data: lesson, error: lessonError } = await supabase
+      .from('lessons')
+      .select('*')
+      .eq('id', lessonId)
+      .maybeSingle();
+
+    if (lessonError) {
+      console.error('❌ Error fetching lesson:', lessonError);
+      throw new Error(`Failed to fetch lesson details: ${lessonError.message}`);
+    }
+
+    if (!lesson) {
+      throw new Error('Lesson not found');
+    }
+
+    console.log('✅ Found lesson:', lesson);
+
+    // KROK 3: Pobierz informacje o tutorze
+    const { data: tutor, error: tutorError } = await supabase
+      .from('users')
+      .select('id, first_name, last_name, email')
+      .eq('id', lesson.tutor_id)
+      .maybeSingle();
+
+    if (tutorError) {
+      console.error('❌ Error fetching tutor:', tutorError);
+      // Nie rzucamy błędu - możemy pokazać lekcję bez danych tutora
+    }
+
+    console.log('✅ Found tutor:', tutor);
+
+    // KROK 4: Połącz wszystkie dane
+    const result = {
+      // Assignment fields
+      id: assignment.id,
+      student_id: assignment.student_id,
+      lesson_id: assignment.lesson_id,
+      assigned_at: assignment.assigned_at,
+      started_at: assignment.started_at,
+      completed_at: assignment.completed_at,
+      status: assignment.status || 'assigned',
+      score: assignment.score,
+      time_spent: assignment.time_spent || 0,
+      progress: assignment.progress || 0,
+      updated_at: assignment.updated_at,
+
+      // Lesson details
+      lesson: {
+        id: lesson.id,
+        title: lesson.title,
+        description: lesson.description,
+        content: lesson.content || 'No content available for this lesson.',
+        status: lesson.status,
+        created_at: lesson.created_at,
+        updated_at: lesson.updated_at,
+        
+        // Tutor info
+        tutor: {
+          first_name: tutor?.first_name || 'Unknown',
+          last_name: tutor?.last_name || 'Tutor',
+          email: tutor?.email || 'unknown@example.com'
+        }
+      }
+    };
+
+    console.log('✅ Prepared lesson details:', result);
+    return result;
+
+  } catch (error: any) {
+    console.error('💥 Error in getLessonDetails:', error);
+    throw error;
+  }
+};
+
+/**
  * Get lessons assigned to a student
  */
 export const getStudentLessons = async (studentId: string): Promise<any[]> => {
