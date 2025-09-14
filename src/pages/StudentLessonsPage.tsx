@@ -321,8 +321,7 @@ export function StudentLessonsPage() {
         </div>
       )}
     </div>
-  );
-  const handleCleanupOrphanedAssignments = async () => {
+    const handleCleanupOrphanedAssignments = async () => {
   if (!session.user?.id) return;
   
   const confirmCleanup = window.confirm(
@@ -362,4 +361,5 @@ export function StudentLessonsPage() {
     alert('❌ Cleanup failed: ' + error.message);
   }
 };
+  );
 }
