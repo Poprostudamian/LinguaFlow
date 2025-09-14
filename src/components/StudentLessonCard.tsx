@@ -127,7 +127,7 @@ export function StudentLessonCard({
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate">
-  {lesson.lesson.title}
+  {lesson.lesson?.title || 'Loading lesson...'}
 </h3>
             {lesson.lesson.description && (
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
