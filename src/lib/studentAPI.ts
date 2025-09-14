@@ -113,6 +113,28 @@ export async function getStudentLessonsReal(studentId: string): Promise<StudentL
     if (missingLessonIds.length > 0) {
       console.warn('🚨 [DEBUG] MISSING LESSON IDs:', missingLessonIds);
       console.warn('💡 These lesson IDs exist in student_lessons but NOT in lessons table');
+      
+      // AUTOMATYCZNE CZYSZCZENIE orphaned assignments
+      console.log('🧹 [AUTO-CLEANUP] Removing orphaned assignments...');
+      try {
+        const { error: cleanupError } = await supabase
+          .from('student_lessons')
+          .delete()
+          .eq('student_id', studentId)
+          .in('lesson_id', missingLessonIds);
+          
+        if (cleanupError) {
+          console.error('❌ Auto-cleanup failed:', cleanupError);
+        } else {
+          console.log('✅ [AUTO-CLEANUP] Successfully removed', missingLessonIds.length, 'orphaned assignments');
+          console.log('♻️ [AUTO-CLEANUP] Reloading clean data...');
+          
+          // Rekurencyjnie wywołaj funkcję ponownie z czystymi danymi
+          return await getStudentLessonsReal(studentId);
+        }
+      } catch (autoCleanupError) {
+        console.error('❌ Auto-cleanup error:', autoCleanupError);
+      }
     }
 
     // KROK 3: Pobierz dane tutorów (bez JOIN)
