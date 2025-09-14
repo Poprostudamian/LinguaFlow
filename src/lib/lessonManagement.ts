@@ -261,23 +261,23 @@ export async function getStudentLessons(studentId: string): Promise<any[]> {
     const { data, error } = await supabase
       .from('student_lessons')
       .select(`
-        *,
-        lessons!inner(
-          id,
-          title,
-          description,
-          content,
-          status,
-          created_at,
-          updated_at,
-          tutor_id,
-          users!lessons_tutor_id_fkey(
-            first_name,
-            last_name,
-            email
-          )
-        )
-      `)
+  *,
+  lessons!inner(
+    id,
+    title,
+    description,
+    content,
+    status,
+    created_at,
+    updated_at,
+    tutor_id,
+    users!lessons_tutor_id_fkey(
+      first_name,
+      last_name,
+      email
+    )
+  )
+`)
       .eq('student_id', studentId)
       .order('assigned_at', { ascending: false });
 
