@@ -1042,34 +1042,6 @@ export const startStudentLesson = async (studentId: string, lessonId: string): P
   }
 };
 
-/**
- * Funkcja pomocnicza do testowania - sprawdza czy student ma przypisane lekcje
- */
-// export const checkStudentLessonsExist = async (studentId: string): Promise<boolean> => {
-//   try {
-//     console.log('🔍 [CHECK] Checking if lessons exist for student:', studentId);
-    
-//     const { data, error } = await supabase
-//       .from('student_lessons')
-//       .select('id', { count: 'exact', head: true })
-//       .eq('student_id', studentId);
-
-//     if (error) {
-//       console.error('❌ [CHECK] Error:', error);
-//       return false;
-//     }
-
-//     const count = data as any; // count będzie w headerach
-//     console.log('✅ [CHECK] Lessons exist check result:', count);
-    
-//     return true; // Jeśli nie ma błędu, znaczy że może dostać się do tabeli
-
-//   } catch (error) {
-//     console.error('💥 [CHECK] Exception:', error);
-//     return false;
-//   }
-// };
-
 export interface StudentStats {
   student_id: string;
   total_lessons: number;
