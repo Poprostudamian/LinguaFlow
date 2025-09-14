@@ -1517,6 +1517,33 @@ export const updateStudentLessonProgress = async (
   }
 };
 
+/**
+ * Get student's exercise answers (for future implementation)
+ */
+export const saveStudentExerciseAnswers = async (
+  studentId: string,
+  lessonId: string,
+  exerciseAnswers: Array<{
+    exercise_id: string;
+    answer: string;
+    is_correct: boolean;
+    time_spent: number;
+  }>
+): Promise<void> => {
+  try {
+    console.log('💾 Saving exercise answers:', { studentId, lessonId, count: exerciseAnswers.length });
+
+    // Opcjonalnie: zapisz odpowiedzi w tabeli student_exercise_answers
+    // Obecnie zapisujemy tylko końcowy wynik w student_lessons
+    
+    console.log('✅ Exercise answers processed');
+
+  } catch (error) {
+    console.error('Error saving exercise answers:', error);
+    throw error;
+  }
+};
+
 // ================================================================================
 // MESSAGING SYSTEM
 // ================================================================================
