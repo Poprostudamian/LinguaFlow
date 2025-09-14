@@ -918,6 +918,32 @@ export const getStudentLessons = async (studentId: string): Promise<any[]> => {
   }
 };
 
+export const startStudentLesson = async (studentId: string, lessonId: string): Promise<void> => {
+  try {
+    console.log('▶️ Starting lesson:', lessonId, 'for student:', studentId);
+    
+    const { error } = await supabase
+      .from('student_lessons')
+      .update({
+        status: 'in_progress',
+        started_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('student_id', studentId)
+      .eq('lesson_id', lessonId);
+
+    if (error) {
+      console.error('❌ Error starting lesson:', error);
+      throw error;
+    }
+
+    console.log('✅ Lesson started successfully');
+  } catch (error) {
+    console.error('❌ Error in startStudentLesson:', error);
+    throw error;
+  }
+};
+
 /**
  * Update student's progress on a lesson
  */
