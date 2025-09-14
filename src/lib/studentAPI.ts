@@ -114,26 +114,51 @@ export async function getStudentLessonsReal(studentId: string): Promise<StudentL
       console.warn('🚨 [DEBUG] MISSING LESSON IDs:', missingLessonIds);
       console.warn('💡 These lesson IDs exist in student_lessons but NOT in lessons table');
       
-      // AUTOMATYCZNE CZYSZCZENIE orphaned assignments
-      console.log('🧹 [AUTO-CLEANUP] Removing orphaned assignments...');
-      try {
-        const { error: cleanupError } = await supabase
-          .from('student_lessons')
-          .delete()
-          .eq('student_id', studentId)
-          .in('lesson_id', missingLessonIds);
+      // DODATKOWE DEBUGGING: Sprawdź czy są w ogóle jakiekolwiek lekcje w systemie
+      console.log('🔍 [DEBUG] Checking if ANY lessons exist in the system...');
+      const { data: allLessons, count: totalLessonsCount } = await supabase
+        .from('lessons')
+        .select('id, title, tutor_id, status, is_published', { count: 'exact' });
+        
+      console.log('📊 [DEBUG] Total lessons in system:', totalLessonsCount);
+      if (allLessons && allLessons.length > 0) {
+        console.log('📚 [DEBUG] Sample lessons in system:');
+        allLessons.slice(0, 5).forEach((lesson, index) => {
+          console.log(`  ${index + 1}. ID: ${lesson.id}`);
+          console.log(`     Title: "${lesson.title}"`);
+          console.log(`     Tutor: ${lesson.tutor_id}`);
+          console.log(`     Status: ${lesson.status} | Published: ${lesson.is_published}`);
+        });
+        
+        // Sprawdź czy są lekcje dla tego studenta od jego tutorów
+        console.log('🔍 [DEBUG] Looking for lessons from student\'s tutors...');
+        const { data: studentTutors } = await supabase
+          .from('tutor_students')
+          .select('tutor_id')
+          .eq('student_id', studentId);
           
-        if (cleanupError) {
-          console.error('❌ Auto-cleanup failed:', cleanupError);
-        } else {
-          console.log('✅ [AUTO-CLEANUP] Successfully removed', missingLessonIds.length, 'orphaned assignments');
-          console.log('♻️ [AUTO-CLEANUP] Reloading clean data...');
+        if (studentTutors && studentTutors.length > 0) {
+          const tutorIds = studentTutors.map(rel => rel.tutor_id);
+          console.log('👨‍🏫 [DEBUG] Student\'s tutors:', tutorIds);
           
-          // Rekurencyjnie wywołaj funkcję ponownie z czystymi danymi
-          return await getStudentLessonsReal(studentId);
+          const { data: tutorLessons } = await supabase
+            .from('lessons')
+            .select('id, title, tutor_id')
+            .in('tutor_id', tutorIds);
+            
+          console.log('📖 [DEBUG] Available lessons from student\'s tutors:');
+          if (tutorLessons && tutorLessons.length > 0) {
+            tutorLessons.forEach((lesson, index) => {
+              console.log(`  ${index + 1}. "${lesson.title}" (ID: ${lesson.id})`);
+            });
+            console.log('💡 [SUGGESTION] These lessons could be assigned to the student!');
+          } else {
+            console.log('  ❌ No lessons found from student\'s tutors');
+          }
         }
-      } catch (autoCleanupError) {
-        console.error('❌ Auto-cleanup error:', autoCleanupError);
+      } else {
+        console.log('❌ [DEBUG] NO LESSONS EXIST in the entire system!');
+        console.log('💡 [SUGGESTION] The tutor needs to create lessons first');
       }
     }
 
