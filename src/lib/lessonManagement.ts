@@ -261,33 +261,27 @@ export async function getStudentLessons(studentId: string): Promise<any[]> {
     const { data, error } = await supabase
       .from('student_lessons')
       .select(`
-  *,
-  lessons!inner(
-    id,
-    title,
-    description,
-    content,
-    status,
-    created_at,
-    updated_at,
-    tutor_id,
-    users!lessons_tutor_id_fkey(
-      first_name,
-      last_name,
-      email
-    )
-  )
-`)
+        *,
+        lessons (
+          id,
+          title,
+          description,
+          content,
+          created_at
+        )
+      `)
       .eq('student_id', studentId)
       .order('assigned_at', { ascending: false });
 
     if (error) throw error;
+
     return data || [];
   } catch (error) {
     console.error('Error fetching student lessons:', error);
     throw error;
   }
 }
+
 
 // Symulacja ukończenia lekcji (dla testów)
 export async function simulateRandomCompletions(tutorId: string): Promise<void> {
