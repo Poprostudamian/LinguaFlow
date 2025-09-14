@@ -29,11 +29,24 @@ export interface CreateLessonInput {
 export async function getTutorLessonsWithStats(tutorId: string): Promise<LessonWithStats[]> {
   try {
     // Pobierz lekcje tutora
-    const { data: lessons, error: lessonsError } = await supabase
-      .from('lessons')
-      .select('*')
-      .eq('tutor_id', tutorId)
-      .order('updated_at', { ascending: false });
+    const { data, error } = await supabase
+  .from('student_lessons')
+  .select(`
+    *,
+    lessons (
+      id,
+      title,
+      description,
+      content,
+      created_at,
+      tutor:tutor_id (
+        first_name,
+        last_name
+      )
+    )
+  `)
+  .eq('student_id', studentId)
+  .order('assigned_at', { ascending: false });
 
     if (lessonsError) throw lessonsError;
 
