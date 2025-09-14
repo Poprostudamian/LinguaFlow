@@ -1,4 +1,3 @@
-// src/pages/StudentLessonViewer.tsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -8,8 +7,8 @@ import {
   ArrowLeft, 
   CheckCircle, 
   PlayCircle,
-  FileText,
-  Zap
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getLessonDetails, getLessonExercises, updateStudentLessonProgress } from '../lib/supabase';
@@ -46,8 +45,6 @@ export function StudentLessonViewer() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'content' | 'exercises'>('content');
-  const [isStarting, setIsStarting] = useState(false);
-  const [isCompleting, setIsCompleting] = useState(false);
 
   useEffect(() => {
     if (lessonId && session?.user?.id) {
@@ -62,20 +59,19 @@ export function StudentLessonViewer() {
       setIsLoading(true);
       setError(null);
 
-      // Pobierz szczegóły lekcji
-      const lessonData = await getLessonDetails(lessonId, session.user.id);
+      const [lessonData, exercisesData] = await Promise.all([
+        getLessonDetails(lessonId, session.user.id),
+        getLessonExercises(lessonId)
+      ]);
+
       if (!lessonData) {
         setError('Lesson not found or not assigned to you');
         return;
       }
 
       setLesson(lessonData);
-
-      // Pobierz ćwiczenia
-      const exercisesData = await getLessonExercises(lessonId);
       setExercises(exercisesData);
 
-      // Jeśli są ćwiczenia i lekcja jest w trakcie/ukończona, pokaż ćwiczenia
       if (exercisesData.length > 0 && lessonData.student_lesson.status !== 'assigned') {
         setActiveTab('exercises');
       }
@@ -92,20 +88,15 @@ export function StudentLessonViewer() {
     if (!lessonId || !session?.user?.id) return;
 
     try {
-      setIsStarting(true);
-      
-      // Aktualizuj status na "in_progress"
       await updateStudentLessonProgress(
         session.user.id,
         lessonId,
-        10, // 10% progress na start
+        10,
         'in_progress'
       );
 
-      // Odśwież dane
       await loadLessonData();
       
-      // Przejdź do ćwiczeń jeśli są dostępne
       if (exercises.length > 0) {
         setActiveTab('exercises');
       }
@@ -113,8 +104,6 @@ export function StudentLessonViewer() {
     } catch (err: any) {
       console.error('Error starting lesson:', err);
       setError('Failed to start lesson');
-    } finally {
-      setIsStarting(false);
     }
   };
 
@@ -122,9 +111,6 @@ export function StudentLessonViewer() {
     if (!lessonId || !session?.user?.id) return;
 
     try {
-      setIsCompleting(true);
-
-      // Aktualizuj progress i oznacz jako ukończone
       await updateStudentLessonProgress(
         session.user.id,
         lessonId,
@@ -134,36 +120,19 @@ export function StudentLessonViewer() {
         timeSpent
       );
 
-      // Odśwież dane
       await loadLessonData();
 
     } catch (err: any) {
       console.error('Error completing exercises:', err);
       setError('Failed to complete exercises');
-    } finally {
-      setIsCompleting(false);
     }
-  };
-
-  const handleExerciseProgress = (current: number, total: number) => {
-    if (!lessonId || !session?.user?.id) return;
-
-    // Aktualizuj progress w czasie rzeczywistym (30% + 60% za ćwiczenia)
-    const exerciseProgress = Math.round((current / total) * 60);
-    const totalProgress = 30 + exerciseProgress; // 30% za rozpoczęcie + 60% za ćwiczenia + 10% za ukończenie
-
-    updateStudentLessonProgress(
-      session.user.id,
-      lessonId,
-      Math.min(totalProgress, 90) // Max 90% podczas robienia ćwiczeń
-    ).catch(console.error);
   };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <RefreshCw className="h-12 w-12 animate-spin text-purple-600 mx-auto mb-4" />
           <p className="text-gray-600 dark:text-gray-400">Loading lesson...</p>
         </div>
       </div>
@@ -231,14 +200,13 @@ export function StudentLessonViewer() {
 
             {hasExercises && (
               <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-                <Zap className="h-4 w-4" />
+                <BookOpen className="h-4 w-4" />
                 <span>{exercises.length} exercises</span>
               </div>
             )}
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Status */}
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${
               student_lesson.status === 'completed'
                 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
@@ -250,7 +218,6 @@ export function StudentLessonViewer() {
                student_lesson.status === 'in_progress' ? 'In Progress' : 'Completed'}
             </span>
 
-            {/* Score */}
             {student_lesson.score !== null && (
               <span className="text-lg font-bold text-gray-900 dark:text-white">
                 {student_lesson.score}%
@@ -259,7 +226,6 @@ export function StudentLessonViewer() {
           </div>
         </div>
 
-        {/* Progress bar */}
         {student_lesson.progress > 0 && (
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
             <div
@@ -283,13 +249,10 @@ export function StudentLessonViewer() {
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'content'
                   ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
               }`}
             >
-              <div className="flex items-center space-x-2">
-                <FileText className="h-4 w-4" />
-                <span>Lesson Content</span>
-              </div>
+              Lesson Content
             </button>
 
             {hasExercises && (
@@ -298,20 +261,16 @@ export function StudentLessonViewer() {
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'exercises'
                     ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
                 }`}
               >
-                <div className="flex items-center space-x-2">
-                  <Zap className="h-4 w-4" />
-                  <span>Exercises ({exercises.length})</span>
-                </div>
+                Exercises ({exercises.length})
               </button>
             )}
           </nav>
         </div>
 
         <div className="p-6">
-          {/* Content Tab */}
           {activeTab === 'content' && (
             <div className="space-y-6">
               <div className="prose dark:prose-invert max-w-none">
@@ -321,20 +280,14 @@ export function StudentLessonViewer() {
                 />
               </div>
 
-              {/* Action buttons */}
               <div className="flex justify-center pt-6">
                 {student_lesson.status === 'assigned' && (
                   <button
                     onClick={handleStartLesson}
-                    disabled={isStarting}
-                    className="flex items-center space-x-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                    className="flex items-center space-x-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
                   >
-                    {isStarting ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                    ) : (
-                      <PlayCircle className="h-5 w-5" />
-                    )}
-                    <span>{isStarting ? 'Starting...' : 'Start Lesson'}</span>
+                    <PlayCircle className="h-5 w-5" />
+                    <span>Start Lesson</span>
                   </button>
                 )}
 
@@ -343,7 +296,7 @@ export function StudentLessonViewer() {
                     onClick={() => setActiveTab('exercises')}
                     className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
-                    <Zap className="h-5 w-5" />
+                    <BookOpen className="h-5 w-5" />
                     <span>Start Exercises</span>
                   </button>
                 )}
@@ -360,7 +313,6 @@ export function StudentLessonViewer() {
             </div>
           )}
 
-          {/* Exercises Tab */}
           {activeTab === 'exercises' && (
             <div>
               {student_lesson.status === 'assigned' ? (
@@ -396,7 +348,7 @@ export function StudentLessonViewer() {
                 <ExerciseViewer
                   exercises={exercises}
                   onComplete={handleCompleteExercises}
-                  onProgress={handleExerciseProgress}
+                  onProgress={() => {}}
                 />
               )}
             </div>
