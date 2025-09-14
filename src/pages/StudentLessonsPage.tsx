@@ -1,4 +1,4 @@
-// src/pages/StudentLessonsPage.tsx - Zastąp całą zawartość tym kodem:
+// src/pages/StudentLessonsPage.tsx - Wersja z debugowaniem
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -55,23 +55,29 @@ export function StudentLessonsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
+    console.log('🔍 StudentLessonsPage: session changed', session?.user?.id);
     if (session?.user?.id) {
       loadStudentLessons();
     }
   }, [session?.user?.id]);
 
   const loadStudentLessons = async () => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id) {
+      console.log('❌ No user session');
+      return;
+    }
 
     try {
+      console.log('📚 Loading lessons for student:', session.user.id);
       setIsLoading(true);
       setError(null);
       
       const data = await getStudentLessons(session.user.id);
+      console.log('✅ Loaded lessons:', data);
       setLessons(data);
       
     } catch (err: any) {
-      console.error('Error loading student lessons:', err);
+      console.error('❌ Error loading student lessons:', err);
       setError(err.message || 'Failed to load lessons');
     } finally {
       setIsLoading(false);
@@ -79,8 +85,9 @@ export function StudentLessonsPage() {
   };
 
   const filteredLessons = lessons.filter(lesson => {
+    const tutorName = `${lesson.lessons.users.first_name} ${lesson.lessons.users.last_name}`;
     const matchesSearch = lesson.lessons.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         `${lesson.lessons.users.first_name} ${lesson.lessons.users.last_name}`.toLowerCase().includes(searchTerm.toLowerCase());
+                         tutorName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || lesson.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -88,6 +95,14 @@ export function StudentLessonsPage() {
   const upcomingLessons = filteredLessons.filter(l => l.status === 'assigned');
   const inProgressLessons = filteredLessons.filter(l => l.status === 'in_progress');
   const completedLessons = filteredLessons.filter(l => l.status === 'completed');
+
+  console.log('📊 Lessons summary:', {
+    total: lessons.length,
+    filtered: filteredLessons.length,
+    upcoming: upcomingLessons.length,
+    inProgress: inProgressLessons.length,
+    completed: completedLessons.length
+  });
 
   if (isLoading) {
     return (
@@ -120,6 +135,19 @@ export function StudentLessonsPage() {
           <span>Refresh</span>
         </button>
       </div>
+
+      {/* Debug Info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">Debug Info:</h4>
+          <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+            <p>User ID: {session?.user?.id || 'None'}</p>
+            <p>User Role: {session?.user?.role || 'None'}</p>
+            <p>Total Lessons: {lessons.length}</p>
+            <p>Filtered Lessons: {filteredLessons.length}</p>
+          </div>
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (
@@ -301,7 +329,10 @@ export function StudentLessonsPage() {
 
                 <div className="ml-4">
                   <button
-                    onClick={() => navigate(`/student/lessons/${lessonData.lesson_id}`)}
+                    onClick={() => {
+                      console.log('🎯 Navigating to lesson:', lessonData.lesson_id);
+                      navigate(`/student/lessons/${lessonData.lesson_id}`);
+                    }}
                     className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                       lessonData.status === 'completed'
                         ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30'
