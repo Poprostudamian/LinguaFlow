@@ -834,11 +834,24 @@ export const unassignLessonFromStudents = async (lessonId: string, studentIds: s
  */
 export const getStudentLessons = async (studentId: string): Promise<any[]> => {
   try {
+    console.log('🔍 Getting lessons for student:', studentId);
+    
+    // STEP 1: Get student lessons with proper JOIN structure
     const { data, error } = await supabase
       .from('student_lessons')
       .select(`
-        *,
-        lessons!inner(
+        id,
+        student_id,
+        lesson_id,
+        assigned_at,
+        started_at,
+        completed_at,
+        status,
+        score,
+        time_spent,
+        progress,
+        updated_at,
+        lessons!inner (
           id,
           title,
           description,
@@ -846,21 +859,61 @@ export const getStudentLessons = async (studentId: string): Promise<any[]> => {
           status,
           created_at,
           updated_at,
-          tutor_id,
-          users!lessons_tutor_id_fkey(
-            first_name,
-            last_name,
-            email
-          )
+          tutor_id
         )
       `)
       .eq('student_id', studentId)
       .order('assigned_at', { ascending: false });
 
-    if (error) throw error;
-    return data || [];
+    if (error) {
+      console.error('❌ Error fetching student lessons:', error);
+      throw error;
+    }
+
+    console.log('✅ Found', data?.length || 0, 'lesson assignments');
+
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    // STEP 2: Get tutor information separately to avoid JOIN issues
+    const tutorIds = [...new Set(data.map(item => (item.lessons as any).tutor_id))];
+    
+    const { data: tutors, error: tutorError } = await supabase
+      .from('users')
+      .select('id, first_name, last_name, email')
+      .in('id', tutorIds);
+
+    if (tutorError) {
+      console.error('❌ Error fetching tutors:', tutorError);
+      // Don't throw - we can still show lessons without tutor names
+    }
+
+    console.log('✅ Found', tutors?.length || 0, 'tutors');
+
+    // STEP 3: Combine the data
+    const enrichedData = data.map(item => {
+      const lesson = item.lessons as any;
+      const tutor = tutors?.find(t => t.id === lesson.tutor_id);
+
+      return {
+        ...item,
+        lessons: {
+          ...lesson,
+          users: {
+            first_name: tutor?.first_name || 'Unknown',
+            last_name: tutor?.last_name || 'Tutor',
+            email: tutor?.email || 'unknown@example.com'
+          }
+        }
+      };
+    });
+
+    console.log('✅ Enriched data prepared:', enrichedData.length, 'lessons');
+    return enrichedData;
+
   } catch (error) {
-    console.error('Error fetching student lessons:', error);
+    console.error('❌ Error in getStudentLessons:', error);
     throw error;
   }
 };
