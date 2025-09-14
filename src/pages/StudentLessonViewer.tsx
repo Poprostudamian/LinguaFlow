@@ -1,4 +1,4 @@
-// src/pages/StudentLessonViewer.tsx - Nowy komponent do wyświetlania lekcji
+// src/pages/StudentLessonViewer.tsx - ZAKTUALIZOWANA WERSJA z ćwiczeniami
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -11,10 +11,18 @@ import {
   Pause,
   RotateCcw,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Award
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getLessonDetails, updateLessonProgress, startStudentLesson } from '../lib/supabase';
+import { 
+  getLessonDetails, 
+  updateLessonProgress, 
+  startStudentLesson,
+  getLessonExercises,
+  completeStudentLesson
+} from '../lib/supabase';
+import { ExerciseViewer, Exercise, StudentAnswer } from '../components/ExerciseViewer';
 
 interface LessonDetails {
   // Assignment info
@@ -51,11 +59,14 @@ export function StudentLessonViewer() {
   const { session } = useAuth();
   
   const [lessonDetails, setLessonDetails] = useState<LessonDetails | null>(null);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [studyStartTime, setStudyStartTime] = useState<Date | null>(null);
   const [studyTime, setStudyTime] = useState(0);
+  const [currentView, setCurrentView] = useState<'content' | 'exercises'>('content');
+  const [exerciseProgress, setExerciseProgress] = useState(0);
 
   // Timer effect
   useEffect(() => {
@@ -74,24 +85,30 @@ export function StudentLessonViewer() {
     };
   }, [studyStartTime, lessonDetails?.status]);
 
-  // Load lesson details
+  // Load lesson details and exercises
   useEffect(() => {
     if (lessonId && session?.user?.id) {
-      loadLessonDetails();
+      loadLessonData();
     }
   }, [lessonId, session?.user?.id]);
 
-  const loadLessonDetails = async () => {
+  const loadLessonData = async () => {
     if (!lessonId || !session?.user?.id) return;
     
     setIsLoading(true);
     setError(null);
     
     try {
-      console.log('🔍 Loading lesson details for:', lessonId);
-      const details = await getLessonDetails(session.user.id, lessonId);
+      console.log('🔍 Loading lesson data for:', lessonId);
+      
+      // Load lesson details and exercises in parallel
+      const [details, exercisesList] = await Promise.all([
+        getLessonDetails(session.user.id, lessonId),
+        getLessonExercises(lessonId)
+      ]);
       
       setLessonDetails(details);
+      setExercises(exercisesList);
       
       // Jeśli lekcja jest już rozpoczęta, uruchom timer
       if (details.status === 'in_progress' && details.started_at) {
@@ -99,9 +116,9 @@ export function StudentLessonViewer() {
         setStudyStartTime(startedAt);
       }
       
-      console.log('✅ Lesson details loaded:', details);
+      console.log('✅ Lesson data loaded:', { details, exercises: exercisesList.length });
     } catch (err: any) {
-      console.error('❌ Error loading lesson details:', err);
+      console.error('❌ Error loading lesson data:', err);
       setError(err.message || 'Failed to load lesson');
     } finally {
       setIsLoading(false);
@@ -126,6 +143,11 @@ export function StudentLessonViewer() {
       // Start timer
       setStudyStartTime(new Date());
       
+      // Switch to exercises if available
+      if (exercises.length > 0) {
+        setCurrentView('exercises');
+      }
+      
       console.log('✅ Lesson started successfully');
     } catch (error: any) {
       console.error('❌ Error starting lesson:', error);
@@ -135,17 +157,22 @@ export function StudentLessonViewer() {
     }
   };
 
-  const handleMarkComplete = async () => {
+  const handleExerciseComplete = async (answers: StudentAnswer[]) => {
     if (!lessonDetails || !session?.user?.id) return;
+    
+    // Calculate score from exercises
+    const totalPoints = exercises.reduce((sum, exercise) => sum + exercise.points, 0);
+    const earnedPoints = answers.reduce((sum, answer) => sum + answer.points_earned, 0);
+    const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 100;
     
     const finalStudyTime = lessonDetails.time_spent + studyTime;
     
     try {
-      await updateLessonProgress(
-        session.user.id, 
-        lessonDetails.lesson_id, 
-        100, 
-        'completed'
+      await completeStudentLesson(
+        session.user.id,
+        lessonDetails.lesson_id,
+        score,
+        finalStudyTime
       );
       
       // Update local state
@@ -154,6 +181,39 @@ export function StudentLessonViewer() {
         status: 'completed',
         completed_at: new Date().toISOString(),
         progress: 100,
+        score: score,
+        time_spent: finalStudyTime
+      } : null);
+      
+      setStudyStartTime(null);
+      
+      console.log('✅ Lesson completed with score:', score);
+    } catch (error: any) {
+      console.error('❌ Error completing lesson:', error);
+      alert('Failed to save lesson completion: ' + error.message);
+    }
+  };
+
+  const handleMarkComplete = async () => {
+    if (!lessonDetails || !session?.user?.id) return;
+    
+    const finalStudyTime = lessonDetails.time_spent + studyTime;
+    
+    try {
+      await completeStudentLesson(
+        session.user.id,
+        lessonDetails.lesson_id,
+        100, // Full score if no exercises
+        finalStudyTime
+      );
+      
+      // Update local state
+      setLessonDetails(prev => prev ? {
+        ...prev,
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        progress: 100,
+        score: 100,
         time_spent: finalStudyTime
       } : null);
       
@@ -206,7 +266,7 @@ export function StudentLessonViewer() {
               {error || 'Lesson not found or access denied'}
             </p>
             <button
-              onClick={loadLessonDetails}
+              onClick={loadLessonData}
               className="mt-4 px-4 py-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-md hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
             >
               Try Again
@@ -282,6 +342,13 @@ export function StudentLessonViewer() {
                   <span>Assigned {new Date(lessonDetails.assigned_at).toLocaleDateString()}</span>
                 </div>
                 
+                {exercises.length > 0 && (
+                  <div className="flex items-center space-x-1">
+                    <Award className="h-4 w-4" />
+                    <span>{exercises.length} exercises</span>
+                  </div>
+                )}
+                
                 {lessonDetails.progress > 0 && (
                   <div className="flex items-center space-x-1">
                     <CheckCircle className="h-4 w-4" />
@@ -308,7 +375,7 @@ export function StudentLessonViewer() {
                 </button>
               )}
               
-              {lessonDetails.status === 'in_progress' && (
+              {lessonDetails.status === 'in_progress' && exercises.length === 0 && (
                 <button
                   onClick={handleMarkComplete}
                   className="flex items-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -322,6 +389,9 @@ export function StudentLessonViewer() {
                 <div className="flex items-center space-x-2 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg">
                   <CheckCircle className="h-5 w-5 text-green-600" />
                   <span>Completed</span>
+                  {lessonDetails.score && (
+                    <span className="text-green-600 font-medium">({lessonDetails.score}%)</span>
+                  )}
                 </div>
               )}
             </div>
@@ -348,36 +418,97 @@ export function StudentLessonViewer() {
           )}
         </div>
 
-        {/* Lesson Content */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Lesson Content
-          </h2>
-          
-          <div className="prose dark:prose-invert max-w-none">
-            <div className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 leading-relaxed">
-              {lessonDetails.lesson.content}
+        {/* Navigation Tabs */}
+        {lessonDetails.status !== 'assigned' && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
+            <div className="flex border-b border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setCurrentView('content')}
+                className={`px-6 py-3 text-sm font-medium transition-colors ${
+                  currentView === 'content'
+                    ? 'border-b-2 border-purple-500 text-purple-600 dark:text-purple-400'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                📖 Lesson Content
+              </button>
+              {exercises.length > 0 && (
+                <button
+                  onClick={() => setCurrentView('exercises')}
+                  className={`px-6 py-3 text-sm font-medium transition-colors ${
+                    currentView === 'exercises'
+                      ? 'border-b-2 border-purple-500 text-purple-600 dark:text-purple-400'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  }`}
+                >
+                  🎯 Exercises ({exercises.length})
+                </button>
+              )}
             </div>
           </div>
-          
-          {/* Lesson Stats */}
-          {(lessonDetails.time_spent > 0 || studyTime > 0) && (
-            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-gray-400">
-                <div className="flex items-center space-x-1">
-                  <Clock className="h-4 w-4" />
-                  <span>
-                    Study Time: {formatTime(lessonDetails.time_spent + studyTime)}
-                  </span>
+        )}
+
+        {/* Content Area */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          {currentView === 'content' && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Lesson Content
+              </h2>
+              
+              <div className="prose dark:prose-invert max-w-none">
+                <div className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 leading-relaxed">
+                  {lessonDetails.lesson.content}
                 </div>
-                
-                {lessonDetails.score && (
-                  <div className="flex items-center space-x-1">
-                    <CheckCircle className="h-4 w-4" />
-                    <span>Score: {lessonDetails.score}/100</span>
-                  </div>
-                )}
               </div>
+              
+              {/* Switch to exercises button */}
+              {exercises.length > 0 && lessonDetails.status === 'in_progress' && (
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={() => setCurrentView('exercises')}
+                    className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    <Award className="h-4 w-4" />
+                    <span>Start Exercises ({exercises.length})</span>
+                  </button>
+                </div>
+              )}
+              
+              {/* Lesson Stats */}
+              {(lessonDetails.time_spent > 0 || studyTime > 0) && (
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center space-x-1">
+                      <Clock className="h-4 w-4" />
+                      <span>
+                        Study Time: {formatTime(lessonDetails.time_spent + studyTime)}
+                      </span>
+                    </div>
+                    
+                    {lessonDetails.score && (
+                      <div className="flex items-center space-x-1">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>Score: {lessonDetails.score}/100</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {currentView === 'exercises' && exercises.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Interactive Exercises
+              </h2>
+              
+              <ExerciseViewer
+                exercises={exercises}
+                onComplete={handleExerciseComplete}
+                onProgress={(progress) => setExerciseProgress(progress)}
+              />
             </div>
           )}
         </div>
