@@ -39,6 +39,7 @@ function App() {
                         <Routes>
                           <Route index element={<StudentDashboard />} />
                           <Route path="lessons" element={<StudentLessonsPage />} />
+                          <Route path="lessons/:lessonId" element={<StudentLessonViewer />} />
                           <Route path="schedule" element={<StudentSchedulePage />} />
                           <Route path="messages" element={<StudentMessagesPage />} />
                         </Routes>
