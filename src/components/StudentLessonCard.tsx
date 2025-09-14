@@ -123,11 +123,11 @@ export function StudentLessonCard({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 overflow-hidden">
       {/* Header */}
-      console.log('Lesson data:', lesson);
       <div className="p-4 pb-3">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate">
+              console.log('Lesson data:', lesson);
   {lesson.lesson?.title || 'Loading lesson...'}
 </h3>
             {lesson.lesson.description && (
