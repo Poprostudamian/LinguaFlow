@@ -1,10 +1,10 @@
-// src/App.tsx - POPRAWIONA KOLEJNOŚĆ PROVIDERÓW
+// src/App.tsx - NAPRAWIONA WERSJA
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { StudentsProvider } from './contexts/StudentsContext';
-import { StudentLessonsProvider } from './contexts/StudentLessonsContext';
 import { Layout } from './components/Layout';
 import { RouteGuard } from './components/RouteGuard';
 import { Login } from './pages/Login';
@@ -23,51 +23,53 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Router>
-          <StudentsProvider>
-            <StudentLessonsProvider>
-              <div className="App">
-                <Routes>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<SignUp />} />
-                  <Route path="/" element={<Navigate to="/login" replace />} />
+        <StudentsProvider>
+          <Router>
+            <div className="App">
+              <Routes>
+                {/* Public routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<SignUp />} />
+                <Route path="/" element={<Navigate to="/login" replace />} />
+                
+                {/* Protected routes with Layout */}
+                <Route path="/" element={<Layout />}>
+                  <Route 
+                    path="student/*" 
+                    element={
+                      <RouteGuard requiredRole="student">
+                        <Routes>
+                          <Route index element={<StudentDashboard />} />
+                          <Route path="lessons" element={<StudentLessonsPage />} />
+                          <Route path="lessons/:lessonId" element={<StudentLessonViewer />} />
+                          <Route path="schedule" element={<StudentSchedulePage />} />
+                          <Route path="messages" element={<StudentMessagesPage />} />
+                        </Routes>
+                      </RouteGuard>
+                    } 
+                  />
                   
-                  <Route path="/" element={<Layout />}>
-                    <Route 
-                      path="student/*" 
-                      element={
-                        <RouteGuard requiredRole="student">
-                          <Routes>
-                            <Route index element={<StudentDashboard />} />
-                            <Route path="lessons" element={<StudentLessonsPage />} />
-                            <Route path="lessons/:lessonId" element={<StudentLessonViewer />} />
-                            <Route path="schedule" element={<StudentSchedulePage />} />
-                            <Route path="messages" element={<StudentMessagesPage />} />
-                          </Routes>
-                        </RouteGuard>
-                      } 
-                    />
-                    <Route 
-                      path="tutor/*" 
-                      element={
-                        <RouteGuard requiredRole="tutor">
-                          <Routes>
-                            <Route index element={<TutorDashboard />} />
-                            <Route path="students" element={<TutorStudentsPage />} />
-                            <Route path="lessons" element={<TutorLessonManagementPage />} />
-                            <Route path="messages" element={<TutorMessagesPage />} />
-                          </Routes>
-                        </RouteGuard>
-                      } 
-                    />
-                  </Route>
-                  
-                  <Route path="*" element={<Navigate to="/login" replace />} />
-                </Routes>
-              </div>
-            </StudentLessonsProvider>
-          </StudentsProvider>
-        </Router>
+                  <Route 
+                    path="tutor/*" 
+                    element={
+                      <RouteGuard requiredRole="tutor">
+                        <Routes>
+                          <Route index element={<TutorDashboard />} />
+                          <Route path="students" element={<TutorStudentsPage />} />
+                          <Route path="lessons" element={<TutorLessonManagementPage />} />
+                          <Route path="messages" element={<TutorMessagesPage />} />
+                        </Routes>
+                      </RouteGuard>
+                    } 
+                  />
+                </Route>
+                
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/login" replace />} />
+              </Routes>
+            </div>
+          </Router>
+        </StudentsProvider>
       </AuthProvider>
     </ThemeProvider>
   );
