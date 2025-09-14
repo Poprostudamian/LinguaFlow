@@ -1451,6 +1451,72 @@ export const getLessonExercises = async (lessonId: string): Promise<any[]> => {
   }
 };
 
+/**
+ * Enhanced updateStudentLessonProgress with optional score and time
+ */
+export const updateStudentLessonProgress = async (
+  studentId: string, 
+  lessonId: string, 
+  progress: number,
+  status?: 'assigned' | 'in_progress' | 'completed',
+  score?: number,
+  timeSpent?: number
+): Promise<void> => {
+  try {
+    console.log('📊 Updating student lesson progress:', { 
+      studentId, 
+      lessonId, 
+      progress, 
+      status, 
+      score, 
+      timeSpent 
+    });
+
+    const updateData: any = {
+      progress: Math.min(Math.max(progress, 0), 100), // Clamp between 0-100
+      updated_at: new Date().toISOString()
+    };
+
+    // Dodaj opcjonalne pola
+    if (status) {
+      updateData.status = status;
+      
+      // Automatyczne timestampy na podstawie statusu
+      if (status === 'in_progress' && !updateData.started_at) {
+        updateData.started_at = new Date().toISOString();
+      } else if (status === 'completed') {
+        updateData.completed_at = new Date().toISOString();
+        updateData.progress = 100; // Force 100% na completed
+      }
+    }
+
+    if (typeof score === 'number') {
+      updateData.score = Math.min(Math.max(score, 0), 100); // Clamp between 0-100
+    }
+
+    if (typeof timeSpent === 'number') {
+      updateData.time_spent = Math.max(timeSpent, 0); // Min 0 seconds
+    }
+
+    const { error } = await supabase
+      .from('student_lessons')
+      .update(updateData)
+      .eq('lesson_id', lessonId)
+      .eq('student_id', studentId);
+
+    if (error) {
+      console.error('❌ Error updating progress:', error);
+      throw error;
+    }
+
+    console.log('✅ Student lesson progress updated successfully');
+
+  } catch (error) {
+    console.error('Error updating student lesson progress:', error);
+    throw error;
+  }
+};
+
 // ================================================================================
 // MESSAGING SYSTEM
 // ================================================================================
