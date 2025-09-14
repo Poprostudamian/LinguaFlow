@@ -11,7 +11,7 @@ import {
   Star
 } from 'lucide-react';
 import { StudentLesson } from '../lib/studentLessons';
-
+console.log('Lesson data:', lesson);
 interface StudentLessonCardProps {
   lesson: StudentLesson;
   onStartLesson?: (lessonId: string) => void;
