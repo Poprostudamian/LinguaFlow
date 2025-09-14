@@ -1,3 +1,4 @@
+// src/App.tsx - POPRAWIONA WERSJA
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -24,49 +25,48 @@ function App() {
       <AuthProvider>
         <StudentsProvider>
           <StudentLessonsProvider>
-          <Router>
-            <div className="App">
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<SignUp />} />
-                <Route path="/" element={<Navigate to="/login" replace />} />
-                
-                <Route path="/" element={<Layout />}>
-                  <Route 
-                    path="student/*" 
-                    element={
-                      <RouteGuard requiredRole="student">
-                        <Routes>
-                          <Route index element={<StudentDashboard />} />
-                          <Route path="lessons" element={<StudentLessonsPage />} />
-                          <Route path="lessons/:lessonId" element={<StudentLessonViewer />} />
-                          <Route path="schedule" element={<StudentSchedulePage />} />
-                          <Route path="messages" element={<StudentMessagesPage />} />
-                        </Routes>
-                      </RouteGuard>
-                    } 
-                  />
+            <Router>
+              <div className="App">
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<SignUp />} />
+                  <Route path="/" element={<Navigate to="/login" replace />} />
                   
-                  <Route 
-                    path="tutor/*" 
-                    element={
-                      <RouteGuard requiredRole="tutor">
-                        <Routes>
-                          <Route index element={<TutorDashboard />} />
-                          <Route path="students" element={<TutorStudentsPage />} />
-                          <Route path="lessons" element={<TutorLessonManagementPage />} />
-                          <Route path="messages" element={<TutorMessagesPage />} />
-                        </Routes>
-                      </RouteGuard>
-                    } 
-                  />
-                </Route>
-                
-                <Route path="*" element={<Navigate to="/login" replace />} />
-              </Routes>
-            </div>
-          </Router>
-            </StudentLessonsProvider>
+                  <Route path="/" element={<Layout />}>
+                    <Route 
+                      path="student/*" 
+                      element={
+                        <RouteGuard requiredRole="student">
+                          <Routes>
+                            <Route index element={<StudentDashboard />} />
+                            <Route path="lessons" element={<StudentLessonsPage />} />
+                            <Route path="lessons/:lessonId" element={<StudentLessonViewer />} />
+                            <Route path="schedule" element={<StudentSchedulePage />} />
+                            <Route path="messages" element={<StudentMessagesPage />} />
+                          </Routes>
+                        </RouteGuard>
+                      } 
+                    />
+                    <Route 
+                      path="tutor/*" 
+                      element={
+                        <RouteGuard requiredRole="tutor">
+                          <Routes>
+                            <Route index element={<TutorDashboard />} />
+                            <Route path="students" element={<TutorStudentsPage />} />
+                            <Route path="lessons" element={<TutorLessonManagementPage />} />
+                            <Route path="messages" element={<TutorMessagesPage />} />
+                          </Routes>
+                        </RouteGuard>
+                      } 
+                    />
+                  </Route>
+                  
+                  <Route path="*" element={<Navigate to="/login" replace />} />
+                </Routes>
+              </div>
+            </Router>
+          </StudentLessonsProvider>
         </StudentsProvider>
       </AuthProvider>
     </ThemeProvider>
