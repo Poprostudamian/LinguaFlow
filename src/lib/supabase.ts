@@ -936,33 +936,6 @@ export const getStudentLessons = async (studentId: string): Promise<any[]> => {
 };
 
 /**
- * Uproszczona funkcja testowa - sprawdza tylko podstawowy dostęp
- */
-export const testStudentLessonsAccess = async (studentId: string) => {
-  try {
-    console.log('🧪 Testing basic access to student_lessons...');
-    
-    const { data, error } = await supabase
-      .from('student_lessons')
-      .select('id, lesson_id, status')
-      .eq('student_id', studentId)
-      .limit(1);
-
-    if (error) {
-      console.error('❌ Access test failed:', error);
-      return false;
-    }
-
-    console.log('✅ Access test passed. Found', data?.length || 0, 'records');
-    return true;
-
-  } catch (error) {
-    console.error('💥 Access test exception:', error);
-    return false;
-  }
-};
-
-/**
  * Funkcja pomocnicza do testowania - sprawdza czy student ma przypisane lekcje
  */
 export const checkStudentLessonsExist = async (studentId: string): Promise<boolean> => {
