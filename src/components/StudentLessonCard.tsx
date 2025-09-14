@@ -127,8 +127,8 @@ export function StudentLessonCard({
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate">
-  {lesson.lesson?.title || 'Loading lesson...'}
-</h3>
+                {lesson.lesson?.title || 'Loading lesson...'}
+            </h3>
             {lesson.lesson.description && (
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
                 {lesson.lesson.description}
@@ -143,13 +143,13 @@ export function StudentLessonCard({
 
         {/* Tutor Info */}
         <div className="flex items-center space-x-2 mb-3">
-  <User className="h-4 w-4 text-gray-400" />
-  <span className="text-sm text-gray-600 dark:text-gray-400">
-  {lesson.lesson?.users?.first_name && lesson.lesson?.users?.last_name 
-    ? `${lesson.lesson.users.first_name} ${lesson.lesson.users.last_name}`
-    : 'Loading tutor...'}
-</span>
-</div>
+          <User className="h-4 w-4 text-gray-400" />
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+                {lesson.lesson?.tutor?.first_name ? 
+              `${lesson.lesson.tutor.first_name} ${lesson.lesson.tutor.last_name}` : 
+                'Loading tutor...'}
+          </span>
+        </div>
 
         {/* Progress Bar */}
         <div className="mb-3">
