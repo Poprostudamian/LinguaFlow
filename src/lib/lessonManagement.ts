@@ -259,19 +259,23 @@ export async function startLesson(lessonId: string, studentId: string): Promise<
 export async function getStudentLessons(studentId: string): Promise<any[]> {
   try {
     const { data, error } = await supabase
-      .from('student_lessons')
-      .select(`
-        *,
-        lessons (
-          id,
-          title,
-          description,
-          content,
-          created_at
-        )
-      `)
-      .eq('student_id', studentId)
-      .order('assigned_at', { ascending: false });
+  .from('student_lessons')
+  .select(`
+    *,
+    lessons (
+      id,
+      title,
+      description,
+      content,
+      created_at,
+      tutor:tutor_id (
+        first_name,
+        last_name
+      )
+    )
+  `)
+  .eq('student_id', studentId)
+  .order('assigned_at', { ascending: false });
 
     if (error) throw error;
 
