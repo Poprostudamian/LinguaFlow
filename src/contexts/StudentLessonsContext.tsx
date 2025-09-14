@@ -1,7 +1,14 @@
-// src/contexts/StudentLessonsContext.tsx
+// CAŁKOWITA NAPRAWA src/contexts/StudentLessonsContext.tsx
+// Zastąp cały plik tym kodem:
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { getStudentLessons } from '../lib/supabase';
+import { 
+  getStudentLessons, 
+  startStudentLesson, 
+  updateLessonProgress,
+  completeStudentLesson 
+} from '../lib/supabase';
 
 // Types for student lessons
 export interface StudentLessonData {
@@ -97,7 +104,7 @@ export function StudentLessonsProvider({ children }: { children: React.ReactNode
     };
   }, [lessons]);
 
-  // Load lessons from database with enhanced debugging
+  // Load lessons from database - UPROSZCZONA WERSJA BEZ testStudentLessonsAccess
   const refreshLessons = async () => {
     if (!session?.user?.id) {
       console.log('❌ No authenticated user, skipping lessons load');
@@ -113,12 +120,6 @@ export function StudentLessonsProvider({ children }: { children: React.ReactNode
       // Sprawdź czy user ma rolę student
       if (session.user.role !== 'student') {
         throw new Error(`Invalid role: ${session.user.role}. Expected: student`);
-      }
-
-      // Test podstawowego dostępu
-      const hasAccess = await testStudentLessonsAccess(session.user.id);
-      if (!hasAccess) {
-        throw new Error('Cannot access student lessons table - check RLS policies');
       }
 
       console.log('🔍 Loading lessons for student:', session.user.id);
