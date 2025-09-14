@@ -152,44 +152,7 @@ export function StudentLessonsPage() {
             </div>
           </div>
           
-          {/* Debug/Fix buttons - tylko w development */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="flex space-x-2">
-              <button
-                onClick={async () => {
-                  try {
-                    const { cleanupOrphanedAssignments } = await import('../lib/fixOrphanedAssignments');
-                    const result = await cleanupOrphanedAssignments(session.user.id);
-                    alert(`✅ Cleanup completed!\nRemoved: ${result.removedCount} orphaned assignments\nKept: ${result.keptCount} valid assignments`);
-                    refreshData(); // Refresh po naprawie
-                  } catch (error) {
-                    alert('❌ Error: ' + error.message);
-                  }
-                }}
-                className="px-3 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600"
-              >
-                🧹 Fix Orphaned
-              </button>
-              
-              <button
-                onClick={async () => {
-                  try {
-                    const { createMissingLessons } = await import('../lib/fixOrphanedAssignments');
-                    const result = await createMissingLessons(session.user.id);
-                    alert('✅ Missing lessons recreated! Check console for details.');
-                    refreshData(); // Refresh po naprawie
-                  } catch (error) {
-                    alert('❌ Error: ' + error.message);
-                  }
-                }}
-                className="px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600"
-              >
-                🔧 Recreate Missing
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+          
 
       {/* Stats Overview - REAL DATA */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
