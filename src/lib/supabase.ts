@@ -746,36 +746,6 @@ export const updateLessonProgress = async (
   }
 };
 
-/**
- * Update an existing lesson
- */
-export const updateLesson = async (lessonId: string, lessonData: UpdateLessonData): Promise<Lesson> => {
-  try {
-    const updateData: any = {
-      ...lessonData,
-      updated_at: new Date().toISOString()
-    };
-
-    // Update is_published based on status if status is provided
-    if (lessonData.status) {
-      updateData.is_published = lessonData.status === 'published';
-    }
-
-    const { data: lesson, error } = await supabase
-      .from('lessons')
-      .update(updateData)
-      .eq('id', lessonId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return lesson;
-  } catch (error) {
-    console.error('Error updating lesson:', error);
-    throw error;
-  }
-};
-
 
 /**
  * Complete a lesson with score
