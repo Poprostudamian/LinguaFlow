@@ -697,29 +697,94 @@ export const createLesson = async (tutorId: string, lessonData: CreateLessonData
 /**
  * Update an existing lesson
  */
-export const updateLesson = async (lessonId: string, lessonData: UpdateLessonData): Promise<Lesson> => {
+export const updateLessonProgress = async (
+  studentId: string, 
+  lessonId: string, 
+  progress: number, 
+  status?: 'assigned' | 'in_progress' | 'completed'
+): Promise<void> => {
   try {
+    console.log('📊 Updating progress:', lessonId, 'to', progress + '%');
+    
+    // Sprawdź sesję
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || session.user.id !== studentId) {
+      throw new Error('Not authenticated or invalid student ID');
+    }
+    
     const updateData: any = {
-      ...lessonData,
+      progress: Math.max(0, Math.min(100, progress)),
       updated_at: new Date().toISOString()
     };
 
-    // Update is_published based on status if status is provided
-    if (lessonData.status) {
-      updateData.is_published = lessonData.status === 'published';
+    if (status) {
+      updateData.status = status;
     }
 
-    const { data: lesson, error } = await supabase
-      .from('lessons')
-      .update(updateData)
-      .eq('id', lessonId)
-      .select()
-      .single();
+    // If progress is 100%, mark as completed
+    if (progress >= 100) {
+      updateData.status = 'completed';
+      updateData.completed_at = new Date().toISOString();
+      updateData.score = progress; // Use progress as score for now
+    }
 
-    if (error) throw error;
-    return lesson;
+    const { error } = await supabase
+      .from('student_lessons')
+      .update(updateData)
+      .eq('student_id', studentId)
+      .eq('lesson_id', lessonId);
+
+    if (error) {
+      console.error('❌ Error updating progress:', error);
+      throw new Error(`Failed to update progress: ${error.message}`);
+    }
+
+    console.log('✅ Progress updated successfully');
   } catch (error) {
-    console.error('Error updating lesson:', error);
+    console.error('❌ Error in updateLessonProgress:', error);
+    throw error;
+  }
+};
+
+/**
+ * Complete a lesson with score
+ */
+export const completeStudentLesson = async (
+  studentId: string,
+  lessonId: string,
+  score: number,
+  timeSpent?: number
+): Promise<void> => {
+  try {
+    console.log('🎯 Completing lesson:', lessonId, 'with score:', score);
+    
+    // Sprawdź sesję
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || session.user.id !== studentId) {
+      throw new Error('Not authenticated or invalid student ID');
+    }
+    
+    const { error } = await supabase
+      .from('student_lessons')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        score: Math.max(0, Math.min(100, score)),
+        progress: 100,
+        time_spent: timeSpent || 0,
+        updated_at: new Date().toISOString()
+      })
+      .eq('student_id', studentId)
+      .eq('lesson_id', lessonId);
+
+    if (error) {
+      console.error('❌ Error completing lesson:', error);
+      throw new Error(`Failed to complete lesson: ${error.message}`);
+    }
+
+    console.log('✅ Lesson completed successfully');
+  } catch (error) {
+    console.error('❌ Error in completeStudentLesson:', error);
     throw error;
   }
 };
@@ -936,32 +1001,67 @@ export const getStudentLessons = async (studentId: string): Promise<any[]> => {
 };
 
 /**
- * Funkcja pomocnicza do testowania - sprawdza czy student ma przypisane lekcje
+ * Start a lesson (update status to in_progress)
  */
-export const checkStudentLessonsExist = async (studentId: string): Promise<boolean> => {
+export const startStudentLesson = async (studentId: string, lessonId: string): Promise<void> => {
   try {
-    console.log('🔍 [CHECK] Checking if lessons exist for student:', studentId);
+    console.log('▶️ Starting lesson:', lessonId, 'for student:', studentId);
     
-    const { data, error } = await supabase
+    // Sprawdź sesję
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || session.user.id !== studentId) {
+      throw new Error('Not authenticated or invalid student ID');
+    }
+    
+    const { error } = await supabase
       .from('student_lessons')
-      .select('id', { count: 'exact', head: true })
-      .eq('student_id', studentId);
+      .update({
+        status: 'in_progress',
+        started_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('student_id', studentId)
+      .eq('lesson_id', lessonId);
 
     if (error) {
-      console.error('❌ [CHECK] Error:', error);
-      return false;
+      console.error('❌ Error starting lesson:', error);
+      throw new Error(`Failed to start lesson: ${error.message}`);
     }
 
-    const count = data as any; // count będzie w headerach
-    console.log('✅ [CHECK] Lessons exist check result:', count);
-    
-    return true; // Jeśli nie ma błędu, znaczy że może dostać się do tabeli
-
+    console.log('✅ Lesson started successfully');
   } catch (error) {
-    console.error('💥 [CHECK] Exception:', error);
-    return false;
+    console.error('❌ Error in startStudentLesson:', error);
+    throw error;
   }
 };
+
+/**
+ * Funkcja pomocnicza do testowania - sprawdza czy student ma przypisane lekcje
+ */
+// export const checkStudentLessonsExist = async (studentId: string): Promise<boolean> => {
+//   try {
+//     console.log('🔍 [CHECK] Checking if lessons exist for student:', studentId);
+    
+//     const { data, error } = await supabase
+//       .from('student_lessons')
+//       .select('id', { count: 'exact', head: true })
+//       .eq('student_id', studentId);
+
+//     if (error) {
+//       console.error('❌ [CHECK] Error:', error);
+//       return false;
+//     }
+
+//     const count = data as any; // count będzie w headerach
+//     console.log('✅ [CHECK] Lessons exist check result:', count);
+    
+//     return true; // Jeśli nie ma błędu, znaczy że może dostać się do tabeli
+
+//   } catch (error) {
+//     console.error('💥 [CHECK] Exception:', error);
+//     return false;
+//   }
+// };
 
 export interface StudentStats {
   student_id: string;
