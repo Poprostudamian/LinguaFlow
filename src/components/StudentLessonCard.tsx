@@ -145,8 +145,8 @@ export function StudentLessonCard({
         <div className="flex items-center space-x-2 mb-3">
   <User className="h-4 w-4 text-gray-400" />
   <span className="text-sm text-gray-600 dark:text-gray-400">
-    {lesson.lesson.tutor.first_name} {lesson.lesson.tutor.last_name}
-  </span>
+  {lesson.lesson.tutor.first_name} {lesson.lesson.tutor.last_name}
+</span>
 </div>
 
         {/* Progress Bar */}
