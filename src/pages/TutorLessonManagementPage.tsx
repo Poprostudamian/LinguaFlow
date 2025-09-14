@@ -45,6 +45,30 @@ export interface UpdateLessonData {
   status?: 'draft' | 'published';
 }
 
+export const updateLesson = async (lessonId: string, updateData: any): Promise<void> => {
+  try {
+    console.log('🔄 Updating lesson:', lessonId, updateData);
+    
+    const { error } = await supabase
+      .from('lessons')
+      .update({
+        ...updateData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', lessonId);
+
+    if (error) {
+      console.error('❌ Error updating lesson:', error);
+      throw error;
+    }
+
+    console.log('✅ Lesson updated successfully');
+  } catch (error) {
+    console.error('❌ Error in updateLesson:', error);
+    throw error;
+  }
+};
+
 // Interface dla prostych ćwiczeń
 interface SimpleExercise {
   id?: string;
