@@ -45,7 +45,6 @@ export interface UpdateLessonData {
   status?: 'draft' | 'published';
 }
 
-
 // Interface dla prostych ćwiczeń
 interface SimpleExercise {
   id?: string;
