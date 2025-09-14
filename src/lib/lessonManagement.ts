@@ -269,6 +269,7 @@ export async function getStudentLessons(studentId: string): Promise<any[]> {
       content,
       created_at,
       tutor:tutor_id (
+        id,
         first_name,
         last_name
       )
