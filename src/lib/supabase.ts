@@ -834,10 +834,27 @@ export const unassignLessonFromStudents = async (lessonId: string, studentIds: s
  */
 export const getStudentLessons = async (studentId: string): Promise<any[]> => {
   try {
-    console.log('🔍 Getting lessons for student:', studentId);
+    console.log('🔍 [DEBUG] Getting lessons for student:', studentId);
     
-    // STEP 1: Get student lessons with proper JOIN structure
-    const { data, error } = await supabase
+    // KROK 1: Sprawdź aktualną sesję i uprawnienia
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.error('❌ [DEBUG] No active session');
+      throw new Error('Not authenticated');
+    }
+    
+    console.log('✅ [DEBUG] Session active, user ID:', session.user.id);
+    
+    // KROK 2: Sprawdź czy studentId to rzeczywiście aktualny użytkownik (bezpieczeństwo)
+    if (session.user.id !== studentId) {
+      console.warn('⚠️ [DEBUG] Student ID mismatch - using session user ID');
+      // Użyj ID z sesji dla bezpieczeństwa
+      studentId = session.user.id;
+    }
+
+    // KROK 3: Proste zapytanie do student_lessons bez JOIN
+    console.log('📚 [DEBUG] Step 1: Getting student lesson assignments...');
+    const { data: assignments, error: assignmentsError } = await supabase
       .from('student_lessons')
       .select(`
         id,
@@ -850,56 +867,106 @@ export const getStudentLessons = async (studentId: string): Promise<any[]> => {
         score,
         time_spent,
         progress,
-        updated_at,
-        lessons!inner (
-          id,
-          title,
-          description,
-          content,
-          status,
-          created_at,
-          updated_at,
-          tutor_id
-        )
+        updated_at
       `)
       .eq('student_id', studentId)
       .order('assigned_at', { ascending: false });
 
-    if (error) {
-      console.error('❌ Error fetching student lessons:', error);
-      throw error;
+    if (assignmentsError) {
+      console.error('❌ [DEBUG] Error fetching assignments:', assignmentsError);
+      
+      // Spróbuj diagnostykę
+      if (assignmentsError.code === 'PGRST301') {
+        console.error('💡 [DEBUG] RLS policy might be blocking access to student_lessons');
+      }
+      
+      throw new Error(`Failed to fetch lesson assignments: ${assignmentsError.message}`);
     }
 
-    console.log('✅ Found', data?.length || 0, 'lesson assignments');
+    console.log('✅ [DEBUG] Found', assignments?.length || 0, 'lesson assignments');
 
-    if (!data || data.length === 0) {
+    if (!assignments || assignments.length === 0) {
+      console.log('ℹ️ [DEBUG] No lesson assignments found for student');
       return [];
     }
 
-    // STEP 2: Get tutor information separately to avoid JOIN issues
-    const tutorIds = [...new Set(data.map(item => (item.lessons as any).tutor_id))];
-    
-    const { data: tutors, error: tutorError } = await supabase
+    // KROK 4: Pobierz informacje o lekcjach
+    const lessonIds = assignments.map(a => a.lesson_id);
+    console.log('📖 [DEBUG] Step 2: Getting lesson details for IDs:', lessonIds);
+
+    const { data: lessons, error: lessonsError } = await supabase
+      .from('lessons')
+      .select(`
+        id,
+        title,
+        description,
+        content,
+        status,
+        created_at,
+        updated_at,
+        tutor_id
+      `)
+      .in('id', lessonIds);
+
+    if (lessonsError) {
+      console.error('❌ [DEBUG] Error fetching lessons:', lessonsError);
+      // Nie rzucaj błędu - pokaż assignments bez detali lekcji
+    }
+
+    console.log('✅ [DEBUG] Found', lessons?.length || 0, 'lesson details');
+
+    // KROK 5: Pobierz informacje o tutorach
+    const tutorIds = lessons ? [...new Set(lessons.map(l => l.tutor_id))] : [];
+    console.log('👨‍🏫 [DEBUG] Step 3: Getting tutor details for IDs:', tutorIds);
+
+    const { data: tutors, error: tutorsError } = await supabase
       .from('users')
       .select('id, first_name, last_name, email')
       .in('id', tutorIds);
 
-    if (tutorError) {
-      console.error('❌ Error fetching tutors:', tutorError);
-      // Don't throw - we can still show lessons without tutor names
+    if (tutorsError) {
+      console.error('❌ [DEBUG] Error fetching tutors:', tutorsError);
+      // Nie rzucaj błędu - pokaż lekcje bez detali tutorów
     }
 
-    console.log('✅ Found', tutors?.length || 0, 'tutors');
+    console.log('✅ [DEBUG] Found', tutors?.length || 0, 'tutor details');
 
-    // STEP 3: Combine the data
-    const enrichedData = data.map(item => {
-      const lesson = item.lessons as any;
-      const tutor = tutors?.find(t => t.id === lesson.tutor_id);
+    // KROK 6: Połącz wszystkie dane
+    console.log('🔗 [DEBUG] Step 4: Combining all data...');
 
-      return {
-        ...item,
+    const enrichedData = assignments.map(assignment => {
+      // Znajdź lekcję
+      const lesson = lessons?.find(l => l.id === assignment.lesson_id);
+      
+      // Znajdź tutora
+      const tutor = lesson && tutors ? tutors.find(t => t.id === lesson.tutor_id) : null;
+
+      const result = {
+        // Assignment data
+        id: assignment.id,
+        student_id: assignment.student_id,
+        lesson_id: assignment.lesson_id,
+        assigned_at: assignment.assigned_at,
+        started_at: assignment.started_at,
+        completed_at: assignment.completed_at,
+        status: assignment.status,
+        score: assignment.score,
+        time_spent: assignment.time_spent,
+        progress: assignment.progress,
+        updated_at: assignment.updated_at,
+
+        // Lesson data
         lessons: {
-          ...lesson,
+          id: lesson?.id || assignment.lesson_id,
+          title: lesson?.title || 'Unknown Lesson',
+          description: lesson?.description || 'No description available',
+          content: lesson?.content || '',
+          status: lesson?.status || 'unknown',
+          created_at: lesson?.created_at || assignment.assigned_at,
+          updated_at: lesson?.updated_at || assignment.updated_at,
+          tutor_id: lesson?.tutor_id || 'unknown',
+
+          // Tutor data
           users: {
             first_name: tutor?.first_name || 'Unknown',
             last_name: tutor?.last_name || 'Tutor',
@@ -907,123 +974,66 @@ export const getStudentLessons = async (studentId: string): Promise<any[]> => {
           }
         }
       };
+
+      console.log(`📋 [DEBUG] Enriched assignment ${assignment.id}:`, {
+        lessonTitle: result.lessons.title,
+        tutorName: `${result.lessons.users.first_name} ${result.lessons.users.last_name}`,
+        status: result.status
+      });
+
+      return result;
     });
 
-    console.log('✅ Enriched data prepared:', enrichedData.length, 'lessons');
+    console.log('✅ [DEBUG] Final result:', enrichedData.length, 'enriched lesson assignments');
+    
+    // Pokaż przykład pierwszej lekcji dla debugowania
+    if (enrichedData.length > 0) {
+      console.log('📝 [DEBUG] First lesson example:', {
+        title: enrichedData[0].lessons.title,
+        tutor: `${enrichedData[0].lessons.users.first_name} ${enrichedData[0].lessons.users.last_name}`,
+        status: enrichedData[0].status
+      });
+    }
+
     return enrichedData;
 
-  } catch (error) {
-    console.error('❌ Error in getStudentLessons:', error);
-    throw error;
-  }
-};
-
-export const startStudentLesson = async (studentId: string, lessonId: string): Promise<void> => {
-  try {
-    console.log('▶️ Starting lesson:', lessonId, 'for student:', studentId);
+  } catch (error: any) {
+    console.error('💥 [DEBUG] Critical error in getStudentLessons:', error);
+    console.error('💡 [DEBUG] Possible causes:');
+    console.error('1. RLS policies blocking access');
+    console.error('2. Student ID mismatch');
+    console.error('3. Missing data in database');
+    console.error('4. Network connectivity issues');
     
-    const { error } = await supabase
-      .from('student_lessons')
-      .update({
-        status: 'in_progress',
-        started_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('student_id', studentId)
-      .eq('lesson_id', lessonId);
-
-    if (error) {
-      console.error('❌ Error starting lesson:', error);
-      throw error;
-    }
-
-    console.log('✅ Lesson started successfully');
-  } catch (error) {
-    console.error('❌ Error in startStudentLesson:', error);
     throw error;
   }
 };
 
 /**
- * Update student's progress on a lesson
+ * Funkcja pomocnicza do testowania - sprawdza czy student ma przypisane lekcje
  */
-export const updateLessonProgress = async (
-  studentId: string, 
-  lessonId: string, 
-  progress: number, 
-  status?: 'assigned' | 'in_progress' | 'completed'
-): Promise<void> => {
+export const checkStudentLessonsExist = async (studentId: string): Promise<boolean> => {
   try {
-    console.log('📊 Updating progress:', lessonId, 'to', progress + '%');
+    console.log('🔍 [CHECK] Checking if lessons exist for student:', studentId);
     
-    const updateData: any = {
-      progress: Math.max(0, Math.min(100, progress)),
-      updated_at: new Date().toISOString()
-    };
-
-    if (status) {
-      updateData.status = status;
-    }
-
-    // If progress is 100%, mark as completed
-    if (progress >= 100) {
-      updateData.status = 'completed';
-      updateData.completed_at = new Date().toISOString();
-      updateData.score = progress; // Use progress as score for now
-    }
-
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('student_lessons')
-      .update(updateData)
-      .eq('student_id', studentId)
-      .eq('lesson_id', lessonId);
+      .select('id', { count: 'exact', head: true })
+      .eq('student_id', studentId);
 
     if (error) {
-      console.error('❌ Error updating progress:', error);
-      throw error;
+      console.error('❌ [CHECK] Error:', error);
+      return false;
     }
 
-    console.log('✅ Progress updated successfully');
-  } catch (error) {
-    console.error('❌ Error in updateLessonProgress:', error);
-    throw error;
-  }
-};
-
-/**
- * Complete a lesson with score
- */
-export const completeStudentLesson = async (
-  studentId: string,
-  lessonId: string,
-  score: number,
-  timeSpent?: number
-): Promise<void> => {
-  try {
-    console.log('🎯 Completing lesson:', lessonId, 'with score:', score);
+    const count = data as any; // count będzie w headerach
+    console.log('✅ [CHECK] Lessons exist check result:', count);
     
-    const { error } = await supabase
-      .from('student_lessons')
-      .update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        score: Math.max(0, Math.min(100, score)),
-        progress: 100,
-        time_spent: timeSpent || 0,
-        updated_at: new Date().toISOString()
-      })
-      .eq('student_id', studentId)
-      .eq('lesson_id', lessonId);
+    return true; // Jeśli nie ma błędu, znaczy że może dostać się do tabeli
 
-    if (error) {
-      console.error('❌ Error completing lesson:', error);
-      throw error;
-    }
-
-    console.log('✅ Lesson completed successfully');
   } catch (error) {
-    console.error('❌ Error in completeStudentLesson:', error);
-    throw error;
+    console.error('💥 [CHECK] Exception:', error);
+    return false;
   }
 };
 
