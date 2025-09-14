@@ -277,6 +277,7 @@ export function StudentLessonsPage() {
           </div>
         </div>
       )}
+      
       {/* Empty State */}
       {filteredLessons.length === 0 && !isLoading && (
         <div className="text-center py-12">
