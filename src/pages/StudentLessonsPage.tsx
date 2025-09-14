@@ -1,5 +1,6 @@
 // src/pages/StudentLessonsPage.tsx - UPDATED VERSION WITH REAL DATABASE DATA
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Search, Filter, BookOpen, Calendar, Clock, CheckCircle, AlertCircle, RefreshCw, Play, FileText } from 'lucide-react';
 import { useStudentLessons } from '../contexts/StudentLessonsContext';
 
@@ -289,33 +290,33 @@ export function StudentLessonsPage() {
                 {/* Action Button */}
                 <div className="ml-4">
                   {lessonData.status === 'assigned' && (
-                    <button
-                      onClick={() => handleStartLesson(lessonData.lesson_id)}
+                    <Link
+                      to={`/student/lessons/${lessonData.lesson_id}`}
                       className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
                     >
                       <Play className="h-4 w-4" />
                       <span>Start Lesson</span>
-                    </button>
+                    </Link>
                   )}
                   
                   {lessonData.status === 'in_progress' && (
-                    <button
-                      onClick={() => handleStartLesson(lessonData.lesson_id)}
+                    <Link
+                      to={`/student/lessons/${lessonData.lesson_id}`}
                       className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                     >
                       <Play className="h-4 w-4" />
                       <span>Continue</span>
-                    </button>
+                    </Link>
                   )}
                   
                   {lessonData.status === 'completed' && (
-                    <button
-                      onClick={() => handleStartLesson(lessonData.lesson_id)}
+                    <Link
+                      to={`/student/lessons/${lessonData.lesson_id}`}
                       className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
                     >
                       <FileText className="h-4 w-4" />
                       <span>Review</span>
-                    </button>
+                    </Link>
                   )}
                 </div>
               </div>
