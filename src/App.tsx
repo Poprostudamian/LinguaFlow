@@ -14,6 +14,7 @@ import { TutorStudentsPage } from './pages/TutorStudentsPage';
 import { TutorLessonManagementPage } from './pages/TutorLessonManagementPage';
 import { TutorMessagesPage } from './pages/TutorMessagesPage';
 import { StudentLessonsPage } from './pages/StudentLessonsPage';
+import { StudentLessonViewer } from './pages/StudentLessonViewer';
 import { StudentSchedulePage } from './pages/StudentSchedulePage';
 import { StudentMessagesPage } from './pages/StudentMessagesPage';
 
