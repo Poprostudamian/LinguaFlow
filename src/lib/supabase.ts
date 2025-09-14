@@ -836,13 +836,13 @@ export const getStudentLessons = async (studentId: string): Promise<any[]> => {
   try {
     console.log('🔍 Getting lessons for student:', studentId);
     
-    // KROK 1: Sprawdź sesję
+    // Sprawdź sesję
     const { data: { session } } = await supabase.auth.getSession();
     if (!session || session.user.id !== studentId) {
-      throw new Error('Not authenticated or invalid student ID');
+      throw new Error('Not authenticated');
     }
 
-    // KROK 2: Pobierz przypisania lekcji (proste zapytanie)
+    // Pobierz przypisania lekcji
     const { data: assignments, error: assignmentsError } = await supabase
       .from('student_lessons')
       .select('*')
@@ -860,7 +860,7 @@ export const getStudentLessons = async (studentId: string): Promise<any[]> => {
       return [];
     }
 
-    // KROK 3: Pobierz lekcje oddzielnie
+    // Pobierz lekcje
     const lessonIds = assignments.map(a => a.lesson_id);
     const { data: lessons, error: lessonsError } = await supabase
       .from('lessons')
@@ -869,12 +869,9 @@ export const getStudentLessons = async (studentId: string): Promise<any[]> => {
 
     if (lessonsError) {
       console.error('❌ Error fetching lessons:', lessonsError);
-      // Kontynuuj bez detali lekcji
     }
 
-    console.log('✅ Found', lessons?.length || 0, 'lessons');
-
-    // KROK 4: Pobierz tutorów oddzielnie (tylko IDs)
+    // Pobierz tutorów
     const tutorIds = lessons ? [...new Set(lessons.map(l => l.tutor_id))] : [];
     let tutors: any[] = [];
     
@@ -884,17 +881,12 @@ export const getStudentLessons = async (studentId: string): Promise<any[]> => {
         .select('id, first_name, last_name, email')
         .in('id', tutorIds);
 
-      if (tutorError) {
-        console.error('❌ Error fetching tutors:', tutorError);
-        // Kontynuuj bez danych tutorów
-      } else {
+      if (!tutorError) {
         tutors = tutorData || [];
       }
     }
 
-    console.log('✅ Found', tutors.length, 'tutors');
-
-    // KROK 5: Połącz dane ręcznie
+    // Połącz dane
     const result = assignments.map(assignment => {
       const lesson = lessons?.find(l => l.id === assignment.lesson_id);
       const tutor = lesson ? tutors.find(t => t.id === lesson.tutor_id) : null;
@@ -913,10 +905,10 @@ export const getStudentLessons = async (studentId: string): Promise<any[]> => {
         progress: assignment.progress || 0,
         updated_at: assignment.updated_at,
 
-        // Lesson fields nested for compatibility
+        // Lesson fields
         lessons: {
           id: lesson?.id || assignment.lesson_id,
-          title: lesson?.title || 'Loading...',
+          title: lesson?.title || 'Unknown Lesson',
           description: lesson?.description || '',
           content: lesson?.content || '',
           status: lesson?.status || 'published',
@@ -924,10 +916,10 @@ export const getStudentLessons = async (studentId: string): Promise<any[]> => {
           updated_at: lesson?.updated_at || assignment.updated_at,
           tutor_id: lesson?.tutor_id || '',
 
-          // Tutor fields nested
+          // Tutor fields
           users: {
-            first_name: tutor?.first_name || 'Loading...',
-            last_name: tutor?.last_name || '',
+            first_name: tutor?.first_name || 'Unknown',
+            last_name: tutor?.last_name || 'Tutor',
             email: tutor?.email || ''
           }
         }
@@ -935,17 +927,6 @@ export const getStudentLessons = async (studentId: string): Promise<any[]> => {
     });
 
     console.log('✅ Prepared', result.length, 'enriched assignments');
-    
-    // Debug pierwszej lekcji
-    if (result.length > 0) {
-      const first = result[0];
-      console.log('📋 First lesson:', {
-        title: first.lessons.title,
-        tutor: `${first.lessons.users.first_name} ${first.lessons.users.last_name}`,
-        status: first.status
-      });
-    }
-
     return result;
 
   } catch (error: any) {
