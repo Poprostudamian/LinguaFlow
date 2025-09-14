@@ -127,7 +127,7 @@ export function StudentLessonCard({
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate">
-              {lesson.lesson.title}
+              {lesson.lessons.title} 
             </h3>
             {lesson.lesson.description && (
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
@@ -145,7 +145,7 @@ export function StudentLessonCard({
         <div className="flex items-center space-x-2 mb-3">
   <User className="h-4 w-4 text-gray-400" />
   <span className="text-sm text-gray-600 dark:text-gray-400">
-  {lesson.lesson.tutor.first_name} {lesson.lesson.tutor.last_name}
+  {lesson.lessons.users.first_name} {lesson.lessons.users.last_name}
 </span>
 </div>
 
