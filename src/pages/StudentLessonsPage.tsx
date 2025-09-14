@@ -278,6 +278,47 @@ export function StudentLessonsPage() {
         </div>
       )}
 
+const handleCleanupOrphanedAssignments = async () => {
+  if (!session.user?.id) return;
+  
+  const confirmCleanup = window.confirm(
+    "Found orphaned assignments (lessons that no longer exist).\n\n" +
+    "Do you want to remove these invalid assignments?\n\n" +
+    "This will clean up your lesson list but won't delete any real lessons."
+  );
+  
+  if (!confirmCleanup) return;
+  
+  try {
+    console.log('🧹 Starting cleanup of orphaned assignments...');
+    
+    // Missing lesson IDs z console output
+    const orphanedLessonIds = [
+      'd1624638-e592-46be-92fe-0b556d6b302a',
+      'e8b4fdb0-f5ef-427d-810a-905bf945761c'
+    ];
+    
+    // Usuń assignments z tymi lesson_id
+    const { error } = await supabase
+      .from('student_lessons')
+      .delete()
+      .eq('student_id', session.user.id)
+      .in('lesson_id', orphanedLessonIds);
+    
+    if (error) throw error;
+    
+    console.log('✅ Cleanup completed');
+    alert('✅ Orphaned assignments cleaned up successfully!');
+    
+    // Refresh data
+    refreshData();
+    
+  } catch (error) {
+    console.error('❌ Cleanup failed:', error);
+    alert('❌ Cleanup failed: ' + error.message);
+  }
+};
+      
       {/* Empty State */}
       {filteredLessons.length === 0 && !isLoading && (
         <div className="text-center py-12">
