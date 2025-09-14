@@ -1,4 +1,4 @@
-// src/App.tsx - POPRAWIONA WERSJA
+// src/App.tsx - POPRAWIONA KOLEJNOŚĆ PROVIDERÓW
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -23,9 +23,9 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <StudentsProvider>
-          <StudentLessonsProvider>
-            <Router>
+        <Router>
+          <StudentsProvider>
+            <StudentLessonsProvider>
               <div className="App">
                 <Routes>
                   <Route path="/login" element={<Login />} />
@@ -65,9 +65,9 @@ function App() {
                   <Route path="*" element={<Navigate to="/login" replace />} />
                 </Routes>
               </div>
-            </Router>
-          </StudentLessonsProvider>
-        </StudentsProvider>
+            </StudentLessonsProvider>
+          </StudentsProvider>
+        </Router>
       </AuthProvider>
     </ThemeProvider>
   );
