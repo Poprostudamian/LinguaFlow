@@ -1,4 +1,4 @@
-// src/components/ExerciseViewer.tsx
+// 1. src/components/ExerciseViewer.tsx
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, RefreshCw, ArrowRight, ArrowLeft } from 'lucide-react';
 
@@ -9,7 +9,7 @@ export interface Exercise {
   title: string;
   question: string;
   correct_answer: string;
-  options?: string[]; // JSON array dla ABCD
+  options?: string[];
   explanation?: string;
   order_number: number;
   points: number;
@@ -27,7 +27,6 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
   const [showResults, setShowResults] = useState(false);
   const [startTime] = useState(Date.now());
   const [currentAnswer, setCurrentAnswer] = useState('');
-  const [showExplanation, setShowExplanation] = useState(false);
 
   const currentExercise = exercises[currentIndex];
 
@@ -49,17 +48,8 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
     if (currentIndex < exercises.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setCurrentAnswer(userAnswers[exercises[currentIndex + 1]?.id] || '');
-      setShowExplanation(false);
     } else {
       finishExercises();
-    }
-  };
-
-  const prevExercise = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-      setCurrentAnswer(userAnswers[exercises[currentIndex - 1]?.id] || '');
-      setShowExplanation(false);
     }
   };
 
@@ -72,7 +62,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
     }, 0);
 
     const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
-    const timeSpent = Math.floor((Date.now() - startTime) / 1000); // w sekundach
+    const timeSpent = Math.floor((Date.now() - startTime) / 1000);
 
     setShowResults(true);
     if (onComplete) {
@@ -106,32 +96,13 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
         <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">
           Your Score: {score}% ({earnedPoints}/{totalPoints} points)
         </p>
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 max-w-md mx-auto">
-          <h4 className="font-medium text-gray-900 dark:text-white mb-2">Results Summary:</h4>
-          {exercises.map((ex, index) => {
-            const userAnswer = userAnswers[ex.id];
-            const isCorrect = userAnswer?.toLowerCase().trim() === ex.correct_answer.toLowerCase().trim();
-            return (
-              <div key={ex.id} className="flex items-center justify-between py-1">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Exercise {index + 1}
-                </span>
-                {isCorrect ? (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                ) : (
-                  <XCircle className="h-4 w-4 text-red-500" />
-                )}
-              </div>
-            );
-          })}
-        </div>
       </div>
     );
   }
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Progress indicator */}
+      {/* Progress */}
       <div className="mb-6">
         <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mb-2">
           <span>Exercise {currentIndex + 1} of {exercises.length}</span>
@@ -145,7 +116,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
         </div>
       </div>
 
-      {/* Exercise content */}
+      {/* Exercise */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
           {currentExercise.title}
@@ -158,7 +129,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
         {currentExercise.exercise_type === 'ABCD' && currentExercise.options && (
           <div className="space-y-3">
             {currentExercise.options.map((option, index) => {
-              const optionLetter = String.fromCharCode(65 + index); // A, B, C, D
+              const optionLetter = String.fromCharCode(65 + index);
               const isSelected = currentAnswer === optionLetter;
               
               return (
@@ -168,7 +139,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
                   className={`w-full text-left p-4 rounded-lg border transition-colors ${
                     isSelected
                       ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
                   }`}
                 >
                   <span className="font-medium text-purple-600 dark:text-purple-400 mr-3">
@@ -181,91 +152,391 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
           </div>
         )}
 
-        {/* Fiszki Type */}
-        {currentExercise.exercise_type === 'Fiszki' && (
-          <div className="space-y-4">
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 text-center">
-              <p className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                {currentExercise.correct_answer}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                How well do you know this?
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-3">
-              {['Easy', 'Medium', 'Hard'].map((difficulty) => (
-                <button
-                  key={difficulty}
-                  onClick={() => handleAnswer(difficulty)}
-                  className={`p-3 rounded-lg border text-center transition-colors ${
-                    currentAnswer === difficulty
-                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300'
-                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  {difficulty}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Tekstowe Type */}
-        {currentExercise.exercise_type === 'Tekstowe' && (
-          <div className="space-y-4">
-            <textarea
-              value={currentAnswer}
-              onChange={(e) => handleAnswer(e.target.value)}
-              placeholder="Type your answer here..."
-              className="w-full p-4 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              rows={4}
-            />
-          </div>
-        )}
-
-        {/* Explanation */}
-        {showExplanation && currentExercise.explanation && (
-          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">Explanation:</h4>
-            <p className="text-blue-800 dark:text-blue-200">{currentExercise.explanation}</p>
-          </div>
-        )}
+        {/* Other exercise types can be added here */}
       </div>
 
       {/* Navigation */}
       <div className="flex justify-between items-center">
         <button
-          onClick={prevExercise}
+          onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
           disabled={currentIndex === 0}
-          className="flex items-center space-x-2 px-4 py-2 text-gray-600 dark:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed hover:text-gray-900 dark:hover:text-white"
+          className="flex items-center space-x-2 px-4 py-2 text-gray-600 disabled:opacity-50"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Previous</span>
         </button>
 
-        <div className="flex space-x-3">
-          {currentExercise.explanation && (
+        <button
+          onClick={nextExercise}
+          disabled={!currentAnswer}
+          className="flex items-center space-x-2 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+        >
+          <span>{currentIndex === exercises.length - 1 ? 'Finish' : 'Next'}</span>
+          <ArrowRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ==============================================================================
+
+// 2. src/pages/StudentLessonViewer.tsx
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { 
+  BookOpen, 
+  Clock, 
+  User, 
+  ArrowLeft, 
+  CheckCircle, 
+  PlayCircle,
+  RefreshCw,
+  AlertCircle
+} from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { getLessonDetails, getLessonExercises, updateStudentLessonProgress } from '../lib/supabase';
+import { ExerciseViewer, Exercise } from '../components/ExerciseViewer';
+
+interface LessonDetails {
+  id: string;
+  title: string;
+  description: string;
+  content: string;
+  created_at: string;
+  tutor: {
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+  student_lesson: {
+    status: 'assigned' | 'in_progress' | 'completed';
+    progress: number;
+    score: number | null;
+    time_spent: number;
+    started_at: string | null;
+    completed_at: string | null;
+  };
+}
+
+export function StudentLessonViewer() {
+  const { lessonId } = useParams<{ lessonId: string }>();
+  const navigate = useNavigate();
+  const { session } = useAuth();
+  
+  const [lesson, setLesson] = useState<LessonDetails | null>(null);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'content' | 'exercises'>('content');
+
+  useEffect(() => {
+    if (lessonId && session?.user?.id) {
+      loadLessonData();
+    }
+  }, [lessonId, session?.user?.id]);
+
+  const loadLessonData = async () => {
+    if (!lessonId || !session?.user?.id) return;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const [lessonData, exercisesData] = await Promise.all([
+        getLessonDetails(lessonId, session.user.id),
+        getLessonExercises(lessonId)
+      ]);
+
+      if (!lessonData) {
+        setError('Lesson not found or not assigned to you');
+        return;
+      }
+
+      setLesson(lessonData);
+      setExercises(exercisesData);
+
+      if (exercisesData.length > 0 && lessonData.student_lesson.status !== 'assigned') {
+        setActiveTab('exercises');
+      }
+
+    } catch (err: any) {
+      console.error('Error loading lesson:', err);
+      setError(err.message || 'Failed to load lesson');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStartLesson = async () => {
+    if (!lessonId || !session?.user?.id) return;
+
+    try {
+      await updateStudentLessonProgress(
+        session.user.id,
+        lessonId,
+        10,
+        'in_progress'
+      );
+
+      await loadLessonData();
+      
+      if (exercises.length > 0) {
+        setActiveTab('exercises');
+      }
+
+    } catch (err: any) {
+      console.error('Error starting lesson:', err);
+      setError('Failed to start lesson');
+    }
+  };
+
+  const handleCompleteExercises = async (score: number, timeSpent: number) => {
+    if (!lessonId || !session?.user?.id) return;
+
+    try {
+      await updateStudentLessonProgress(
+        session.user.id,
+        lessonId,
+        100,
+        'completed',
+        score,
+        timeSpent
+      );
+
+      await loadLessonData();
+
+    } catch (err: any) {
+      console.error('Error completing exercises:', err);
+      setError('Failed to complete exercises');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <RefreshCw className="h-12 w-12 animate-spin text-purple-600 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Loading lesson...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !lesson) {
+    return (
+      <div className="max-w-2xl mx-auto py-8">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+          <h3 className="text-red-800 dark:text-red-200 font-medium mb-2">Error</h3>
+          <p className="text-red-600 dark:text-red-300">{error || 'Lesson not found'}</p>
+          <button
+            onClick={() => navigate('/student/lessons')}
+            className="mt-4 px-4 py-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-md hover:bg-red-200 dark:hover:bg-red-700"
+          >
+            Back to Lessons
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const { student_lesson } = lesson;
+  const hasExercises = exercises.length > 0;
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center space-x-4 mb-6">
+        <button
+          onClick={() => navigate('/student/lessons')}
+          className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {lesson.title}
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            {lesson.description}
+          </p>
+        </div>
+      </div>
+
+      {/* Lesson metadata */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+              <User className="h-4 w-4" />
+              <span>{lesson.tutor.first_name} {lesson.tutor.last_name}</span>
+            </div>
+            
+            <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+              <Clock className="h-4 w-4" />
+              <span>
+                {student_lesson.time_spent > 0 
+                  ? `${Math.round(student_lesson.time_spent / 60)} min spent`
+                  : 'Not started'
+                }
+              </span>
+            </div>
+
+            {hasExercises && (
+              <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+                <BookOpen className="h-4 w-4" />
+                <span>{exercises.length} exercises</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+              student_lesson.status === 'completed'
+                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                : student_lesson.status === 'in_progress'
+                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+            }`}>
+              {student_lesson.status === 'assigned' ? 'Not Started' : 
+               student_lesson.status === 'in_progress' ? 'In Progress' : 'Completed'}
+            </span>
+
+            {student_lesson.score !== null && (
+              <span className="text-lg font-bold text-gray-900 dark:text-white">
+                {student_lesson.score}%
+              </span>
+            )}
+          </div>
+        </div>
+
+        {student_lesson.progress > 0 && (
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+            <div
+              className={`h-3 rounded-full transition-all duration-300 ${
+                student_lesson.status === 'completed' 
+                  ? 'bg-green-500' 
+                  : 'bg-purple-600'
+              }`}
+              style={{ width: `${student_lesson.progress}%` }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <nav className="flex space-x-8 px-6">
             <button
-              onClick={() => setShowExplanation(!showExplanation)}
-              className="px-4 py-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+              onClick={() => setActiveTab('content')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'content'
+                  ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+              }`}
             >
-              {showExplanation ? 'Hide' : 'Show'} Explanation
+              Lesson Content
             </button>
+
+            {hasExercises && (
+              <button
+                onClick={() => setActiveTab('exercises')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'exercises'
+                    ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                }`}
+              >
+                Exercises ({exercises.length})
+              </button>
+            )}
+          </nav>
+        </div>
+
+        <div className="p-6">
+          {activeTab === 'content' && (
+            <div className="space-y-6">
+              <div className="prose dark:prose-invert max-w-none">
+                <div 
+                  dangerouslySetInnerHTML={{ __html: lesson.content }}
+                  className="text-gray-700 dark:text-gray-300"
+                />
+              </div>
+
+              <div className="flex justify-center pt-6">
+                {student_lesson.status === 'assigned' && (
+                  <button
+                    onClick={handleStartLesson}
+                    className="flex items-center space-x-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                  >
+                    <PlayCircle className="h-5 w-5" />
+                    <span>Start Lesson</span>
+                  </button>
+                )}
+
+                {student_lesson.status === 'in_progress' && hasExercises && (
+                  <button
+                    onClick={() => setActiveTab('exercises')}
+                    className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    <BookOpen className="h-5 w-5" />
+                    <span>Start Exercises</span>
+                  </button>
+                )}
+
+                {student_lesson.status === 'completed' && (
+                  <div className="text-center">
+                    <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />
+                    <p className="text-green-600 dark:text-green-400 font-medium">
+                      Lesson completed! Score: {student_lesson.score}%
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
 
-          <button
-            onClick={nextExercise}
-            disabled={!currentAnswer}
-            className="flex items-center space-x-2 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span>{currentIndex === exercises.length - 1 ? 'Finish' : 'Next'}</span>
-            {currentIndex === exercises.length - 1 ? (
-              <CheckCircle className="h-4 w-4" />
-            ) : (
-              <ArrowRight className="h-4 w-4" />
-            )}
-          </button>
+          {activeTab === 'exercises' && (
+            <div>
+              {student_lesson.status === 'assigned' ? (
+                <div className="text-center py-8">
+                  <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Start the lesson first
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    You need to start the lesson before accessing exercises.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab('content')}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                  >
+                    Go to Lesson Content
+                  </button>
+                </div>
+              ) : student_lesson.status === 'completed' ? (
+                <div className="text-center py-8">
+                  <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Exercises Completed!
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-2">
+                    You've already completed all exercises for this lesson.
+                  </p>
+                  <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                    Final Score: {student_lesson.score}%
+                  </p>
+                </div>
+              ) : (
+                <ExerciseViewer
+                  exercises={exercises}
+                  onComplete={handleCompleteExercises}
+                  onProgress={() => {}}
+                />
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
