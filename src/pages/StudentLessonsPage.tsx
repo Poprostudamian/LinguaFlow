@@ -139,18 +139,16 @@ export function StudentLessonsPage() {
 
       {/* REAL DATA INDICATOR - tak jak w TutorDashboard */}
       <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-green-800 dark:text-green-200 font-medium">
-                Live Database Connection
-              </span>
-            </div>
-            <div className="text-green-600 dark:text-green-300 text-sm mt-1">
-              Lessons: {lessons.length} • Study Time: {Math.floor(kpis.totalStudyTime / 60)}h {kpis.totalStudyTime % 60}m • Progress: {kpis.averageProgress}%
-            </div>
-          </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <span className="text-green-800 dark:text-green-200 font-medium">
+            Live Database Connection
+          </span>
+        </div>
+        <div className="text-green-600 dark:text-green-300 text-sm mt-1">
+          Lessons: {lessons.length} • Study Time: {Math.floor(kpis.totalStudyTime / 60)}h {kpis.totalStudyTime % 60}m • Progress: {kpis.averageProgress}%
+        </div>
+      </div>
 
       {/* Stats Overview - REAL DATA */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
