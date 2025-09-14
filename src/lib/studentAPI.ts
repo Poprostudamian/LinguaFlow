@@ -216,10 +216,11 @@ export function useStudentData(studentId: string | undefined) {
 
       console.log('🔄 [STUDENT HOOK] Loading data for:', studentId);
 
-      // TYMCZASOWO: Użyj debug wersji żeby zobaczyć co się dzieje
-      const { getStudentLessonsRealWithDebug } = await import('../lib/debugUnknownData');
-      const lessonsData = await getStudentLessonsRealWithDebug(studentId);
-      const kpisData = await getStudentKPIsReal(studentId);
+      // Równoległe ładowanie danych (tak jak w tutorze)
+      const [lessonsData, kpisData] = await Promise.all([
+        getStudentLessonsReal(studentId),
+        getStudentKPIsReal(studentId)
+      ]);
 
       console.log('✅ [STUDENT HOOK] Data loaded successfully');
       setLessons(lessonsData);
