@@ -947,23 +947,29 @@ export const startStudentLesson = async (studentId: string, lessonId: string): P
 /**
  * Update student's progress on a lesson
  */
-export const updateStudentLessonProgress = async (
+export const updateLessonProgress = async (
   studentId: string, 
   lessonId: string, 
-  progress: number,
+  progress: number, 
   status?: 'assigned' | 'in_progress' | 'completed'
 ): Promise<void> => {
   try {
+    console.log('📊 Updating progress:', lessonId, 'to', progress + '%');
+    
     const updateData: any = {
-      progress,
+      progress: Math.max(0, Math.min(100, progress)),
       updated_at: new Date().toISOString()
     };
 
     if (status) {
       updateData.status = status;
-      if (status === 'completed') {
-        updateData.completed_at = new Date().toISOString();
-      }
+    }
+
+    // If progress is 100%, mark as completed
+    if (progress >= 100) {
+      updateData.status = 'completed';
+      updateData.completed_at = new Date().toISOString();
+      updateData.score = progress; // Use progress as score for now
     }
 
     const { error } = await supabase
@@ -972,9 +978,14 @@ export const updateStudentLessonProgress = async (
       .eq('student_id', studentId)
       .eq('lesson_id', lessonId);
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error updating progress:', error);
+      throw error;
+    }
+
+    console.log('✅ Progress updated successfully');
   } catch (error) {
-    console.error('Error updating student lesson progress:', error);
+    console.error('❌ Error in updateLessonProgress:', error);
     throw error;
   }
 };
