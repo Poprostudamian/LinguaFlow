@@ -19,6 +19,7 @@ import { StudentLessonsPage } from './pages/StudentLessonsPage';
 import { StudentLessonViewer } from './pages/StudentLessonViewer';
 import { StudentSchedulePage } from './pages/StudentSchedulePage';
 import { StudentMessagesPage } from './pages/StudentMessagesPage';
+import { StudentLessonHistory } from './pages/StudentLessonHistory';
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
                             <Route index element={<StudentDashboard />} />
                             <Route path="lessons" element={<StudentLessonsPage />} />
                             <Route path="lessons/:lessonId" element={<StudentLessonViewer />} />
+                            <Route path="lessons/:lessonId/history" element={<StudentLessonHistory />} />
                             <Route path="schedule" element={<StudentSchedulePage />} />
                             <Route path="messages" element={<StudentMessagesPage />} />
                           </Routes>
