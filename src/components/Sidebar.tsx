@@ -24,6 +24,7 @@ export function Sidebar() {
     { path: '/tutor', label: 'Dashboard', icon: Home },
     { path: '/tutor/students', label: 'Students', icon: Users },
     { path: '/tutor/lessons', label: 'Create Lesson', icon: PlusCircle },
+    { path: '/tutor/schedule', label: 'Schedule', icon: Calendar }, // ✅ NOWA OPCJA
     { path: '/tutor/messages', label: 'Messages', icon: MessageCircle },
   ];
 
