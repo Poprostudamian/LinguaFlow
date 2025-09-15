@@ -1,4 +1,4 @@
-// src/pages/StudentLessonViewer.tsx - WERSJA Z DEBUGOWANIEM
+// src/pages/StudentLessonViewer.tsx - ULEPSZONA WERSJA DEBUG
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -37,7 +37,7 @@ interface LessonDetails {
   };
 }
 
-// Dodajmy prostą implementację getLessonDetails
+// Ulepszona implementacja getLessonDetails z dodatkowymi logami
 const getLessonDetails = async (lessonId: string, studentId: string): Promise<LessonDetails | null> => {
   try {
     console.log('🔍 Getting lesson details for:', { lessonId, studentId });
@@ -88,13 +88,16 @@ const getLessonDetails = async (lessonId: string, studentId: string): Promise<Le
     }
 
     console.log('✅ Raw lesson data:', data);
+    console.log('📝 Raw lesson content:', data.lessons.content);
+    console.log('📝 Content length:', data.lessons.content ? data.lessons.content.length : 0);
+    console.log('📝 Content type:', typeof data.lessons.content);
 
     // Formatuj dane dla komponentu
     const formattedData = {
       id: data.lessons.id,
       title: data.lessons.title,
       description: data.lessons.description || '',
-      content: data.lessons.content || '',
+      content: data.lessons.content || 'No content available for this lesson.',
       created_at: data.lessons.created_at,
       tutor: {
         first_name: data.lessons.users.first_name,
@@ -112,6 +115,7 @@ const getLessonDetails = async (lessonId: string, studentId: string): Promise<Le
     };
 
     console.log('✅ Formatted lesson data:', formattedData);
+    console.log('📝 Final content:', formattedData.content);
     return formattedData;
 
   } catch (error) {
@@ -186,13 +190,6 @@ export function StudentLessonViewer() {
 
       console.log('📚 Loading lesson data for:', { lessonId, studentId: session.user.id });
 
-      // Dodaj debug info
-      setDebugInfo({
-        lessonId,
-        studentId: session.user.id,
-        userRole: session.user.role
-      });
-
       // Pobierz szczegóły lekcji
       const lessonData = await getLessonDetails(lessonId, session.user.id);
       console.log('📖 Lesson data result:', lessonData);
@@ -203,6 +200,17 @@ export function StudentLessonViewer() {
       }
 
       setLesson(lessonData);
+
+      // Dodaj debug info z więcej szczegółów
+      setDebugInfo({
+        lessonId,
+        studentId: session.user.id,
+        userRole: session.user.role,
+        lessonTitle: lessonData.title,
+        contentLength: lessonData.content ? lessonData.content.length : 0,
+        hasContent: !!lessonData.content && lessonData.content.trim().length > 0,
+        rawContent: lessonData.content
+      });
 
       // Pobierz ćwiczenia
       const exercisesData = await getLessonExercises(lessonId);
@@ -315,17 +323,30 @@ export function StudentLessonViewer() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Debug panel dla development */}
+      {/* Enhanced Debug panel dla development */}
       {process.env.NODE_ENV === 'development' && (
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">Debug Info:</h4>
+          <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">Enhanced Debug Info:</h4>
           <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
             <p>Lesson ID: {debugInfo.lessonId}</p>
             <p>Student ID: {debugInfo.studentId}</p>
             <p>User Role: {debugInfo.userRole}</p>
+            <p>Lesson Title: {debugInfo.lessonTitle}</p>
+            <p>Content Length: {debugInfo.contentLength} characters</p>
+            <p>Has Content: {debugInfo.hasContent ? 'YES' : 'NO'}</p>
             <p>Lesson Status: {student_lesson.status}</p>
             <p>Progress: {student_lesson.progress}%</p>
             <p>Exercises: {exercises.length}</p>
+            
+            {/* Raw content preview */}
+            <details className="mt-2">
+              <summary className="cursor-pointer text-blue-600 dark:text-blue-400">
+                Raw Content Preview (click to expand)
+              </summary>
+              <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs overflow-auto max-h-32">
+                <pre>{debugInfo.rawContent || 'No content'}</pre>
+              </div>
+            </details>
           </div>
         </div>
       )}
@@ -418,11 +439,31 @@ export function StudentLessonViewer() {
           Lesson Content
         </h2>
         
+        {/* Content Warning if empty */}
+        {(!lesson.content || lesson.content.trim().length === 0) && (
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+            <div className="flex items-center space-x-2">
+              <AlertCircle className="h-5 w-5 text-yellow-600" />
+              <p className="text-yellow-800 dark:text-yellow-200">
+                This lesson has no content yet. The tutor may need to add content to this lesson.
+              </p>
+            </div>
+          </div>
+        )}
+        
         <div className="prose dark:prose-invert max-w-none mb-6">
-          <div 
-            dangerouslySetInnerHTML={{ __html: lesson.content }}
-            className="text-gray-700 dark:text-gray-300"
-          />
+          {lesson.content && lesson.content.trim().length > 0 ? (
+            <div 
+              dangerouslySetInnerHTML={{ __html: lesson.content }}
+              className="text-gray-700 dark:text-gray-300"
+            />
+          ) : (
+            <div className="text-gray-500 dark:text-gray-400 italic text-center py-8">
+              <BookOpen className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>No content available for this lesson.</p>
+              <p className="text-sm mt-1">Please contact your tutor to add content to this lesson.</p>
+            </div>
+          )}
         </div>
 
         {/* Action buttons */}
@@ -451,6 +492,31 @@ export function StudentLessonViewer() {
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                 Exercise functionality coming soon!
               </p>
+            </div>
+          )}
+
+          {student_lesson.status === 'in_progress' && !hasExercises && (
+            <div className="text-center">
+              <CheckCircle className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+              <p className="text-blue-600 dark:text-blue-400 font-medium">
+                Lesson in progress! Continue reading the content above.
+              </p>
+              <button
+                onClick={() => {
+                  // Symuluj ukończenie lekcji
+                  updateStudentLessonProgress(
+                    session.user.id,
+                    lessonId,
+                    100,
+                    'completed',
+                    100, // 100% score
+                    300  // 5 minut
+                  ).then(() => loadLessonData());
+                }}
+                className="mt-3 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                Mark as Completed
+              </button>
             </div>
           )}
 
