@@ -222,93 +222,144 @@ export function TutorLessonManagementPage() {
   // ========================================================================================
 
   const handleCreateLesson = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!session?.user?.id) {
-      setError('No authenticated user');
-      return;
+  e.preventDefault();
+  if (!session?.user?.id) return;
+
+  setIsCreating(true);
+  setError(null);
+
+  try {
+    console.log('🎯 Creating lesson with exercises:', {
+      lesson: newLesson,
+      exercises: exercises
+    });
+
+    // KROK 1: Stwórz lekcję
+    const { data: lesson, error: lessonError } = await supabase
+      .from('lessons')
+      .insert({
+        tutor_id: session.user.id,
+        title: newLesson.title.trim(),
+        description: newLesson.description?.trim() || null,
+        content: `<h2>${newLesson.title}</h2><p>This lesson includes ${exercises.length} interactive exercises.</p>`,
+        status: newLesson.status,
+        is_published: newLesson.status === 'published'
+      })
+      .select()
+      .single();
+
+    if (lessonError) {
+      console.error('❌ Error creating lesson:', lessonError);
+      throw lessonError;
     }
 
-    if (!newLesson.title.trim()) {
-      setError('Lesson title is required');
-      return;
-    }
+    console.log('✅ Lesson created:', lesson);
+    const lessonId = lesson.id;
 
-    setIsCreating(true);
-    setError(null);
+    // KROK 2: Przypisz studentów do lekcji
+    if (newLesson.assignedStudentIds.length > 0) {
+      const assignments = newLesson.assignedStudentIds.map(studentId => ({
+        lesson_id: lessonId,
+        student_id: studentId,
+        status: 'assigned' as const,
+        progress: 0,
+        score: null,
+        time_spent: 0
+      }));
 
-    try {
-      let lesson;
-      
-      // Próbuj użyć funkcji createLesson
-      try {
-        lesson = await createLesson(session.user.id, {
-          ...newLesson,
-          title: newLesson.title.trim(),
-          description: newLesson.description?.trim() || undefined
-        });
-      } catch (createError) {
-        // Fallback - bezpośrednie wstawienie do Supabase
-        const { data, error: insertError } = await supabase
-          .from('lessons')
-          .insert([{
-            title: newLesson.title.trim(),
-            description: newLesson.description?.trim() || null,
-            status: newLesson.status,
-            tutor_id: session.user.id,
-            content: '' // Dodaj puste content jeśli tabela tego wymaga
-          }])
-          .select()
-          .single();
+      const { error: assignmentError } = await supabase
+        .from('student_lessons')
+        .insert(assignments);
 
-        if (insertError) throw insertError;
-        lesson = data;
+      if (assignmentError) {
+        console.error('❌ Error assigning students:', assignmentError);
+        throw assignmentError;
       }
 
-      // Przypisz studentów jeśli wybrano
-      if (newLesson.assignedStudentIds.length > 0) {
-        try {
-          await assignLessonToStudents(lesson.id, newLesson.assignedStudentIds);
-        } catch (assignError) {
-          // Fallback assignment
-          const assignments = newLesson.assignedStudentIds.map(studentId => ({
-            lesson_id: lesson.id,
-            student_id: studentId,
-            assigned_at: new Date().toISOString(),
-            status: 'assigned'
-          }));
+      console.log('✅ Students assigned:', newLesson.assignedStudentIds.length);
+    }
 
-          await supabase
-            .from('student_lessons')
-            .insert(assignments);
+    // KROK 3: Stwórz ćwiczenia (NAJWAŻNIEJSZE!)
+    if (exercises.length > 0) {
+      console.log('🎯 Creating exercises for lesson:', lessonId);
+
+      const exercisesData = exercises.map((exercise, index) => {
+        const baseExercise = {
+          lesson_id: lessonId,
+          exercise_type: exercise.type,
+          title: exercise.title,
+          question: exercise.question,
+          order_number: index + 1,
+          points: exercise.points || 1,
+          explanation: exercise.explanation || null
+        };
+
+        // Dodaj specyficzne pola dla różnych typów
+        if (exercise.type === 'multiple_choice') {
+          return {
+            ...baseExercise,
+            correct_answer: exercise.correctAnswer || 'A',
+            options: JSON.stringify(exercise.options || ['Option A', 'Option B', 'Option C', 'Option D'])
+          };
+        } else if (exercise.type === 'flashcard') {
+          return {
+            ...baseExercise,
+            correct_answer: exercise.flashcards?.[0]?.back || 'Answer',
+            options: JSON.stringify(exercise.flashcards || [])
+          };
+        } else if (exercise.type === 'text_answer') {
+          return {
+            ...baseExercise,
+            correct_answer: exercise.correctAnswer || 'Sample answer',
+            options: JSON.stringify({ maxLength: exercise.maxLength || 500 })
+          };
         }
-      }
 
-      // W przyszłości tutaj będziemy zapisywać ćwiczenia
-      if (exercises.length > 0) {
-        console.log('Exercises to save:', exercises.length);
-        // TODO: Zaimplementować zapisywanie ćwiczeń do bazy
-      }
-
-      // Reset form
-      setExercises([]);
-      setNewLesson({
-        title: '',
-        description: '',
-        assignedStudentIds: [],
-        status: 'published'
+        return baseExercise;
       });
-      
-      setShowCreateForm(false);
-      await loadLessons();
-      
-    } catch (err: any) {
-      console.error('Error creating lesson:', err);
-      setError(err.message || 'Failed to create lesson');
-    } finally {
-      setIsCreating(false);
+
+      const { error: exercisesError } = await supabase
+        .from('lesson_exercises')
+        .insert(exercisesData);
+
+      if (exercisesError) {
+        console.error('❌ Error creating exercises:', exercisesError);
+        
+        // Jeśli tabela nie istnieje, pomiń błąd ale pokaż ostrzeżenie
+        if (exercisesError.code === '42P01') {
+          console.warn('⚠️ lesson_exercises table does not exist. Exercises will not be saved.');
+          alert('Warning: Exercises cannot be saved. The lesson_exercises table needs to be created in the database.');
+        } else {
+          throw exercisesError;
+        }
+      } else {
+        console.log('✅ Exercises created:', exercises.length);
+      }
     }
-  };
+
+    // KROK 4: Reset formularza i odśwież dane
+    setNewLesson({
+      title: '',
+      description: '',
+      assignedStudentIds: [],
+      status: 'published'
+    });
+    setExercises([]);
+    setShowCreateForm(false);
+
+    // Pokaż sukces
+    alert(`✅ Lesson "${lesson.title}" created successfully with ${exercises.length} exercises!`);
+
+    // Odśwież listę lekcji
+    await loadLessons();
+
+  } catch (error: any) {
+    console.error('❌ Error creating lesson:', error);
+    setError(error.message || 'Failed to create lesson');
+  } finally {
+    setIsCreating(false);
+  }
+};
 
   const handleEditLesson = async (lessonId: string, updates: UpdateLessonData) => {
     console.log('🔄 Editing lesson:', lessonId, updates);
