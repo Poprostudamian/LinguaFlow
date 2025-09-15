@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS meetings (
   duration_minutes INTEGER DEFAULT 60 CHECK (duration_minutes > 0 AND duration_minutes <= 480), -- Max 8 hours
   status VARCHAR(20) DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'in_progress', 'completed', 'cancelled')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
   
   -- Role validation handled by RLS policies
 );
@@ -46,9 +46,6 @@ CREATE TABLE IF NOT EXISTS meeting_participants (
   joined_at TIMESTAMPTZ,
   left_at TIMESTAMPTZ,
   status VARCHAR(20) DEFAULT 'invited' CHECK (status IN ('invited', 'joined', 'missed', 'cancelled')),
-  
-  -- Prevent duplicate invitations
-  UNIQUE(meeting_id, student_id),
   
   -- Ensure logical timestamp ordering
   CONSTRAINT participants_time_logic_check CHECK (
