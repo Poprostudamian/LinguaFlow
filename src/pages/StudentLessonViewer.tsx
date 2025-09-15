@@ -1,4 +1,4 @@
-// src/pages/StudentLessonViewer.tsx - ULEPSZONA WERSJA DEBUG
+// src/pages/StudentLessonViewer.tsx - KOMPLETNA WERSJA Z ZAKŁADKAMI
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, updateStudentLessonProgress } from '../lib/supabase';
+import { ExerciseViewer, Exercise } from '../components/ExerciseViewer';
 
 interface LessonDetails {
   id: string;
@@ -37,12 +38,11 @@ interface LessonDetails {
   };
 }
 
-// Ulepszona implementacja getLessonDetails z dodatkowymi logami
+// Implementacja getLessonDetails
 const getLessonDetails = async (lessonId: string, studentId: string): Promise<LessonDetails | null> => {
   try {
     console.log('🔍 Getting lesson details for:', { lessonId, studentId });
 
-    // Pobierz informacje o lekcji wraz z przypisaniem studenta
     const { data, error } = await supabase
       .from('student_lessons')
       .select(`
@@ -87,12 +87,6 @@ const getLessonDetails = async (lessonId: string, studentId: string): Promise<Le
       return null;
     }
 
-    console.log('✅ Raw lesson data:', data);
-    console.log('📝 Raw lesson content:', data.lessons.content);
-    console.log('📝 Content length:', data.lessons.content ? data.lessons.content.length : 0);
-    console.log('📝 Content type:', typeof data.lessons.content);
-
-    // Formatuj dane dla komponentu
     const formattedData = {
       id: data.lessons.id,
       title: data.lessons.title,
@@ -115,7 +109,6 @@ const getLessonDetails = async (lessonId: string, studentId: string): Promise<Le
     };
 
     console.log('✅ Formatted lesson data:', formattedData);
-    console.log('📝 Final content:', formattedData.content);
     return formattedData;
 
   } catch (error) {
@@ -124,8 +117,8 @@ const getLessonDetails = async (lessonId: string, studentId: string): Promise<Le
   }
 };
 
-// Prosta implementacja getLessonExercises
-const getLessonExercises = async (lessonId: string) => {
+// Implementacja getLessonExercises
+const getLessonExercises = async (lessonId: string): Promise<Exercise[]> => {
   try {
     console.log('🎯 Getting exercises for lesson:', lessonId);
 
@@ -136,28 +129,31 @@ const getLessonExercises = async (lessonId: string) => {
       .order('order_number', { ascending: true });
 
     if (error) {
-      // Jeśli tabela nie istnieje, zwróć pustą tablicę
       if (error.code === '42P01') {
         console.log('ℹ️ lesson_exercises table does not exist yet');
         return [];
       }
       console.error('❌ Error fetching exercises:', error);
-      return []; // Nie rzucaj błędu, tylko zwróć pustą tablicę
+      return [];
     }
 
     console.log('✅ Found', data?.length || 0, 'exercises');
     
-    // Parsuj opcje JSON dla ćwiczeń ABCD
+    // Mapuj exercise_type na oczekiwane wartości
     const formattedExercises = (data || []).map(exercise => ({
       ...exercise,
+      exercise_type: exercise.exercise_type === 'multiple_choice' ? 'ABCD' :
+                    exercise.exercise_type === 'flashcard' ? 'Fiszki' :
+                    exercise.exercise_type === 'text_answer' ? 'Tekstowe' : 'ABCD',
       options: exercise.options ? JSON.parse(exercise.options) : null
     }));
 
+    console.log('✅ Formatted exercises:', formattedExercises);
     return formattedExercises;
 
   } catch (error) {
     console.error('Error getting lesson exercises:', error);
-    return []; // Zwróć pustą tablicę zamiast rzucać błąd
+    return [];
   }
 };
 
@@ -167,11 +163,12 @@ export function StudentLessonViewer() {
   const { session } = useAuth();
   
   const [lesson, setLesson] = useState<LessonDetails | null>(null);
-  const [exercises, setExercises] = useState<any[]>([]);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'content' | 'exercises'>('content');
   const [isStarting, setIsStarting] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
   const [debugInfo, setDebugInfo] = useState<any>({});
 
   useEffect(() => {
@@ -201,7 +198,12 @@ export function StudentLessonViewer() {
 
       setLesson(lessonData);
 
-      // Dodaj debug info z więcej szczegółów
+      // Pobierz ćwiczenia
+      const exercisesData = await getLessonExercises(lessonId);
+      console.log('🎯 Exercises data result:', exercisesData);
+      setExercises(exercisesData);
+
+      // Dodaj debug info
       setDebugInfo({
         lessonId,
         studentId: session.user.id,
@@ -209,13 +211,9 @@ export function StudentLessonViewer() {
         lessonTitle: lessonData.title,
         contentLength: lessonData.content ? lessonData.content.length : 0,
         hasContent: !!lessonData.content && lessonData.content.trim().length > 0,
-        rawContent: lessonData.content
+        exercisesCount: exercisesData.length,
+        exerciseTypes: exercisesData.map(ex => ex.exercise_type)
       });
-
-      // Pobierz ćwiczenia
-      const exercisesData = await getLessonExercises(lessonId);
-      console.log('🎯 Exercises data result:', exercisesData);
-      setExercises(exercisesData);
 
       // Jeśli są ćwiczenia i lekcja jest w trakcie/ukończona, pokaż ćwiczenia
       if (exercisesData.length > 0 && lessonData.student_lesson.status !== 'assigned') {
@@ -237,18 +235,15 @@ export function StudentLessonViewer() {
       setIsStarting(true);
       console.log('▶️ Starting lesson:', { lessonId, studentId: session.user.id });
       
-      // Aktualizuj status na "in_progress"
       await updateStudentLessonProgress(
         session.user.id,
         lessonId,
-        10, // 10% progress na start
+        10,
         'in_progress'
       );
 
-      // Odśwież dane
       await loadLessonData();
       
-      // Przejdź do ćwiczeń jeśli są dostępne
       if (exercises.length > 0) {
         setActiveTab('exercises');
       }
@@ -261,21 +256,51 @@ export function StudentLessonViewer() {
     }
   };
 
+  const handleCompleteExercises = async (score: number, timeSpent: number) => {
+    if (!lessonId || !session?.user?.id) return;
+
+    try {
+      setIsCompleting(true);
+      console.log('🏁 Completing exercises:', { score, timeSpent });
+
+      await updateStudentLessonProgress(
+        session.user.id,
+        lessonId,
+        100,
+        'completed',
+        score,
+        timeSpent
+      );
+
+      await loadLessonData();
+
+    } catch (err: any) {
+      console.error('❌ Error completing exercises:', err);
+      setError('Failed to complete exercises');
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
+  const handleExerciseProgress = (current: number, total: number) => {
+    if (!lessonId || !session?.user?.id) return;
+
+    const exerciseProgress = Math.round((current / total) * 60);
+    const totalProgress = 30 + exerciseProgress;
+
+    updateStudentLessonProgress(
+      session.user.id,
+      lessonId,
+      Math.min(totalProgress, 90)
+    ).catch(console.error);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading lesson...</p>
-          
-          {/* Debug info */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-4 text-xs text-gray-500">
-              <p>Lesson ID: {debugInfo.lessonId}</p>
-              <p>Student ID: {debugInfo.studentId}</p>
-              <p>User Role: {debugInfo.userRole}</p>
-            </div>
-          )}
         </div>
       </div>
     );
@@ -287,32 +312,12 @@ export function StudentLessonViewer() {
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
           <h3 className="text-red-800 dark:text-red-200 font-medium mb-2">Error</h3>
           <p className="text-red-600 dark:text-red-300">{error || 'Lesson not found'}</p>
-          
-          {/* Debug info */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded text-xs">
-              <p><strong>Debug Info:</strong></p>
-              <p>Lesson ID: {debugInfo.lessonId}</p>
-              <p>Student ID: {debugInfo.studentId}</p>
-              <p>User Role: {debugInfo.userRole}</p>
-              <p>Error: {error}</p>
-            </div>
-          )}
-          
-          <div className="flex space-x-3 mt-4">
-            <button
-              onClick={() => navigate('/student/lessons')}
-              className="px-4 py-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-md hover:bg-red-200 dark:hover:bg-red-700"
-            >
-              Back to Lessons
-            </button>
-            <button
-              onClick={loadLessonData}
-              className="px-4 py-2 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 rounded-md hover:bg-blue-200 dark:hover:bg-blue-700"
-            >
-              Retry
-            </button>
-          </div>
+          <button
+            onClick={() => navigate('/student/lessons')}
+            className="mt-4 px-4 py-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-md hover:bg-red-200 dark:hover:bg-red-700"
+          >
+            Back to Lessons
+          </button>
         </div>
       </div>
     );
@@ -323,30 +328,18 @@ export function StudentLessonViewer() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Enhanced Debug panel dla development */}
+      {/* Debug panel */}
       {process.env.NODE_ENV === 'development' && (
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">Enhanced Debug Info:</h4>
+          <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">Debug Info:</h4>
           <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
             <p>Lesson ID: {debugInfo.lessonId}</p>
             <p>Student ID: {debugInfo.studentId}</p>
-            <p>User Role: {debugInfo.userRole}</p>
-            <p>Lesson Title: {debugInfo.lessonTitle}</p>
-            <p>Content Length: {debugInfo.contentLength} characters</p>
-            <p>Has Content: {debugInfo.hasContent ? 'YES' : 'NO'}</p>
             <p>Lesson Status: {student_lesson.status}</p>
             <p>Progress: {student_lesson.progress}%</p>
-            <p>Exercises: {exercises.length}</p>
-            
-            {/* Raw content preview */}
-            <details className="mt-2">
-              <summary className="cursor-pointer text-blue-600 dark:text-blue-400">
-                Raw Content Preview (click to expand)
-              </summary>
-              <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs overflow-auto max-h-32">
-                <pre>{debugInfo.rawContent || 'No content'}</pre>
-              </div>
-            </details>
+            <p>Exercises: {debugInfo.exercisesCount}</p>
+            <p>Exercise Types: {debugInfo.exerciseTypes?.join(', ')}</p>
+            <p>Active Tab: {activeTab}</p>
           </div>
         </div>
       )}
@@ -397,7 +390,6 @@ export function StudentLessonViewer() {
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Status */}
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${
               student_lesson.status === 'completed'
                 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
@@ -409,7 +401,6 @@ export function StudentLessonViewer() {
                student_lesson.status === 'in_progress' ? 'In Progress' : 'Completed'}
             </span>
 
-            {/* Score */}
             {student_lesson.score !== null && (
               <span className="text-lg font-bold text-gray-900 dark:text-white">
                 {student_lesson.score}%
@@ -418,7 +409,6 @@ export function StudentLessonViewer() {
           </div>
         </div>
 
-        {/* Progress bar */}
         {student_lesson.progress > 0 && (
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
             <div
@@ -433,99 +423,130 @@ export function StudentLessonViewer() {
         )}
       </div>
 
-      {/* Content */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Lesson Content
-        </h2>
-        
-        {/* Content Warning if empty */}
-        {(!lesson.content || lesson.content.trim().length === 0) && (
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
-            <div className="flex items-center space-x-2">
-              <AlertCircle className="h-5 w-5 text-yellow-600" />
-              <p className="text-yellow-800 dark:text-yellow-200">
-                This lesson has no content yet. The tutor may need to add content to this lesson.
-              </p>
-            </div>
-          </div>
-        )}
-        
-        <div className="prose dark:prose-invert max-w-none mb-6">
-          {lesson.content && lesson.content.trim().length > 0 ? (
-            <div 
-              dangerouslySetInnerHTML={{ __html: lesson.content }}
-              className="text-gray-700 dark:text-gray-300"
-            />
-          ) : (
-            <div className="text-gray-500 dark:text-gray-400 italic text-center py-8">
-              <BookOpen className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>No content available for this lesson.</p>
-              <p className="text-sm mt-1">Please contact your tutor to add content to this lesson.</p>
-            </div>
-          )}
+      {/* Tabs */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <nav className="flex space-x-8 px-6">
+            <button
+              onClick={() => setActiveTab('content')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'content'
+                  ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <FileText className="h-4 w-4" />
+                <span>Lesson Content</span>
+              </div>
+            </button>
+
+            {hasExercises && (
+              <button
+                onClick={() => setActiveTab('exercises')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'exercises'
+                    ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <Zap className="h-4 w-4" />
+                  <span>Exercises ({exercises.length})</span>
+                </div>
+              </button>
+            )}
+          </nav>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex justify-center pt-6">
-          {student_lesson.status === 'assigned' && (
-            <button
-              onClick={handleStartLesson}
-              disabled={isStarting}
-              className="flex items-center space-x-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-            >
-              {isStarting ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+        <div className="p-6">
+          {/* Content Tab */}
+          {activeTab === 'content' && (
+            <div className="space-y-6">
+              <div className="prose dark:prose-invert max-w-none">
+                <div 
+                  dangerouslySetInnerHTML={{ __html: lesson.content }}
+                  className="text-gray-700 dark:text-gray-300"
+                />
+              </div>
+
+              <div className="flex justify-center pt-6">
+                {student_lesson.status === 'assigned' && (
+                  <button
+                    onClick={handleStartLesson}
+                    disabled={isStarting}
+                    className="flex items-center space-x-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                  >
+                    {isStarting ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                    ) : (
+                      <PlayCircle className="h-5 w-5" />
+                    )}
+                    <span>{isStarting ? 'Starting...' : 'Start Lesson'}</span>
+                  </button>
+                )}
+
+                {student_lesson.status === 'in_progress' && hasExercises && (
+                  <button
+                    onClick={() => setActiveTab('exercises')}
+                    className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    <Zap className="h-5 w-5" />
+                    <span>Start Exercises</span>
+                  </button>
+                )}
+
+                {student_lesson.status === 'completed' && (
+                  <div className="text-center">
+                    <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />
+                    <p className="text-green-600 dark:text-green-400 font-medium">
+                      Lesson completed! Score: {student_lesson.score}%
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Exercises Tab */}
+          {activeTab === 'exercises' && (
+            <div>
+              {student_lesson.status === 'assigned' ? (
+                <div className="text-center py-8">
+                  <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Start the lesson first
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    You need to start the lesson before accessing exercises.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab('content')}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                  >
+                    Go to Lesson Content
+                  </button>
+                </div>
+              ) : student_lesson.status === 'completed' ? (
+                <div className="text-center py-8">
+                  <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Exercises Completed!
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-2">
+                    You've already completed all exercises for this lesson.
+                  </p>
+                  <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                    Final Score: {student_lesson.score}%
+                  </p>
+                </div>
               ) : (
-                <PlayCircle className="h-5 w-5" />
+                <ExerciseViewer
+                  exercises={exercises}
+                  onComplete={handleCompleteExercises}
+                  onProgress={handleExerciseProgress}
+                />
               )}
-              <span>{isStarting ? 'Starting...' : 'Start Lesson'}</span>
-            </button>
-          )}
-
-          {student_lesson.status === 'in_progress' && hasExercises && (
-            <div className="text-center">
-              <button className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                <Zap className="h-5 w-5" />
-                <span>Exercises Available ({exercises.length})</span>
-              </button>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                Exercise functionality coming soon!
-              </p>
-            </div>
-          )}
-
-          {student_lesson.status === 'in_progress' && !hasExercises && (
-            <div className="text-center">
-              <CheckCircle className="h-8 w-8 text-blue-500 mx-auto mb-2" />
-              <p className="text-blue-600 dark:text-blue-400 font-medium">
-                Lesson in progress! Continue reading the content above.
-              </p>
-              <button
-                onClick={() => {
-                  // Symuluj ukończenie lekcji
-                  updateStudentLessonProgress(
-                    session.user.id,
-                    lessonId,
-                    100,
-                    'completed',
-                    100, // 100% score
-                    300  // 5 minut
-                  ).then(() => loadLessonData());
-                }}
-                className="mt-3 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-              >
-                Mark as Completed
-              </button>
-            </div>
-          )}
-
-          {student_lesson.status === 'completed' && (
-            <div className="text-center">
-              <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />
-              <p className="text-green-600 dark:text-green-400 font-medium">
-                Lesson completed! Score: {student_lesson.score}%
-              </p>
             </div>
           )}
         </div>
