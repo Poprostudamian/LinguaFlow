@@ -234,51 +234,9 @@ GRANT ALL ON meeting_participants TO authenticated;
 GRANT SELECT ON meeting_details TO authenticated;
 GRANT SELECT ON student_meetings TO authenticated;
 
--- Enable RLS on views for extra security
-ALTER VIEW meeting_details ENABLE ROW LEVEL SECURITY;
-ALTER VIEW student_meetings ENABLE ROW LEVEL SECURITY;
-
--- RLS Policies for meeting_details view
-CREATE POLICY "Tutors can see their own meeting details"
-  ON meeting_details
-  FOR SELECT
-  TO authenticated
-  USING (
-    auth.uid() = tutor_id 
-    AND EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'tutor')
-  );
-
-CREATE POLICY "Students can see meeting details they're invited to"
-  ON meeting_details
-  FOR SELECT
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM meeting_participants mp
-      WHERE mp.meeting_id = meeting_details.id
-      AND mp.student_id = auth.uid()
-      AND EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'student')
-    )
-  );
-
--- RLS Policies for student_meetings view  
-CREATE POLICY "Tutors can see all participants in their meetings"
-  ON student_meetings
-  FOR SELECT
-  TO authenticated
-  USING (
-    auth.uid() = tutor_id 
-    AND EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'tutor')
-  );
-
-CREATE POLICY "Students can see only their own meeting participations"
-  ON student_meetings
-  FOR SELECT
-  TO authenticated
-  USING (
-    auth.uid() = student_id 
-    AND EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'student')
-  );
+-- NOTE: Views automatically inherit RLS policies from underlying tables
+-- PostgreSQL does not support RLS directly on views, but security is maintained
+-- through the RLS policies on 'meetings' and 'meeting_participants' tables
 
 -- Create notification function (placeholder for future webhooks/notifications)
 CREATE OR REPLACE FUNCTION notify_meeting_created()
