@@ -375,7 +375,6 @@ export function StudentLessonsPage() {
                       </button>
                     )}
                     
-                </div>
               </div>
             </div>
           ))}
