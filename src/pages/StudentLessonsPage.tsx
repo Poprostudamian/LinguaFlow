@@ -327,8 +327,6 @@ export function StudentLessonsPage() {
                   )}
                 </div>
 
-                // Fragment do zastąpienia w StudentLessonsPage.tsx - sekcja z przyciskami
-
                 <div className="ml-4">
                   <div className="flex space-x-2">
                     <button
@@ -362,7 +360,6 @@ export function StudentLessonsPage() {
                       )}
                     </button>
 
-                    {/* History button for completed lessons */}
                     {lessonData.status === 'completed' && (
                       <button
                         onClick={() => {
@@ -377,8 +374,9 @@ export function StudentLessonsPage() {
                         </span>
                       </button>
                     )}
-                  </div>
+                    
                 </div>
+              </div>
             </div>
           ))}
         </div>
