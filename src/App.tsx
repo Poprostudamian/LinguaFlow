@@ -11,7 +11,7 @@ import { StudentDashboard } from './pages/StudentDashboard';
 import { TutorDashboard } from './pages/TutorDashboard';
 import { TutorStudentsPage } from './pages/TutorStudentsPage';
 import { TutorLessonManagementPage } from './pages/TutorLessonManagementPage';
-import { TutorSchedulePage } from './pages/TutorSchedulePage'; // ✅ NOWY IMPORT
+import { TutorSchedulePage } from './pages/TutorSchedulePage';
 import { TutorMessagesPage } from './pages/TutorMessagesPage';
 import { StudentLessonsPage } from './pages/StudentLessonsPage';
 import { StudentSchedulePage } from './pages/StudentSchedulePage';
