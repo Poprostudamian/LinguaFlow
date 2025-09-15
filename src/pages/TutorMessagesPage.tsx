@@ -1,5 +1,4 @@
-// src/pages/TutorMessagesPage.tsx - NAPRAWIONA WERSJA
-// Replace your current file completely with this version
+// src/pages/TutorMessagesPage.tsx
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
