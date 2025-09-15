@@ -327,39 +327,58 @@ export function StudentLessonsPage() {
                   )}
                 </div>
 
+                // Fragment do zastąpienia w StudentLessonsPage.tsx - sekcja z przyciskami
+
                 <div className="ml-4">
-                  <button
-                    onClick={() => {
-                      console.log('🎯 Navigating to lesson:', lessonData.lesson_id);
-                      navigate(`/student/lessons/${lessonData.lesson_id}`);
-                    }}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      lessonData.status === 'completed'
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30'
-                        : lessonData.status === 'in_progress'
-                        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30'
-                        : 'bg-purple-600 text-white hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600'
-                    }`}
-                  >
-                    {lessonData.status === 'assigned' ? (
-                      <span className="flex items-center space-x-2">
-                        <PlayCircle className="h-4 w-4" />
-                        <span>Start Lesson</span>
-                      </span>
-                    ) : lessonData.status === 'in_progress' ? (
-                      <span className="flex items-center space-x-2">
-                        <Zap className="h-4 w-4" />
-                        <span>Continue</span>
-                      </span>
-                    ) : (
-                      <span className="flex items-center space-x-2">
-                        <CheckCircle className="h-4 w-4" />
-                        <span>Review</span>
-                      </span>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => {
+                        console.log('🎯 Navigating to lesson:', lessonData.lesson_id);
+                        navigate(`/student/lessons/${lessonData.lesson_id}`);
+                      }}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        lessonData.status === 'completed'
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30'
+                          : lessonData.status === 'in_progress'
+                          ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30'
+                          : 'bg-purple-600 text-white hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600'
+                      }`}
+                    >
+                      {lessonData.status === 'assigned' ? (
+                        <span className="flex items-center space-x-2">
+                          <PlayCircle className="h-4 w-4" />
+                          <span>Start Lesson</span>
+                        </span>
+                      ) : lessonData.status === 'in_progress' ? (
+                        <span className="flex items-center space-x-2">
+                          <Zap className="h-4 w-4" />
+                          <span>Continue</span>
+                        </span>
+                      ) : (
+                        <span className="flex items-center space-x-2">
+                          <CheckCircle className="h-4 w-4" />
+                          <span>Review</span>
+                        </span>
+                      )}
+                    </button>
+
+                    {/* History button for completed lessons */}
+                    {lessonData.status === 'completed' && (
+                      <button
+                        onClick={() => {
+                          console.log('📚 Navigating to lesson history:', lessonData.lesson_id);
+                          navigate(`/student/lessons/${lessonData.lesson_id}/history`);
+                        }}
+                        className="px-4 py-2 rounded-lg font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600"
+                      >
+                        <span className="flex items-center space-x-2">
+                          <Clock className="h-4 w-4" />
+                          <span>View History</span>
+                        </span>
+                      </button>
                     )}
-                  </button>
+                  </div>
                 </div>
-              </div>
             </div>
           ))}
         </div>
