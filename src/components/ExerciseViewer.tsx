@@ -295,7 +295,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
         )}
 
         {/* Fiszki Type - NAPRAWIONA WERSJA */}
-        {currentExercise.exercise_type === 'Fiszki' && (
+         {currentExercise.exercise_type === 'Fiszki' && (
           <div className="space-y-6">
             {parseFlashcards(currentExercise).map((flashcard, cardIndex) => {
               const cardId = `${currentExercise.id}-${cardIndex}`;
@@ -335,45 +335,35 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
                       <RotateCcw className="h-4 w-4 text-gray-400" />
                     </div>
                   </div>
-                  
-                  {/* Self-assessment only after revealing answer */}
-                  {isFlipped && (
-                    <div className="space-y-3">
-                      <p className="text-center text-sm font-medium text-gray-600 dark:text-gray-400">
-                        How well did you know this?
-                      </p>
-                      
-                      <div className="grid grid-cols-3 gap-3">
-                        {[
-                          { value: 'Hard', label: 'Hard', color: 'red' },
-                          { value: 'Medium', label: 'Medium', color: 'yellow' },
-                          { value: 'Easy', label: 'Easy', color: 'green' }
-                        ].map((difficulty) => (
-                          <button
-                            key={difficulty.value}
-                            onClick={() => handleAnswer(difficulty.value)}
-                            className={`p-3 rounded-lg border text-center transition-colors ${
-                              currentAnswer === difficulty.value
-                                ? `border-${difficulty.color}-500 bg-${difficulty.color}-50 dark:bg-${difficulty.color}-900/20 text-${difficulty.color}-700 dark:text-${difficulty.color}-300`
-                                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                            }`}
-                          >
-                            {difficulty.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
             })}
             
-            {/* Instrukcja jeśli karta nie jest odwrócona */}
-            {!Object.values(flippedCards).some(flipped => flipped) && (
-              <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
-                👆 Click on the flashcard above to reveal the answer, then rate your knowledge
+            {/* Automatycznie oznacz jako "odpowiedziane" po zobaczeniu wszystkich kart */}
+            {parseFlashcards(currentExercise).every((_, index) => {
+              const cardId = `${currentExercise.id}-${index}`;
+              return flippedCards[cardId];
+            }) && !currentAnswer && (
+              <div className="text-center py-4">
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                  <p className="text-green-600 dark:text-green-400 font-medium">
+                    You've viewed all flashcards! Ready to continue.
+                  </p>
+                  <button
+                    onClick={() => handleAnswer('completed')}
+                    className="mt-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    Mark as Studied
+                  </button>
+                </div>
               </div>
             )}
+            
+            {/* Instrukcja */}
+            <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+              Click on flashcards to study them. After viewing all cards, you can continue to the next exercise.
+            </div>
           </div>
         )}
 
