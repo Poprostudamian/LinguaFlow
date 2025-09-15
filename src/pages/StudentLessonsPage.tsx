@@ -374,7 +374,7 @@ export function StudentLessonsPage() {
                         </span>
                       </button>
                     )}
-                    
+                </div>
               </div>
             </div>
           ))}
