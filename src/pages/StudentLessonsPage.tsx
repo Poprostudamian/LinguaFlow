@@ -1,4 +1,4 @@
-// src/pages/StudentLessonsPage.tsx - Wersja z debugowaniem
+// src/pages/StudentLessonsPage.tsx - KOMPLETNA POPRAWIONA WERSJA
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -135,19 +135,6 @@ export function StudentLessonsPage() {
           <span>Refresh</span>
         </button>
       </div>
-
-      {/* Debug Info */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">Debug Info:</h4>
-          <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-            <p>User ID: {session?.user?.id || 'None'}</p>
-            <p>User Role: {session?.user?.role || 'None'}</p>
-            <p>Total Lessons: {lessons.length}</p>
-            <p>Filtered Lessons: {filteredLessons.length}</p>
-          </div>
-        </div>
-      )}
 
       {/* Error Message */}
       {error && (
@@ -360,6 +347,7 @@ export function StudentLessonsPage() {
                       )}
                     </button>
 
+                    {/* History button for completed lessons */}
                     {lessonData.status === 'completed' && (
                       <button
                         onClick={() => {
@@ -374,6 +362,7 @@ export function StudentLessonsPage() {
                         </span>
                       </button>
                     )}
+                  </div>
                 </div>
               </div>
             </div>
