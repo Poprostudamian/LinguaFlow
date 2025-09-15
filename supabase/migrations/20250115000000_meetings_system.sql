@@ -34,10 +34,7 @@ CREATE TABLE IF NOT EXISTS meetings (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   
-  -- Ensure tutor is actually a tutor
-  CONSTRAINT meetings_tutor_role_check CHECK (
-    EXISTS (SELECT 1 FROM users WHERE id = tutor_id AND role = 'tutor')
-  )
+  -- Role validation handled by RLS policies
 );
 
 -- Create meeting_participants table
@@ -53,26 +50,12 @@ CREATE TABLE IF NOT EXISTS meeting_participants (
   -- Prevent duplicate invitations
   UNIQUE(meeting_id, student_id),
   
-  -- Ensure student is actually a student
-  CONSTRAINT participants_student_role_check CHECK (
-    EXISTS (SELECT 1 FROM users WHERE id = student_id AND role = 'student')
-  ),
-  
   -- Ensure logical timestamp ordering
   CONSTRAINT participants_time_logic_check CHECK (
     joined_at IS NULL OR joined_at >= invited_at
-  ),
-  
-  -- Ensure tutor-student relationship exists
-  CONSTRAINT participants_relationship_check CHECK (
-    EXISTS (
-      SELECT 1 FROM user_relationships ur 
-      JOIN meetings m ON m.id = meeting_id 
-      WHERE ur.tutor_id = m.tutor_id 
-      AND ur.student_id = meeting_participants.student_id 
-      AND ur.is_active = true
-    )
   )
+  
+  -- Role and relationship validation handled by RLS policies
 );
 
 -- Create indexes for performance optimization
