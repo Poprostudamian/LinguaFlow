@@ -1,6 +1,6 @@
-// src/components/ExerciseViewer.tsx
+// src/components/ExerciseViewer.tsx - NAPRAWIONA WERSJA Z POPRAWNYMI FISZKAMI
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, RefreshCw, ArrowRight, ArrowLeft } from 'lucide-react';
+import { CheckCircle, XCircle, RefreshCw, ArrowRight, ArrowLeft, RotateCcw } from 'lucide-react';
 
 export interface Exercise {
   id: string;
@@ -9,7 +9,7 @@ export interface Exercise {
   title: string;
   question: string;
   correct_answer: string;
-  options?: string[];
+  options?: string[] | any; // Może być array lub JSON
   explanation?: string;
   order_number: number;
   points: number;
@@ -28,8 +28,22 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
   const [startTime] = useState(Date.now());
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [showExplanation, setShowExplanation] = useState(false);
+  const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({});
 
   const currentExercise = exercises[currentIndex];
+
+  // Debug log dla fiszek
+  useEffect(() => {
+    if (currentExercise?.exercise_type === 'Fiszki') {
+      console.log('🃏 Current flashcard exercise:', {
+        title: currentExercise.title,
+        question: currentExercise.question,
+        correct_answer: currentExercise.correct_answer,
+        options: currentExercise.options,
+        optionsType: typeof currentExercise.options
+      });
+    }
+  }, [currentExercise]);
 
   useEffect(() => {
     if (onProgress) {
@@ -67,17 +81,100 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
     const totalPoints = exercises.reduce((sum, ex) => sum + ex.points, 0);
     const earnedPoints = exercises.reduce((sum, ex) => {
       const userAnswer = userAnswers[ex.id];
-      const isCorrect = userAnswer?.toLowerCase().trim() === ex.correct_answer.toLowerCase().trim();
+      
+      // Różne sposoby oceniania w zależności od typu ćwiczenia
+      let isCorrect = false;
+      if (ex.exercise_type === 'Fiszki') {
+        // Dla fiszek każda odpowiedź daje punkty (self-assessment)
+        isCorrect = !!userAnswer; // Jeśli student odpowiedział, dostaje punkty
+      } else {
+        // Dla ABCD i Tekstowe sprawdzaj poprawność
+        isCorrect = userAnswer?.toLowerCase().trim() === ex.correct_answer.toLowerCase().trim();
+      }
+      
       return sum + (isCorrect ? ex.points : 0);
     }, 0);
 
     const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
-    const timeSpent = Math.floor((Date.now() - startTime) / 1000); // w sekundach
+    const timeSpent = Math.floor((Date.now() - startTime) / 1000);
 
     setShowResults(true);
     if (onComplete) {
       onComplete(score, timeSpent);
     }
+  };
+
+  const toggleCardFlip = (exerciseId: string) => {
+    setFlippedCards(prev => ({
+      ...prev,
+      [exerciseId]: !prev[exerciseId]
+    }));
+  };
+
+  // Funkcja do parsowania fiszek z options
+  const parseFlashcards = (exercise: Exercise) => {
+    console.log('🔍 Parsing flashcards for exercise:', exercise.title);
+    console.log('📝 Raw options:', exercise.options);
+    
+    let flashcards = [];
+    
+    try {
+      // Jeśli options to string, spróbuj sparsować jako JSON
+      if (typeof exercise.options === 'string') {
+        const parsed = JSON.parse(exercise.options);
+        console.log('📋 Parsed JSON options:', parsed);
+        
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Sprawdź czy to array obiektów z front/back
+          if (parsed[0]?.front && parsed[0]?.back) {
+            flashcards = parsed;
+          } else {
+            // Jeśli to zwykły array, utwórz fiszki z question i correct_answer
+            flashcards = [{
+              front: exercise.question,
+              back: exercise.correct_answer
+            }];
+          }
+        } else {
+          // Fallback - użyj question i correct_answer
+          flashcards = [{
+            front: exercise.question,
+            back: exercise.correct_answer
+          }];
+        }
+      } 
+      // Jeśli options to już array
+      else if (Array.isArray(exercise.options)) {
+        console.log('📋 Options is already array:', exercise.options);
+        
+        if (exercise.options.length > 0 && exercise.options[0]?.front) {
+          flashcards = exercise.options;
+        } else {
+          // Fallback
+          flashcards = [{
+            front: exercise.question,
+            back: exercise.correct_answer
+          }];
+        }
+      } 
+      // Fallback - użyj question i correct_answer
+      else {
+        flashcards = [{
+          front: exercise.question,
+          back: exercise.correct_answer
+        }];
+      }
+    } catch (error) {
+      console.error('❌ Error parsing flashcards:', error);
+      // Fallback w przypadku błędu
+      flashcards = [{
+        front: exercise.question,
+        back: exercise.correct_answer
+      }];
+    }
+    
+    console.log('✅ Final flashcards:', flashcards);
+    return flashcards;
   };
 
   if (exercises.length === 0) {
@@ -92,7 +189,14 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
     const totalPoints = exercises.reduce((sum, ex) => sum + ex.points, 0);
     const earnedPoints = exercises.reduce((sum, ex) => {
       const userAnswer = userAnswers[ex.id];
-      const isCorrect = userAnswer?.toLowerCase().trim() === ex.correct_answer.toLowerCase().trim();
+      let isCorrect = false;
+      
+      if (ex.exercise_type === 'Fiszki') {
+        isCorrect = !!userAnswer;
+      } else {
+        isCorrect = userAnswer?.toLowerCase().trim() === ex.correct_answer.toLowerCase().trim();
+      }
+      
       return sum + (isCorrect ? ex.points : 0);
     }, 0);
     const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
@@ -110,11 +214,18 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
           <h4 className="font-medium text-gray-900 dark:text-white mb-2">Results Summary:</h4>
           {exercises.map((ex, index) => {
             const userAnswer = userAnswers[ex.id];
-            const isCorrect = userAnswer?.toLowerCase().trim() === ex.correct_answer.toLowerCase().trim();
+            let isCorrect = false;
+            
+            if (ex.exercise_type === 'Fiszki') {
+              isCorrect = !!userAnswer;
+            } else {
+              isCorrect = userAnswer?.toLowerCase().trim() === ex.correct_answer.toLowerCase().trim();
+            }
+            
             return (
               <div key={ex.id} className="flex items-center justify-between py-1">
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Exercise {index + 1}
+                  Exercise {index + 1} ({ex.exercise_type})
                 </span>
                 {isCorrect ? (
                   <CheckCircle className="h-4 w-4 text-green-500" />
@@ -150,78 +261,138 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
           {currentExercise.title}
         </h3>
-        <p className="text-gray-700 dark:text-gray-300 mb-6">
-          {currentExercise.question}
-        </p>
-
+        
         {/* ABCD Type */}
         {currentExercise.exercise_type === 'ABCD' && currentExercise.options && (
-          <div className="space-y-3">
-            {currentExercise.options.map((option, index) => {
-              const optionLetter = String.fromCharCode(65 + index); // A, B, C, D
-              const isSelected = currentAnswer === optionLetter;
-              
-              return (
-                <button
-                  key={index}
-                  onClick={() => handleAnswer(optionLetter)}
-                  className={`w-full text-left p-4 rounded-lg border transition-colors ${
-                    isSelected
-                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                  }`}
-                >
-                  <span className="font-medium text-purple-600 dark:text-purple-400 mr-3">
-                    {optionLetter}.
-                  </span>
-                  <span className="text-gray-900 dark:text-white">{option}</span>
-                </button>
-              );
-            })}
-          </div>
+          <>
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
+              {currentExercise.question}
+            </p>
+            <div className="space-y-3">
+              {Array.isArray(currentExercise.options) && currentExercise.options.map((option, index) => {
+                const optionLetter = String.fromCharCode(65 + index); // A, B, C, D
+                const isSelected = currentAnswer === optionLetter;
+                
+                return (
+                  <button
+                    key={index}
+                    onClick={() => handleAnswer(optionLetter)}
+                    className={`w-full text-left p-4 rounded-lg border transition-colors ${
+                      isSelected
+                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                    }`}
+                  >
+                    <span className="font-medium text-purple-600 dark:text-purple-400 mr-3">
+                      {optionLetter}.
+                    </span>
+                    <span className="text-gray-900 dark:text-white">{option}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
         )}
 
-        {/* Fiszki Type */}
+        {/* Fiszki Type - NAPRAWIONA WERSJA */}
         {currentExercise.exercise_type === 'Fiszki' && (
-          <div className="space-y-4">
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 text-center">
-              <p className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                {currentExercise.correct_answer}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                How well do you know this?
-              </p>
-            </div>
+          <div className="space-y-6">
+            {parseFlashcards(currentExercise).map((flashcard, cardIndex) => {
+              const cardId = `${currentExercise.id}-${cardIndex}`;
+              const isFlipped = flippedCards[cardId];
+              
+              return (
+                <div key={cardIndex} className="space-y-4">
+                  {/* Flashcard */}
+                  <div 
+                    className="relative bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-8 min-h-32 cursor-pointer transform transition-all duration-300 hover:scale-105 border-2 border-blue-200 dark:border-blue-700"
+                    onClick={() => toggleCardFlip(cardId)}
+                  >
+                    <div className="text-center">
+                      {!isFlipped ? (
+                        <>
+                          <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                            {flashcard.front}
+                          </h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Click to reveal answer
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <h4 className="text-lg font-medium text-blue-600 dark:text-blue-400 mb-2">
+                            {flashcard.back}
+                          </h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Click to flip back
+                          </p>
+                        </>
+                      )}
+                    </div>
+                    
+                    {/* Flip icon */}
+                    <div className="absolute top-3 right-3">
+                      <RotateCcw className="h-4 w-4 text-gray-400" />
+                    </div>
+                  </div>
+                  
+                  {/* Self-assessment only after revealing answer */}
+                  {isFlipped && (
+                    <div className="space-y-3">
+                      <p className="text-center text-sm font-medium text-gray-600 dark:text-gray-400">
+                        How well did you know this?
+                      </p>
+                      
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { value: 'Hard', label: 'Hard', color: 'red' },
+                          { value: 'Medium', label: 'Medium', color: 'yellow' },
+                          { value: 'Easy', label: 'Easy', color: 'green' }
+                        ].map((difficulty) => (
+                          <button
+                            key={difficulty.value}
+                            onClick={() => handleAnswer(difficulty.value)}
+                            className={`p-3 rounded-lg border text-center transition-colors ${
+                              currentAnswer === difficulty.value
+                                ? `border-${difficulty.color}-500 bg-${difficulty.color}-50 dark:bg-${difficulty.color}-900/20 text-${difficulty.color}-700 dark:text-${difficulty.color}-300`
+                                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            {difficulty.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
             
-            <div className="grid grid-cols-3 gap-3">
-              {['Easy', 'Medium', 'Hard'].map((difficulty) => (
-                <button
-                  key={difficulty}
-                  onClick={() => handleAnswer(difficulty)}
-                  className={`p-3 rounded-lg border text-center transition-colors ${
-                    currentAnswer === difficulty
-                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300'
-                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  {difficulty}
-                </button>
-              ))}
-            </div>
+            {/* Instrukcja jeśli karta nie jest odwrócona */}
+            {!Object.values(flippedCards).some(flipped => flipped) && (
+              <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+                👆 Click on the flashcard above to reveal the answer, then rate your knowledge
+              </div>
+            )}
           </div>
         )}
 
         {/* Tekstowe Type */}
         {currentExercise.exercise_type === 'Tekstowe' && (
-          <div className="space-y-4">
-            <textarea
-              value={currentAnswer}
-              onChange={(e) => handleAnswer(e.target.value)}
-              placeholder="Type your answer here..."
-              className="w-full p-4 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              rows={4}
-            />
-          </div>
+          <>
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
+              {currentExercise.question}
+            </p>
+            <div className="space-y-4">
+              <textarea
+                value={currentAnswer}
+                onChange={(e) => handleAnswer(e.target.value)}
+                placeholder="Type your answer here..."
+                className="w-full p-4 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                rows={4}
+              />
+            </div>
+          </>
         )}
 
         {/* Explanation */}
@@ -256,7 +427,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
 
           <button
             onClick={nextExercise}
-            disabled={!currentAnswer}
+            disabled={!currentAnswer || (currentExercise.exercise_type === 'Fiszki' && !Object.values(flippedCards).some(flipped => flipped))}
             className="flex items-center space-x-2 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span>{currentIndex === exercises.length - 1 ? 'Finish' : 'Next'}</span>
