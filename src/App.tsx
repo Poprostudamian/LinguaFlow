@@ -14,10 +14,10 @@ import { TutorLessonManagementPage } from './pages/TutorLessonManagementPage';
 import { TutorSchedulePage } from './pages/TutorSchedulePage';
 import { TutorMessagesPage } from './pages/TutorMessagesPage';
 import { StudentLessonsPage } from './pages/StudentLessonsPage';
-import { StudentSchedulePage } from './pages/StudentSchedulePage';
-import { StudentMessagesPage } from './pages/StudentMessagesPage';
 import { StudentLessonViewer } from './pages/StudentLessonViewer';
 import { StudentLessonHistory } from './pages/StudentLessonHistory';
+import { StudentSchedulePage } from './pages/StudentSchedulePage';
+import { StudentMessagesPage } from './pages/StudentMessagesPage';
 
 function App() {
   return (
@@ -31,7 +31,8 @@ function App() {
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 
-                <Route 
+                <Route path="/" element={<Layout />}>
+                  <Route 
                     path="student/*" 
                     element={
                       <RouteGuard requiredRole="student">
@@ -46,7 +47,6 @@ function App() {
                       </RouteGuard>
                     } 
                   />
-                </Route>
                   
                   <Route 
                     path="tutor/*" 
