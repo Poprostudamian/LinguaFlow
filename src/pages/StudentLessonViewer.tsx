@@ -1,4 +1,5 @@
-// src/pages/StudentLessonViewer.tsx - KOMPLETNA WERSJA Z ZAKŁADKAMI
+// src/pages/StudentLessonViewer.tsx - ULEPSZONA WERSJA 2.0
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -11,7 +12,12 @@ import {
   FileText,
   Zap,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Trophy,
+  Target,
+  Calendar,
+  Sparkles,
+  Award
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, updateStudentLessonProgress } from '../lib/supabase';
@@ -38,60 +44,29 @@ interface LessonDetails {
   };
 }
 
-// Implementacja getLessonDetails
 const getLessonDetails = async (lessonId: string, studentId: string): Promise<LessonDetails | null> => {
   try {
-    console.log('🔍 Getting lesson details for:', { lessonId, studentId });
-
     const { data, error } = await supabase
       .from('student_lessons')
       .select(`
-        id,
-        student_id,
-        lesson_id,
-        assigned_at,
-        started_at,
-        completed_at,
-        status,
-        score,
-        time_spent,
-        progress,
+        id, student_id, lesson_id, assigned_at, started_at, completed_at,
+        status, score, time_spent, progress,
         lessons!inner (
-          id,
-          title,
-          description,
-          content,
-          status,
-          created_at,
-          updated_at,
-          tutor_id,
-          users!lessons_tutor_id_fkey (
-            id,
-            first_name,
-            last_name,
-            email
-          )
+          id, title, description, content, status, created_at, updated_at, tutor_id,
+          users!lessons_tutor_id_fkey (id, first_name, last_name, email)
         )
       `)
       .eq('lesson_id', lessonId)
       .eq('student_id', studentId)
       .single();
 
-    if (error) {
-      console.error('❌ Error fetching lesson details:', error);
-      throw error;
-    }
+    if (error || !data) return null;
 
-    if (!data) {
-      console.log('ℹ️ Lesson not found or not assigned to student');
-      return null;
-    }
-
-    const formattedData = {
+    return {
       id: data.lessons.id,
       title: data.lessons.title,
       description: data.lessons.description || '',
-      content: data.lessons.content || 'No content available for this lesson.',
+      content: data.lessons.content || 'No content available.',
       created_at: data.lessons.created_at,
       tutor: {
         first_name: data.lessons.users.first_name,
@@ -107,52 +82,30 @@ const getLessonDetails = async (lessonId: string, studentId: string): Promise<Le
         completed_at: data.completed_at
       }
     };
-
-    console.log('✅ Formatted lesson data:', formattedData);
-    return formattedData;
-
   } catch (error) {
     console.error('Error getting lesson details:', error);
     throw error;
   }
 };
 
-// Implementacja getLessonExercises
 const getLessonExercises = async (lessonId: string): Promise<Exercise[]> => {
   try {
-    console.log('🎯 Getting exercises for lesson:', lessonId);
-
     const { data, error } = await supabase
       .from('lesson_exercises')
       .select('*')
       .eq('lesson_id', lessonId)
       .order('order_number', { ascending: true });
 
-    if (error) {
-      if (error.code === '42P01') {
-        console.log('ℹ️ lesson_exercises table does not exist yet');
-        return [];
-      }
-      console.error('❌ Error fetching exercises:', error);
-      return [];
-    }
+    if (error) return [];
 
-    console.log('✅ Found', data?.length || 0, 'exercises');
-    
-    // Mapuj exercise_type na oczekiwane wartości
-    const formattedExercises = (data || []).map(exercise => ({
+    return (data || []).map(exercise => ({
       ...exercise,
       exercise_type: exercise.exercise_type === 'multiple_choice' ? 'ABCD' :
                     exercise.exercise_type === 'flashcard' ? 'Fiszki' :
                     exercise.exercise_type === 'text_answer' ? 'Tekstowe' : 'ABCD',
       options: exercise.options ? JSON.parse(exercise.options) : null
     }));
-
-    console.log('✅ Formatted exercises:', formattedExercises);
-    return formattedExercises;
-
   } catch (error) {
-    console.error('Error getting lesson exercises:', error);
     return [];
   }
 };
@@ -169,10 +122,8 @@ export function StudentLessonViewer() {
   const [activeTab, setActiveTab] = useState<'content' | 'exercises'>('content');
   const [isStarting, setIsStarting] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<any>({});
 
   useEffect(() => {
-    console.log('🚀 StudentLessonViewer mounted:', { lessonId, studentId: session?.user?.id });
     if (lessonId && session?.user?.id) {
       loadLessonData();
     }
@@ -185,12 +136,7 @@ export function StudentLessonViewer() {
       setIsLoading(true);
       setError(null);
 
-      console.log('📚 Loading lesson data for:', { lessonId, studentId: session.user.id });
-
-      // Pobierz szczegóły lekcji
       const lessonData = await getLessonDetails(lessonId, session.user.id);
-      console.log('📖 Lesson data result:', lessonData);
-
       if (!lessonData) {
         setError('Lesson not found or not assigned to you');
         return;
@@ -198,30 +144,13 @@ export function StudentLessonViewer() {
 
       setLesson(lessonData);
 
-      // Pobierz ćwiczenia
       const exercisesData = await getLessonExercises(lessonId);
-      console.log('🎯 Exercises data result:', exercisesData);
       setExercises(exercisesData);
 
-      // Dodaj debug info
-      setDebugInfo({
-        lessonId,
-        studentId: session.user.id,
-        userRole: session.user.role,
-        lessonTitle: lessonData.title,
-        contentLength: lessonData.content ? lessonData.content.length : 0,
-        hasContent: !!lessonData.content && lessonData.content.trim().length > 0,
-        exercisesCount: exercisesData.length,
-        exerciseTypes: exercisesData.map(ex => ex.exercise_type)
-      });
-
-      // Jeśli są ćwiczenia i lekcja jest w trakcie/ukończona, pokaż ćwiczenia
       if (exercisesData.length > 0 && lessonData.student_lesson.status !== 'assigned') {
         setActiveTab('exercises');
       }
-
     } catch (err: any) {
-      console.error('❌ Error loading lesson:', err);
       setError(err.message || 'Failed to load lesson');
     } finally {
       setIsLoading(false);
@@ -233,23 +162,10 @@ export function StudentLessonViewer() {
 
     try {
       setIsStarting(true);
-      console.log('▶️ Starting lesson:', { lessonId, studentId: session.user.id });
-      
-      await updateStudentLessonProgress(
-        session.user.id,
-        lessonId,
-        10,
-        'in_progress'
-      );
-
+      await updateStudentLessonProgress(session.user.id, lessonId, 10, 'in_progress');
       await loadLessonData();
-      
-      if (exercises.length > 0) {
-        setActiveTab('exercises');
-      }
-
+      if (exercises.length > 0) setActiveTab('exercises');
     } catch (err: any) {
-      console.error('❌ Error starting lesson:', err);
       setError('Failed to start lesson');
     } finally {
       setIsStarting(false);
@@ -261,45 +177,20 @@ export function StudentLessonViewer() {
 
     try {
       setIsCompleting(true);
-      console.log('🏁 Completing exercises:', { score, timeSpent });
-
-      await updateStudentLessonProgress(
-        session.user.id,
-        lessonId,
-        100,
-        'completed',
-        score,
-        timeSpent
-      );
-
+      await updateStudentLessonProgress(session.user.id, lessonId, 100, 'completed', score, timeSpent);
       await loadLessonData();
-
     } catch (err: any) {
-      console.error('❌ Error completing exercises:', err);
       setError('Failed to complete exercises');
     } finally {
       setIsCompleting(false);
     }
   };
 
-  const handleExerciseProgress = (current: number, total: number) => {
-    if (!lessonId || !session?.user?.id) return;
-
-    const exerciseProgress = Math.round((current / total) * 60);
-    const totalProgress = 30 + exerciseProgress;
-
-    updateStudentLessonProgress(
-      session.user.id,
-      lessonId,
-      Math.min(totalProgress, 90)
-    ).catch(console.error);
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <RefreshCw className="h-12 w-12 animate-spin text-purple-600 dark:text-purple-400 mx-auto mb-4" />
           <p className="text-gray-600 dark:text-gray-400">Loading lesson...</p>
         </div>
       </div>
@@ -308,13 +199,14 @@ export function StudentLessonViewer() {
 
   if (error || !lesson) {
     return (
-      <div className="max-w-2xl mx-auto py-8">
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
-          <h3 className="text-red-800 dark:text-red-200 font-medium mb-2">Error</h3>
-          <p className="text-red-600 dark:text-red-300">{error || 'Lesson not found'}</p>
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Error</h2>
+          <p className="text-red-600 dark:text-red-400 mb-6">{error || 'Lesson not found'}</p>
           <button
             onClick={() => navigate('/student/lessons')}
-            className="mt-4 px-4 py-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-md hover:bg-red-200 dark:hover:bg-red-700"
+            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold"
           >
             Back to Lessons
           </button>
@@ -326,182 +218,208 @@ export function StudentLessonViewer() {
   const { student_lesson } = lesson;
   const hasExercises = exercises.length > 0;
 
+  // Status configuration
+  const statusConfig = {
+    assigned: {
+      color: 'bg-yellow-500',
+      textColor: 'text-yellow-700 dark:text-yellow-300',
+      bgColor: 'bg-yellow-50 dark:bg-yellow-900/20',
+      label: 'Not Started'
+    },
+    in_progress: {
+      color: 'bg-blue-500',
+      textColor: 'text-blue-700 dark:text-blue-300',
+      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+      label: 'In Progress'
+    },
+    completed: {
+      color: 'bg-green-500',
+      textColor: 'text-green-700 dark:text-green-300',
+      bgColor: 'bg-green-50 dark:bg-green-900/20',
+      label: 'Completed'
+    }
+  };
+
+  const config = statusConfig[student_lesson.status];
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Debug panel */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">Debug Info:</h4>
-          <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-            <p>Lesson ID: {debugInfo.lessonId}</p>
-            <p>Student ID: {debugInfo.studentId}</p>
-            <p>Lesson Status: {student_lesson.status}</p>
-            <p>Progress: {student_lesson.progress}%</p>
-            <p>Exercises: {debugInfo.exercisesCount}</p>
-            <p>Exercise Types: {debugInfo.exerciseTypes?.join(', ')}</p>
-            <p>Active Tab: {activeTab}</p>
-          </div>
-        </div>
-      )}
+    <div className="max-w-6xl mx-auto space-y-6">
+      {/* Hero Header with Gradient */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 rounded-2xl shadow-2xl">
+        <div className="absolute inset-0 bg-black/10" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
+        
+        <div className="relative p-8">
+          <button
+            onClick={() => navigate('/student/lessons')}
+            className="mb-4 flex items-center space-x-2 text-white/90 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            <span className="font-medium">Back to Lessons</span>
+          </button>
 
-      {/* Header */}
-      <div className="flex items-center space-x-4 mb-6">
-        <button
-          onClick={() => navigate('/student/lessons')}
-          className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {lesson.title}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {lesson.description}
-          </p>
-        </div>
-      </div>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h1 className="text-4xl font-bold text-white mb-3">
+                {lesson.title}
+              </h1>
+              {lesson.description && (
+                <p className="text-purple-100 text-lg mb-6 max-w-3xl">
+                  {lesson.description}
+                </p>
+              )}
 
-      {/* Lesson metadata */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-              <User className="h-4 w-4" />
-              <span>{lesson.tutor.first_name} {lesson.tutor.last_name}</span>
-            </div>
-            
-            <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-              <Clock className="h-4 w-4" />
-              <span>
-                {student_lesson.time_spent > 0 
-                  ? `${Math.round(student_lesson.time_spent / 60)} min spent`
-                  : 'Not started'
-                }
-              </span>
-            </div>
+              {/* Meta info */}
+              <div className="flex flex-wrap items-center gap-6 text-white/90">
+                <div className="flex items-center space-x-2">
+                  <User className="h-5 w-5" />
+                  <span>{lesson.tutor.first_name} {lesson.tutor.last_name}</span>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-5 w-5" />
+                  <span>
+                    {student_lesson.time_spent > 0 
+                      ? `${Math.round(student_lesson.time_spent / 60)} min spent`
+                      : 'Not started'}
+                  </span>
+                </div>
 
-            {hasExercises && (
-              <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-                <Zap className="h-4 w-4" />
-                <span>{exercises.length} exercises</span>
+                {hasExercises && (
+                  <div className="flex items-center space-x-2">
+                    <Zap className="h-5 w-5" />
+                    <span>{exercises.length} exercises</span>
+                  </div>
+                )}
+
+                {student_lesson.score !== null && (
+                  <div className="flex items-center space-x-2">
+                    <Trophy className="h-5 w-5" />
+                    <span className="font-bold">{student_lesson.score}%</span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </div>
 
-          <div className="flex items-center space-x-4">
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-              student_lesson.status === 'completed'
-                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                : student_lesson.status === 'in_progress'
-                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-            }`}>
-              {student_lesson.status === 'assigned' ? 'Not Started' : 
-               student_lesson.status === 'in_progress' ? 'In Progress' : 'Completed'}
-            </span>
-
-            {student_lesson.score !== null && (
-              <span className="text-lg font-bold text-gray-900 dark:text-white">
-                {student_lesson.score}%
+            {/* Status Badge */}
+            <div className="flex flex-col items-end space-y-3">
+              <span className={`px-4 py-2 rounded-full text-sm font-bold ${config.bgColor} ${config.textColor} border-2 border-white/20`}>
+                {config.label}
               </span>
-            )}
+              
+              {student_lesson.progress > 0 && (
+                <div className="text-right">
+                  <div className="text-white/90 text-sm mb-1">Progress</div>
+                  <div className="text-2xl font-bold text-white">{student_lesson.progress}%</div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        {student_lesson.progress > 0 && (
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-            <div
-              className={`h-3 rounded-full transition-all duration-300 ${
-                student_lesson.status === 'completed' 
-                  ? 'bg-green-500' 
-                  : 'bg-purple-600'
-              }`}
-              style={{ width: `${student_lesson.progress}%` }}
-            />
-          </div>
-        )}
+          {/* Progress Bar */}
+          {student_lesson.progress > 0 && (
+            <div className="mt-6 bg-white/20 rounded-full h-3 overflow-hidden backdrop-blur-sm">
+              <div
+                className="h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500"
+                style={{ width: `${student_lesson.progress}%` }}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-        <div className="border-b border-gray-200 dark:border-gray-700">
-          <nav className="flex space-x-8 px-6">
+      {/* Modern Tabs */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+          <nav className="flex">
             <button
               onClick={() => setActiveTab('content')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`flex-1 flex items-center justify-center space-x-3 py-4 px-6 font-semibold text-sm transition-all relative ${
                 activeTab === 'content'
-                  ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                  ? 'text-purple-600 dark:text-purple-400'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
-              <div className="flex items-center space-x-2">
-                <FileText className="h-4 w-4" />
-                <span>Lesson Content</span>
-              </div>
+              {activeTab === 'content' && (
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-600 to-indigo-600" />
+              )}
+              <FileText className="h-5 w-5" />
+              <span>Lesson Content</span>
             </button>
 
             {hasExercises && (
               <button
                 onClick={() => setActiveTab('exercises')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`flex-1 flex items-center justify-center space-x-3 py-4 px-6 font-semibold text-sm transition-all relative ${
                   activeTab === 'exercises'
-                    ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                    ? 'text-purple-600 dark:text-purple-400'
+                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                 }`}
               >
-                <div className="flex items-center space-x-2">
-                  <Zap className="h-4 w-4" />
-                  <span>Exercises ({exercises.length})</span>
-                </div>
+                {activeTab === 'exercises' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-600 to-indigo-600" />
+                )}
+                <Zap className="h-5 w-5" />
+                <span>Exercises ({exercises.length})</span>
               </button>
             )}
           </nav>
         </div>
 
-        <div className="p-6">
+        <div className="p-8">
           {/* Content Tab */}
           {activeTab === 'content' && (
-            <div className="space-y-6">
-              <div className="prose dark:prose-invert max-w-none">
+            <div className="space-y-8">
+              {/* Lesson Content */}
+              <div className="prose prose-lg dark:prose-invert max-w-none">
                 <div 
                   dangerouslySetInnerHTML={{ __html: lesson.content }}
-                  className="text-gray-700 dark:text-gray-300"
+                  className="text-gray-700 dark:text-gray-300 leading-relaxed"
                 />
               </div>
 
-              <div className="flex justify-center pt-6">
+              {/* Action Buttons */}
+              <div className="flex justify-center pt-8 border-t border-gray-200 dark:border-gray-700">
                 {student_lesson.status === 'assigned' && (
                   <button
                     onClick={handleStartLesson}
                     disabled={isStarting}
-                    className="flex items-center space-x-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                    className="group flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 text-white rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transform transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
                   >
                     {isStarting ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                      <RefreshCw className="h-6 w-6 animate-spin" />
                     ) : (
-                      <PlayCircle className="h-5 w-5" />
+                      <PlayCircle className="h-6 w-6 group-hover:scale-110 transition-transform" />
                     )}
-                    <span>{isStarting ? 'Starting...' : 'Start Lesson'}</span>
+                    <span>{isStarting ? 'Starting Lesson...' : 'Start Lesson'}</span>
+                    <Sparkles className="h-5 w-5 group-hover:rotate-12 transition-transform" />
                   </button>
                 )}
 
                 {student_lesson.status === 'in_progress' && hasExercises && (
                   <button
                     onClick={() => setActiveTab('exercises')}
-                    className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    className="group flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-700 text-white rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transform transition-all hover:scale-105 active:scale-95"
                   >
-                    <Zap className="h-5 w-5" />
+                    <Zap className="h-6 w-6 group-hover:scale-110 transition-transform" />
                     <span>Start Exercises</span>
+                    <Target className="h-5 w-5 group-hover:rotate-90 transition-transform" />
                   </button>
                 )}
 
                 {student_lesson.status === 'completed' && (
-                  <div className="text-center">
-                    <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />
-                    <p className="text-green-600 dark:text-green-400 font-medium">
-                      Lesson completed! Score: {student_lesson.score}%
-                    </p>
+                  <div className="text-center space-y-4">
+                    <div className="flex items-center justify-center space-x-4">
+                      <Award className="h-16 w-16 text-green-500" />
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                          Lesson Completed!
+                        </h3>
+                        <p className="text-xl text-green-600 dark:text-green-400 font-bold">
+                          Score: {student_lesson.score}%
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -512,39 +430,47 @@ export function StudentLessonViewer() {
           {activeTab === 'exercises' && (
             <div>
               {student_lesson.status === 'assigned' ? (
-                <div className="text-center py-8">
-                  <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                <div className="text-center py-16">
+                  <Target className="h-20 w-20 text-gray-300 dark:text-gray-600 mx-auto mb-6" />
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
                     Start the lesson first
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  <p className="text-gray-600 dark:text-gray-400 mb-8 text-lg">
                     You need to start the lesson before accessing exercises.
                   </p>
                   <button
                     onClick={() => setActiveTab('content')}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                    className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold"
                   >
                     Go to Lesson Content
                   </button>
                 </div>
               ) : student_lesson.status === 'completed' ? (
-                <div className="text-center py-8">
-                  <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                <div className="text-center py-16">
+                  <CheckCircle className="h-20 w-20 text-green-500 mx-auto mb-6" />
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
                     Exercises Completed!
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-2">
+                  <p className="text-gray-600 dark:text-gray-400 mb-4 text-lg">
                     You've already completed all exercises for this lesson.
                   </p>
-                  <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                  <p className="text-3xl font-bold text-green-600 dark:text-green-400 mb-8">
                     Final Score: {student_lesson.score}%
                   </p>
+                  <button
+                    onClick={() => navigate(`/student/lessons/${lessonId}/history`)}
+                    className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 font-semibold"
+                  >
+                    View History
+                  </button>
                 </div>
               ) : (
                 <ExerciseViewer
                   exercises={exercises}
                   onComplete={handleCompleteExercises}
-                  onProgress={handleExerciseProgress}
+                  onProgress={(currentIndex) => {
+                    console.log('Exercise progress:', currentIndex);
+                  }}
                 />
               )}
             </div>
