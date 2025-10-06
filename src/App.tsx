@@ -46,6 +46,7 @@ function App() {
                       </RouteGuard>
                     } 
                   />
+                </Route>
                   
                   <Route 
                     path="tutor/*" 
