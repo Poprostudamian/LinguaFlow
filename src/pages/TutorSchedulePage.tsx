@@ -1,4 +1,4 @@
-// src/components/CreateMeetingModal.tsx
+// src/pages/TutorSchedulePage.tsx - FIXED VERSION
 import React, { useState, useEffect } from 'react';
 import { 
   Calendar, 
@@ -10,46 +10,51 @@ import {
   Video,
   Edit,
   Trash2,
-  ExternalLink
+  ExternalLink,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { CreateMeetingModal } from '../components/CreateMeetingModal';
-
-// Temporary mock data - będziemy to zastępować prawdziwymi danymi z API
-const mockMeetings = [
-  {
-    id: '1',
-    title: 'Spanish Conversation Practice',
-    description: 'Weekly conversation practice with Maria',
-    scheduled_at: '2025-01-20T14:00:00Z',
-    duration_minutes: 60,
-    meeting_url: 'https://zoom.us/j/123456789',
-    status: 'scheduled',
-    participants: [
-      { id: 'student1', name: 'Anna Kowalska', email: 'anna@example.com', status: 'invited' }
-    ]
-  },
-  {
-    id: '2',
-    title: 'Grammar Workshop',
-    description: 'Advanced grammar concepts',
-    scheduled_at: '2025-01-22T16:30:00Z',
-    duration_minutes: 90,
-    meeting_url: 'https://meet.google.com/abc-defg-hij',
-    status: 'scheduled',
-    participants: [
-      { id: 'student2', name: 'Piotr Nowak', email: 'piotr@example.com', status: 'invited' },
-      { id: 'student3', name: 'Maria Wiśniewska', email: 'maria@example.com', status: 'invited' }
-    ]
-  }
-];
+import { 
+  getTutorMeetings, 
+  deleteMeeting, 
+  MeetingWithParticipants 
+} from '../lib/meetingsAPI'; // ← IMPORT API
 
 export function TutorSchedulePage() {
   const { session } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [meetings, setMeetings] = useState(mockMeetings);
+  const [meetings, setMeetings] = useState<MeetingWithParticipants[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // ✅ ŁADOWANIE SPOTKAŃ Z BAZY DANYCH
+  const loadMeetings = async () => {
+    if (!session.user?.id) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      console.log('📅 Loading meetings from database...');
+      const data = await getTutorMeetings(session.user.id);
+      setMeetings(data);
+      console.log('✅ Loaded', data.length, 'meetings');
+    } catch (err: any) {
+      console.error('❌ Error loading meetings:', err);
+      setError(err.message || 'Failed to load meetings');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ✅ ZAŁADUJ SPOTKANIA PO MONTOWANIU KOMPONENTU
+  useEffect(() => {
+    if (session.isAuthenticated && session.user?.id) {
+      loadMeetings();
+    }
+  }, [session.isAuthenticated, session.user?.id]);
 
   // Filter meetings for current view
   const upcomingMeetings = meetings
@@ -111,21 +116,40 @@ export function TutorSchedulePage() {
     }
   };
 
-  // Handle new meeting creation
-  const handleMeetingCreated = (newMeeting: any) => {
+  // ✅ OBSŁUGA UTWORZENIA SPOTKANIA
+  const handleMeetingCreated = (newMeeting: MeetingWithParticipants) => {
     setMeetings(prev => [...prev, newMeeting]);
-    console.log('Meeting created:', newMeeting);
-    // Here you could show a success notification
+    console.log('✅ Meeting added to list:', newMeeting.id);
   };
 
-  // Handle meeting deletion
-  const handleDeleteMeeting = (meetingId: string) => {
-    if (window.confirm('Are you sure you want to delete this meeting?')) {
-      setMeetings(meetings.filter(m => m.id !== meetingId));
-      // Here you would also call the API to delete the meeting
-      console.log('Meeting deleted:', meetingId);
+  // ✅ OBSŁUGA USUNIĘCIA SPOTKANIA
+  const handleDeleteMeeting = async (meetingId: string) => {
+    if (!window.confirm('Are you sure you want to delete this meeting?')) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Deleting meeting:', meetingId);
+      await deleteMeeting(meetingId);
+      setMeetings(prev => prev.filter(m => m.id !== meetingId));
+      console.log('✅ Meeting deleted successfully');
+    } catch (err: any) {
+      console.error('❌ Error deleting meeting:', err);
+      alert(err.message || 'Failed to delete meeting');
     }
   };
+
+  // ✅ LOADING STATE
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading meetings...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -147,6 +171,22 @@ export function TutorSchedulePage() {
           <span>Create Meeting</span>
         </button>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="flex items-start space-x-2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+          <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <button
+              onClick={loadMeetings}
+              className="text-sm text-red-700 dark:text-red-300 underline mt-1"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -173,124 +213,91 @@ export function TutorSchedulePage() {
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-2">
             <Users className="h-5 w-5 text-green-600" />
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Students</span>
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Upcoming</span>
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-            {new Set(meetings.flatMap(m => m.participants.map(p => p.id))).size}
+            {upcomingMeetings.length}
           </p>
         </div>
       </div>
 
       {/* Calendar Navigation */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </h2>
-          <div className="flex items-center space-x-2">
+          <div className="flex space-x-2">
             <button
               onClick={() => navigateMonth('prev')}
-              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
             >
               <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
             </button>
             <button
               onClick={() => navigateMonth('next')}
-              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
             >
               <ChevronRight className="h-5 w-5 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
         </div>
-
-        {/* Next Meeting Highlight */}
-        {upcomingMeetings.length > 0 && (
-          <div className="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-            <h3 className="text-sm font-medium text-purple-800 dark:text-purple-300 mb-2">
-              Next Meeting
-            </h3>
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-lg font-semibold text-purple-900 dark:text-purple-100">
-                  {upcomingMeetings[0].title}
-                </h4>
-                <p className="text-purple-700 dark:text-purple-300">
-                  {formatDate(upcomingMeetings[0].scheduled_at)} at {formatTime(upcomingMeetings[0].scheduled_at)}
-                </p>
-                <p className="text-sm text-purple-600 dark:text-purple-400">
-                  {upcomingMeetings[0].participants.length} participant(s)
-                </p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <a
-                  href={upcomingMeetings[0].meeting_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center space-x-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors"
-                >
-                  <Video className="h-4 w-4" />
-                  <span>Join</span>
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Upcoming Meetings List */}
+      {/* Meetings List */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Upcoming Meetings ({upcomingMeetings.length})
-          </h3>
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Upcoming Meetings
+          </h2>
         </div>
         
         <div className="divide-y divide-gray-200 dark:divide-gray-700">
           {upcomingMeetings.length > 0 ? (
-            upcomingMeetings.map((meeting) => (
-              <div key={meeting.id} className="p-6">
+            upcomingMeetings.map(meeting => (
+              <div key={meeting.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                         {meeting.title}
-                      </h4>
+                      </h3>
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(meeting.status)}`}>
                         {meeting.status}
                       </span>
                     </div>
                     
                     {meeting.description && (
-                      <p className="text-gray-600 dark:text-gray-400 mb-3">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                         {meeting.description}
                       </p>
                     )}
                     
-                    <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                       <div className="flex items-center space-x-1">
                         <Calendar className="h-4 w-4" />
                         <span>{formatDate(meeting.scheduled_at)}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <Clock className="h-4 w-4" />
-                        <span>{formatTime(meeting.scheduled_at)} ({meeting.duration_minutes}min)</span>
+                        <span>{formatTime(meeting.scheduled_at)} ({meeting.duration_minutes} min)</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <Users className="h-4 w-4" />
-                        <span>{meeting.participants.length} participant(s)</span>
+                        <span>{meeting.participants.length} student{meeting.participants.length !== 1 ? 's' : ''}</span>
                       </div>
                     </div>
                     
-                    <div className="mt-3">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Participants:</span>
-                        {meeting.participants.map((participant, index) => (
-                          <span key={participant.id} className="text-sm text-gray-700 dark:text-gray-300">
-                            {participant.name}{index < meeting.participants.length - 1 ? ',' : ''}
-                          </span>
-                        ))}
-                      </div>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Students:</span>
+                      {meeting.participants.map((participant, idx) => (
+                        <span 
+                          key={participant.id}
+                          className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded"
+                        >
+                          {participant.name}{idx < meeting.participants.length - 1 ? ',' : ''}
+                        </span>
+                      ))}
                     </div>
                   </div>
                   
