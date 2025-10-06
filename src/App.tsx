@@ -16,6 +16,8 @@ import { TutorMessagesPage } from './pages/TutorMessagesPage';
 import { StudentLessonsPage } from './pages/StudentLessonsPage';
 import { StudentSchedulePage } from './pages/StudentSchedulePage';
 import { StudentMessagesPage } from './pages/StudentMessagesPage';
+import { StudentLessonViewer } from './pages/StudentLessonViewer';
+import { StudentLessonHistory } from './pages/StudentLessonHistory';
 
 function App() {
   return (
@@ -29,20 +31,21 @@ function App() {
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 
-                <Route path="/" element={<Layout />}>
-                  <Route 
+                <Route 
                     path="student/*" 
                     element={
                       <RouteGuard requiredRole="student">
                         <Routes>
                           <Route index element={<StudentDashboard />} />
                           <Route path="lessons" element={<StudentLessonsPage />} />
+                          <Route path="lessons/:lessonId" element={<StudentLessonViewer />} />
+                          <Route path="lessons/:lessonId/history" element={<StudentLessonHistory />} />
                           <Route path="schedule" element={<StudentSchedulePage />} />
                           <Route path="messages" element={<StudentMessagesPage />} />
                         </Routes>
                       </RouteGuard>
                     } 
-                  />
+              />
                   
                   <Route 
                     path="tutor/*" 
