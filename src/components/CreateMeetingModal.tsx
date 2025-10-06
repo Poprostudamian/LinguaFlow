@@ -1,3 +1,4 @@
+// src/components/CreateMeetingModal.tsx - FIXED VERSION
 import React, { useState, useEffect } from 'react';
 import { 
   X, 
@@ -12,11 +13,12 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useStudents } from '../contexts/StudentsContext';
+import { createMeeting, MeetingWithParticipants } from '../lib/meetingsAPI'; // ← IMPORT API
 
 interface CreateMeetingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onMeetingCreated: (meeting: any) => void; // callback po utworzeniu spotkania
+  onMeetingCreated: (meeting: MeetingWithParticipants) => void;
 }
 
 interface MeetingFormData {
@@ -79,7 +81,7 @@ export function CreateMeetingModal({ isOpen, onClose, onMeetingCreated }: Create
       
       setFormData(prev => ({
         ...prev,
-        scheduled_at: tomorrow.toISOString().slice(0, 16) // Format for datetime-local input
+        scheduled_at: tomorrow.toISOString().slice(0, 16)
       }));
     }
   }, [isOpen, formData.scheduled_at]);
@@ -141,37 +143,28 @@ export function CreateMeetingModal({ isOpen, onClose, onMeetingCreated }: Create
       return;
     }
 
+    if (!session.user?.id) {
+      setError('You must be logged in to create a meeting');
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
     try {
-      // Here you would call your API to create the meeting
-      // For now, we'll simulate the API call with mock data
+      console.log('📅 Creating meeting with API...');
       
-      const newMeeting = {
-        id: Date.now().toString(), // Mock ID
+      // ✅ PRAWDZIWE ZAPISYWANIE DO SUPABASE
+      const newMeeting = await createMeeting(session.user.id, {
         title: formData.title,
         description: formData.description,
         meeting_url: formData.meeting_url,
         scheduled_at: new Date(formData.scheduled_at).toISOString(),
         duration_minutes: formData.duration_minutes,
-        status: 'scheduled',
-        tutor_id: session.user?.id,
-        participants: formData.selected_students.map(studentId => {
-          const student = students.find(s => s.student_id === studentId);
-          return {
-            id: studentId,
-            name: student ? `${student.student_first_name} ${student.student_last_name}` : 'Unknown',
-            email: student?.student_email || '',
-            status: 'invited'
-          };
-        })
-      };
+        student_ids: formData.selected_students
+      });
 
-      console.log('Creating meeting:', newMeeting);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('✅ Meeting created successfully:', newMeeting.id);
       
       // Call the callback with the new meeting
       onMeetingCreated(newMeeting);
@@ -180,7 +173,7 @@ export function CreateMeetingModal({ isOpen, onClose, onMeetingCreated }: Create
       onClose();
       
     } catch (err: any) {
-      console.error('Error creating meeting:', err);
+      console.error('❌ Error creating meeting:', err);
       setError(err.message || 'Failed to create meeting. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -190,16 +183,16 @@ export function CreateMeetingModal({ isOpen, onClose, onMeetingCreated }: Create
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             Create New Meeting
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             disabled={isSubmitting}
           >
             <X className="h-6 w-6" />
@@ -210,9 +203,9 @@ export function CreateMeetingModal({ isOpen, onClose, onMeetingCreated }: Create
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Error Message */}
           {error && (
-            <div className="flex items-center space-x-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <span className="text-red-800 dark:text-red-200 text-sm">{error}</span>
+            <div className="flex items-start space-x-2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
             </div>
           )}
 
@@ -270,9 +263,8 @@ export function CreateMeetingModal({ isOpen, onClose, onMeetingCreated }: Create
             </div>
           </div>
 
-          {/* Date and Time + Duration */}
+          {/* Date and Time */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Date and Time */}
             <div>
               <label htmlFor="scheduled_at" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Date & Time *
@@ -291,10 +283,9 @@ export function CreateMeetingModal({ isOpen, onClose, onMeetingCreated }: Create
               </div>
             </div>
 
-            {/* Duration */}
             <div>
               <label htmlFor="duration_minutes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Duration
+                Duration *
               </label>
               <div className="relative">
                 <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -303,7 +294,7 @@ export function CreateMeetingModal({ isOpen, onClose, onMeetingCreated }: Create
                   name="duration_minutes"
                   value={formData.duration_minutes}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white appearance-none"
                   disabled={isSubmitting}
                 >
                   {DURATION_OPTIONS.map(option => (
@@ -316,13 +307,13 @@ export function CreateMeetingModal({ isOpen, onClose, onMeetingCreated }: Create
             </div>
           </div>
 
-          {/* Student Selection */}
+          {/* Students Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Invite Students * ({formData.selected_students.length} selected)
+              Select Students *
             </label>
             
-            {/* Search Students */}
+            {/* Search */}
             <div className="relative mb-3">
               <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
@@ -338,61 +329,59 @@ export function CreateMeetingModal({ isOpen, onClose, onMeetingCreated }: Create
             {/* Students List */}
             <div className="border border-gray-300 dark:border-gray-600 rounded-md max-h-60 overflow-y-auto">
               {studentsLoading ? (
-                <div className="p-4 text-center text-gray-500">
-                  Loading students...
-                </div>
+                <div className="p-4 text-center text-gray-500">Loading students...</div>
               ) : filteredStudents.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
-                  {searchQuery ? 'No students found matching your search.' : 'No students available.'}
-                </div>
+                <div className="p-4 text-center text-gray-500">No students found</div>
               ) : (
-                <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredStudents.map((student) => (
-                    <label
-                      key={student.student_id}
-                      className="flex items-center p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-                    >
-                      <div className="relative">
-                        <input
-                          type="checkbox"
-                          checked={formData.selected_students.includes(student.student_id)}
-                          onChange={() => handleStudentToggle(student.student_id)}
-                          className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                          disabled={isSubmitting}
-                        />
-                        {formData.selected_students.includes(student.student_id) && (
-                          <Check className="absolute inset-0 h-4 w-4 text-purple-600 pointer-events-none" />
-                        )}
-                      </div>
-                      <div className="ml-3 flex-1">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {student.student_first_name} {student.student_last_name}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {student.student_email}
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
+                filteredStudents.map(student => (
+                  <label
+                    key={student.student_id}
+                    className="flex items-center space-x-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-200 dark:border-gray-700 last:border-b-0"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.selected_students.includes(student.student_id)}
+                      onChange={() => handleStudentToggle(student.student_id)}
+                      className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                      disabled={isSubmitting}
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {student.student_first_name} {student.student_last_name}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {student.student_email}
+                      </p>
+                    </div>
+                    {formData.selected_students.includes(student.student_id) && (
+                      <Check className="h-5 w-5 text-purple-600" />
+                    )}
+                  </label>
+                ))
               )}
             </div>
+
+            {formData.selected_students.length > 0 && (
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                {formData.selected_students.length} student{formData.selected_students.length !== 1 ? 's' : ''} selected
+              </p>
+            )}
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || formData.selected_students.length === 0}
-              className="flex items-center space-x-2 px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-md transition-colors"
+              className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <>
