@@ -1,4 +1,4 @@
-// src/pages/StudentLessonsPage.tsx - ULEPSZONA WERSJA 2.0
+// src/pages/StudentLessonsPage.tsx - WERSJA Z NOWYMI PRZYCISKAMI
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -14,10 +14,8 @@ import {
   User,
   Zap,
   Trophy,
-  TrendingUp,
-  History,
-  ChevronRight,
-  Star
+  Star,
+  History
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getStudentLessons } from '../lib/supabase';
@@ -79,7 +77,6 @@ export function StudentLessonsPage() {
     }
   };
 
-  // Filter lessons
   const filteredLessons = lessons.filter(lesson => {
     const tutorName = `${lesson.lessons.users.first_name} ${lesson.lessons.users.last_name}`;
     const matchesSearch = lesson.lessons.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -88,7 +85,6 @@ export function StudentLessonsPage() {
     return matchesSearch && matchesFilter;
   });
 
-  // Calculate stats
   const stats = {
     total: lessons.length,
     assigned: lessons.filter(l => l.status === 'assigned').length,
@@ -98,14 +94,6 @@ export function StudentLessonsPage() {
     avgScore: lessons.filter(l => l.score !== null).length > 0 
       ? Math.round(lessons.filter(l => l.score !== null).reduce((sum, l) => sum + (l.score || 0), 0) / lessons.filter(l => l.score !== null).length)
       : 0
-  };
-
-  const handleLessonClick = (lesson: StudentLessonData) => {
-    if (lesson.status === 'completed') {
-      navigate(`/student/lessons/${lesson.lesson_id}`);
-    } else {
-      navigate(`/student/lessons/${lesson.lesson_id}`);
-    }
   };
 
   if (isLoading) {
@@ -135,7 +123,7 @@ export function StudentLessonsPage() {
         <button
           onClick={loadStudentLessons}
           disabled={isLoading}
-          className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm disabled:opacity-50"
+          className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
         >
           <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           <span>Refresh</span>
@@ -201,7 +189,6 @@ export function StudentLessonsPage() {
           />
         </div>
 
-        {/* Filter Tabs */}
         <div className="flex bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg p-1 shadow-sm">
           {[
             { key: 'all', label: 'All', count: stats.total },
@@ -258,7 +245,8 @@ export function StudentLessonsPage() {
             <LessonCard 
               key={lesson.id} 
               lesson={lesson} 
-              onClick={() => handleLessonClick(lesson)}
+              onNavigate={(lessonId) => navigate(`/student/lessons/${lessonId}`)}
+              onHistory={(lessonId) => navigate(`/student/lessons/${lessonId}/history`)}
             />
           ))}
         </div>
@@ -267,13 +255,17 @@ export function StudentLessonsPage() {
   );
 }
 
-// Lesson Card Component
+// ============================================================================
+// LESSON CARD COMPONENT WITH NEW BUTTONS
+// ============================================================================
+
 interface LessonCardProps {
   lesson: StudentLessonData;
-  onClick: () => void;
+  onNavigate: (lessonId: string) => void;
+  onHistory: (lessonId: string) => void;
 }
 
-function LessonCard({ lesson, onClick }: LessonCardProps) {
+function LessonCard({ lesson, onNavigate, onHistory }: LessonCardProps) {
   const statusConfig = {
     assigned: {
       color: 'bg-yellow-500',
@@ -281,8 +273,7 @@ function LessonCard({ lesson, onClick }: LessonCardProps) {
       bgColor: 'bg-yellow-50 dark:bg-yellow-900/20',
       borderColor: 'border-yellow-200 dark:border-yellow-800',
       icon: PlayCircle,
-      label: 'New',
-      action: 'Start Lesson'
+      label: 'New'
     },
     in_progress: {
       color: 'bg-blue-500',
@@ -290,8 +281,7 @@ function LessonCard({ lesson, onClick }: LessonCardProps) {
       bgColor: 'bg-blue-50 dark:bg-blue-900/20',
       borderColor: 'border-blue-200 dark:border-blue-800',
       icon: Zap,
-      label: 'In Progress',
-      action: 'Continue'
+      label: 'In Progress'
     },
     completed: {
       color: 'bg-green-500',
@@ -299,19 +289,48 @@ function LessonCard({ lesson, onClick }: LessonCardProps) {
       bgColor: 'bg-green-50 dark:bg-green-900/20',
       borderColor: 'border-green-200 dark:border-green-800',
       icon: CheckCircle,
-      label: 'Completed',
-      action: 'Review'
+      label: 'Completed'
     }
   };
 
   const config = statusConfig[lesson.status];
   const StatusIcon = config.icon;
 
+  // Button configurations
+  const getButtonConfig = () => {
+    switch (lesson.status) {
+      case 'assigned':
+        return {
+          icon: PlayCircle,
+          label: 'Start Lesson',
+          gradient: 'from-purple-500 via-purple-600 to-indigo-600',
+          hoverGradient: 'hover:from-purple-600 hover:via-purple-700 hover:to-indigo-700',
+          shadow: 'shadow-purple-500/50'
+        };
+      case 'in_progress':
+        return {
+          icon: Zap,
+          label: 'Continue',
+          gradient: 'from-blue-500 via-blue-600 to-cyan-600',
+          hoverGradient: 'hover:from-blue-600 hover:via-blue-700 hover:to-cyan-700',
+          shadow: 'shadow-blue-500/50'
+        };
+      case 'completed':
+        return {
+          icon: CheckCircle,
+          label: 'Review',
+          gradient: 'from-green-500 via-emerald-600 to-teal-600',
+          hoverGradient: 'hover:from-green-600 hover:via-emerald-700 hover:to-teal-700',
+          shadow: 'shadow-green-500/50'
+        };
+    }
+  };
+
+  const buttonConfig = getButtonConfig();
+  const ButtonIcon = buttonConfig.icon;
+
   return (
-    <div 
-      onClick={onClick}
-      className="group bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden"
-    >
+    <div className="group bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 hover:shadow-xl transition-all duration-300 overflow-hidden">
       {/* Status Bar */}
       <div className={`h-2 ${config.color}`} />
 
@@ -355,7 +374,7 @@ function LessonCard({ lesson, onClick }: LessonCardProps) {
         )}
 
         {/* Meta Information */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-2 gap-3 mb-5">
           <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
             <User className="h-4 w-4 flex-shrink-0" />
             <span className="truncate">
@@ -385,24 +404,51 @@ function LessonCard({ lesson, onClick }: LessonCardProps) {
           )}
         </div>
 
-        {/* Action Button */}
-        <div className="flex items-center space-x-3">
-          <button 
-            className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors shadow-sm group-hover:shadow-md"
+        {/* NEW IMPROVED ACTION BUTTONS */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Primary Action Button with Gradient */}
+          <button
+            onClick={() => onNavigate(lesson.lesson_id)}
+            className={`
+              group/btn relative flex-1 flex items-center justify-center gap-2 
+              px-5 py-3.5 rounded-xl font-bold text-white text-sm
+              bg-gradient-to-r ${buttonConfig.gradient} ${buttonConfig.hoverGradient}
+              shadow-lg ${buttonConfig.shadow} hover:shadow-xl
+              transform transition-all duration-300 
+              hover:scale-[1.02] active:scale-[0.98]
+              overflow-hidden
+            `}
           >
-            <StatusIcon className="h-5 w-5" />
-            <span>{config.action}</span>
+            {/* Shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 
+                          translate-x-[-100%] group-hover/btn:translate-x-[100%] 
+                          transition-transform duration-700" />
+            
+            <ButtonIcon className="h-5 w-5 relative z-10 group-hover/btn:scale-110 transition-transform" />
+            <span className="relative z-10">{buttonConfig.label}</span>
           </button>
 
+          {/* History Button (only for completed) */}
           {lesson.status === 'completed' && (
-            <button 
+            <button
               onClick={(e) => {
                 e.stopPropagation();
-                window.location.href = `/student/lessons/${lesson.lesson_id}/history`;
+                onHistory(lesson.lesson_id);
               }}
-              className="px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-semibold transition-colors border border-gray-300 dark:border-gray-600 flex items-center space-x-2"
+              className="
+                group/hist flex items-center justify-center gap-2 
+                px-5 py-3.5 rounded-xl font-bold text-sm
+                bg-gradient-to-r from-gray-700 via-gray-800 to-gray-900
+                dark:from-gray-600 dark:via-gray-700 dark:to-gray-800
+                text-white
+                border-2 border-gray-600 dark:border-gray-500
+                shadow-lg hover:shadow-xl
+                transform transition-all duration-300 
+                hover:scale-[1.02] active:scale-[0.98]
+                sm:flex-none sm:min-w-[160px]
+              "
             >
-              <History className="h-5 w-5" />
+              <History className="h-5 w-5 group-hover/hist:rotate-[-12deg] transition-transform" />
               <span>History</span>
             </button>
           )}
