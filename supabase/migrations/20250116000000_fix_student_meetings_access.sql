@@ -7,7 +7,7 @@
   ## Changes
   - Add SELECT policy for students on meetings table
   - Students can only read meetings where they appear in meeting_participants
-*/
+*/ 
 
 -- Add policy allowing students to read meetings they're participating in
 CREATE POLICY "Students can view meetings they're invited to"
