@@ -57,11 +57,11 @@ export function StudentMessagesPage() {
     loadAvailableTutors();
   }, []);
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time updates for selected conversation
   useEffect(() => {
     if (!selectedConversation) return;
 
-    const unsubscribe = subscribeToConversationMessages(
+    const subscription = subscribeToConversationMessages(
       selectedConversation,
       (message) => {
         setCurrentMessages(prev => {
@@ -73,26 +73,23 @@ export function StudentMessagesPage() {
     );
 
     return () => {
-      if (unsubscribe) unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, [selectedConversation]);
 
-  // Subscribe to conversation updates
+  // Subscribe to conversation list updates
   useEffect(() => {
-    const unsubscribe = subscribeToConversationUpdates((conversation) => {
-      setConversations(prev => {
-        const index = prev.findIndex(c => c.id === conversation.id);
-        if (index >= 0) {
-          const updated = [...prev];
-          updated[index] = conversation;
-          return updated;
-        }
-        return [conversation, ...prev];
-      });
+    const subscription = subscribeToConversationUpdates(() => {
+      // Reload conversations when any conversation is updated
+      loadConversations();
     });
 
     return () => {
-      if (unsubscribe) unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, []);
 
