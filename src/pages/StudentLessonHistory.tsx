@@ -37,7 +37,7 @@ interface LessonHistoryItem {
     title: string;
     question: string;
     correct_answer: string;
-    options?: any;
+    options?: string[] | { front: string; back: string } | null;
   }>;
 }
 
@@ -124,7 +124,7 @@ export function StudentLessonHistory() {
           title: exercise.title,
           question: exercise.question,
           correct_answer: exercise.correct_answer,
-          options: exercise.options ? JSON.parse(exercise.options) : null
+          options: exercise.options ? (typeof exercise.options === 'string' ? JSON.parse(exercise.options) : exercise.options) : null
         }))
       };
 
@@ -433,25 +433,40 @@ export function StudentLessonHistory() {
                             Options
                           </p>
                           <div className="space-y-2">
-                            {exercise.options.map((option: string, idx: number) => (
-                              <div
-                                key={idx}
-                                className={`p-3 rounded-lg border ${
-                                  option === exercise.correct_answer
-                                    ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
-                                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-                                }`}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="text-gray-900 dark:text-white">
-                                    {option}
-                                  </span>
-                                  {option === exercise.correct_answer && (
-                                    <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                                  )}
+                            {typeof exercise.options === 'object' && !Array.isArray(exercise.options) ? (
+                              // Flashcard type (front/back object)
+                              <div className="space-y-3">
+                                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">Front:</p>
+                                  <p className="text-gray-900 dark:text-white">{exercise.options.front}</p>
+                                </div>
+                                <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                                  <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-1">Back:</p>
+                                  <p className="text-gray-900 dark:text-white">{exercise.options.back}</p>
                                 </div>
                               </div>
-                            ))}
+                            ) : Array.isArray(exercise.options) ? (
+                              // Multiple choice options (array)
+                              exercise.options.map((option: string, idx: number) => (
+                                <div
+                                  key={idx}
+                                  className={`p-3 rounded-lg border ${
+                                    option === exercise.correct_answer
+                                      ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
+                                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-gray-900 dark:text-white">
+                                      {option}
+                                    </span>
+                                    {option === exercise.correct_answer && (
+                                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                    )}
+                                  </div>
+                                </div>
+                              ))
+                            ) : null}
                           </div>
                         </div>
                       )}
