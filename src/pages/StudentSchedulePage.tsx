@@ -468,42 +468,82 @@ export function StudentSchedulePage() {
         </div>
       </div>
 
-      {/* Meetings List */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {viewMode === 'day' ? 'Today\'s Meetings' : 
-             viewMode === 'week' ? 'This Week\'s Meetings' : 
-             'All Meetings'}
-          </h2>
+      {/* Main Content - Different views based on viewMode */}
+      {viewMode === 'month' && (
+        <div>
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Calendar View
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Click on a day to see meeting details
+            </p>
+          </div>
+          
+          {/* Use CalendarGrid component here when you create it */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <p className="text-center text-gray-500 dark:text-gray-400">
+              Calendar grid view - integrate CalendarGrid component
+            </p>
+          </div>
         </div>
+      )}
 
-        {filteredMeetings.length > 0 ? (
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredMeetings
-              .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())
-              .map(meeting => (
-                <MeetingCard key={meeting.id} meeting={meeting} />
-              ))}
+      {viewMode === 'week' && (
+        <div>
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Week Timeline
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Your schedule for the week
+            </p>
           </div>
-        ) : (
-          <div className="p-12 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="bg-gray-100 dark:bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="h-8 w-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                No meetings scheduled
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                {filterStatus !== 'all' 
-                  ? `No ${filterStatus} meetings found.`
-                  : 'Your tutor hasn\'t scheduled any meetings yet. Check back later!'}
-              </p>
+          
+          {/* Use WeekTimeline component here when you create it */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <p className="text-center text-gray-500 dark:text-gray-400">
+              Week timeline view - integrate WeekTimeline component
+            </p>
+          </div>
+        </div>
+      )}
+
+      {viewMode === 'day' && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Today's Meetings
+            </h2>
+          </div>
+
+          {filteredMeetings.length > 0 ? (
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredMeetings
+                .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())
+                .map(meeting => (
+                  <MeetingCard key={meeting.id} meeting={meeting} />
+                ))}
             </div>
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="p-12 text-center">
+              <div className="max-w-md mx-auto">
+                <div className="bg-gray-100 dark:bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Calendar className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  No meetings scheduled
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400">
+                  {filterStatus !== 'all' 
+                    ? `No ${filterStatus} meetings found.`
+                    : 'Your tutor hasn\'t scheduled any meetings yet. Check back later!'}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
