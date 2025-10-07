@@ -1,4 +1,4 @@
-// src/pages/StudentLessonViewer.tsx - MODERN LESSON VIEWER
+// src/pages/StudentLessonViewer.tsx - MODERN LESSON VIEWER (FIXED)
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -50,7 +50,7 @@ interface Exercise {
   title: string;
   question: string;
   correct_answer: string;
-  options?: any;
+  options?: string[] | { front: string; back: string } | null;
 }
 
 export function StudentLessonViewer() {
@@ -141,7 +141,13 @@ export function StudentLessonViewer() {
         .eq('lesson_id', lessonId)
         .order('order_number');
 
-      setExercises(exercisesData || []);
+      // Parse exercises and handle different option formats
+      const parsedExercises = (exercisesData || []).map(ex => ({
+        ...ex,
+        options: ex.options ? (typeof ex.options === 'string' ? JSON.parse(ex.options) : ex.options) : null
+      }));
+
+      setExercises(parsedExercises);
 
     } catch (err: any) {
       setError(err.message || 'Failed to load lesson');
@@ -479,9 +485,10 @@ export function StudentLessonViewer() {
                     Lesson Material
                   </h2>
                 </div>
-                <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
-                  {lesson.content}
-                </div>
+                <div 
+                  className="text-gray-700 dark:text-gray-300 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: lesson.content }}
+                />
               </div>
             </div>
           )}
@@ -532,14 +539,29 @@ export function StudentLessonViewer() {
                     </p>
                     {exercise.options && (
                       <div className="space-y-2">
-                        {JSON.parse(exercise.options).map((option: string, idx: number) => (
-                          <div
-                            key={idx}
-                            className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
-                          >
-                            {option}
+                        {typeof exercise.options === 'object' && !Array.isArray(exercise.options) ? (
+                          // Flashcard type (front/back object)
+                          <div className="space-y-3">
+                            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                              <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">Front:</p>
+                              <p className="text-gray-900 dark:text-white">{exercise.options.front}</p>
+                            </div>
+                            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                              <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-2">Back:</p>
+                              <p className="text-gray-900 dark:text-white">{exercise.options.back}</p>
+                            </div>
                           </div>
-                        ))}
+                        ) : Array.isArray(exercise.options) ? (
+                          // Multiple choice options (array)
+                          exercise.options.map((option: string, idx: number) => (
+                            <div
+                              key={idx}
+                              className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
+                            >
+                              {option}
+                            </div>
+                          ))
+                        ) : null}
                       </div>
                     )}
                   </div>
