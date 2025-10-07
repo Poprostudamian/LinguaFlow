@@ -538,20 +538,25 @@ export function StudentLessonViewer() {
                       {exercise.question}
                     </p>
                     {exercise.options && (
-                      <div className="space-y-2">
-                        {typeof exercise.options === 'object' && !Array.isArray(exercise.options) ? (
-                          // Flashcard type (front/back object)
-                          <div className="space-y-3">
-                            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
-                              <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">Front:</p>
-                              <p className="text-gray-900 dark:text-white">{exercise.options.front}</p>
-                            </div>
-                            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
-                              <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-2">Back:</p>
-                              <p className="text-gray-900 dark:text-white">{exercise.options.back}</p>
-                            </div>
-                          </div>
-                        ) : Array.isArray(exercise.options) ? (
+  <div className="space-y-2">
+    {/* ✅ NAPRAWIONE - sprawdzamy czy to tablica flashcards */}
+    {Array.isArray(exercise.options) && exercise.options.length > 0 && exercise.options[0]?.front ? (
+      // Flashcards - map through array
+      <div className="space-y-3">
+        {exercise.options.map((flashcard: any, idx: number) => (
+          <div key={idx} className="space-y-2">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+              <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">Front:</p>
+              <p className="text-gray-900 dark:text-white">{String(flashcard.front)}</p>
+            </div>
+            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+              <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-2">Back:</p>
+              <p className="text-gray-900 dark:text-white">{String(flashcard.back)}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : Array.isArray(exercise.options) ? (
                           // Multiple choice options (array)
                           exercise.options.map((option: string, idx: number) => (
                             <div
