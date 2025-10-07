@@ -1,6 +1,6 @@
-// src/components/ExerciseViewer.tsx - NAPRAWIONA WERSJA Z POPRAWNYMI FISZKAMI
+// src/components/ExerciseViewer.tsx - NAPRAWIONA WERSJA
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, RefreshCw, ArrowRight, ArrowLeft, RotateCcw } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowRight, ArrowLeft, RotateCcw } from 'lucide-react';
 
 export interface Exercise {
   id: string;
@@ -9,7 +9,7 @@ export interface Exercise {
   title: string;
   question: string;
   correct_answer: string;
-  options?: string[] | any; // Może być array lub JSON
+  options?: string[] | any;
   explanation?: string;
   order_number: number;
   points: number;
@@ -31,19 +31,6 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
   const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({});
 
   const currentExercise = exercises[currentIndex];
-
-  // Debug log dla fiszek
-  useEffect(() => {
-    if (currentExercise?.exercise_type === 'Fiszki') {
-      console.log('🃏 Current flashcard exercise:', {
-        title: currentExercise.title,
-        question: currentExercise.question,
-        correct_answer: currentExercise.correct_answer,
-        options: currentExercise.options,
-        optionsType: typeof currentExercise.options
-      });
-    }
-  }, [currentExercise]);
 
   useEffect(() => {
     if (onProgress) {
@@ -81,14 +68,11 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
     const totalPoints = exercises.reduce((sum, ex) => sum + ex.points, 0);
     const earnedPoints = exercises.reduce((sum, ex) => {
       const userAnswer = userAnswers[ex.id];
-      
-      // Różne sposoby oceniania w zależności od typu ćwiczenia
       let isCorrect = false;
+      
       if (ex.exercise_type === 'Fiszki') {
-        // Dla fiszek każda odpowiedź daje punkty (self-assessment)
-        isCorrect = !!userAnswer; // Jeśli student odpowiedział, dostaje punkty
+        isCorrect = !!userAnswer;
       } else {
-        // Dla ABCD i Tekstowe sprawdzaj poprawność
         isCorrect = userAnswer?.toLowerCase().trim() === ex.correct_answer.toLowerCase().trim();
       }
       
@@ -104,77 +88,41 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
     }
   };
 
-  const toggleCardFlip = (exerciseId: string) => {
+  const toggleCardFlip = (cardId: string) => {
     setFlippedCards(prev => ({
       ...prev,
-      [exerciseId]: !prev[exerciseId]
+      [cardId]: !prev[cardId]
     }));
   };
 
-  // Funkcja do parsowania fiszek z options
-  const parseFlashcards = (exercise: Exercise) => {
-    console.log('🔍 Parsing flashcards for exercise:', exercise.title);
-    console.log('📝 Raw options:', exercise.options);
-    
-    let flashcards = [];
-    
+  // ✅ NAPRAWIONA funkcja parseFlashcards - zawsze zwraca poprawny array
+  const parseFlashcards = (exercise: Exercise): Array<{front: string, back: string}> => {
     try {
-      // Jeśli options to string, spróbuj sparsować jako JSON
+      // Jeśli options to string JSON
       if (typeof exercise.options === 'string') {
         const parsed = JSON.parse(exercise.options);
-        console.log('📋 Parsed JSON options:', parsed);
         
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Sprawdź czy to array obiektów z front/back
-          if (parsed[0]?.front && parsed[0]?.back) {
-            flashcards = parsed;
-          } else {
-            // Jeśli to zwykły array, utwórz fiszki z question i correct_answer
-            flashcards = [{
-              front: exercise.question,
-              back: exercise.correct_answer
-            }];
-          }
-        } else {
-          // Fallback - użyj question i correct_answer
-          flashcards = [{
-            front: exercise.question,
-            back: exercise.correct_answer
-          }];
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.front && parsed[0]?.back) {
+          return parsed;
         }
       } 
-      // Jeśli options to już array
-      else if (Array.isArray(exercise.options)) {
-        console.log('📋 Options is already array:', exercise.options);
-        
-        if (exercise.options.length > 0 && exercise.options[0]?.front) {
-          flashcards = exercise.options;
-        } else {
-          // Fallback
-          flashcards = [{
-            front: exercise.question,
-            back: exercise.correct_answer
-          }];
-        }
-      } 
-      // Fallback - użyj question i correct_answer
-      else {
-        flashcards = [{
-          front: exercise.question,
-          back: exercise.correct_answer
-        }];
+      // Jeśli options to już array obiektów
+      else if (Array.isArray(exercise.options) && exercise.options.length > 0 && exercise.options[0]?.front && exercise.options[0]?.back) {
+        return exercise.options;
       }
+      
+      // Fallback - użyj question i correct_answer
+      return [{
+        front: exercise.question || 'No question',
+        back: exercise.correct_answer || 'No answer'
+      }];
     } catch (error) {
-      console.error('❌ Error parsing flashcards:', error);
-      // Fallback w przypadku błędu
-      flashcards = [{
-        front: exercise.question,
-        back: exercise.correct_answer
+      console.error('Error parsing flashcards:', error);
+      return [{
+        front: exercise.question || 'No question',
+        back: exercise.correct_answer || 'No answer'
       }];
     }
-    
-    console.log('✅ Final flashcards:', flashcards);
-    return flashcards;
   };
 
   if (exercises.length === 0) {
@@ -199,6 +147,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
       
       return sum + (isCorrect ? ex.points : 0);
     }, 0);
+
     const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
 
     return (
@@ -262,7 +211,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
           {currentExercise.title}
         </h3>
         
-        {/* ABCD Type */}
+        {/* ✅ ABCD Type */}
         {currentExercise.exercise_type === 'ABCD' && currentExercise.options && (
           <>
             <p className="text-gray-700 dark:text-gray-300 mb-6">
@@ -270,7 +219,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
             </p>
             <div className="space-y-3">
               {Array.isArray(currentExercise.options) && currentExercise.options.map((option, index) => {
-                const optionLetter = String.fromCharCode(65 + index); // A, B, C, D
+                const optionLetter = String.fromCharCode(65 + index);
                 const isSelected = currentAnswer === optionLetter;
                 
                 return (
@@ -294,8 +243,8 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
           </>
         )}
 
-        {/* Fiszki Type - NAPRAWIONA WERSJA */}
-         {currentExercise.exercise_type === 'Fiszki' && (
+        {/* ✅ NAPRAWIONA Fiszki Type */}
+        {currentExercise.exercise_type === 'Fiszki' && (
           <div className="space-y-6">
             {parseFlashcards(currentExercise).map((flashcard, cardIndex) => {
               const cardId = `${currentExercise.id}-${cardIndex}`;
@@ -303,7 +252,6 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
               
               return (
                 <div key={cardIndex} className="space-y-4">
-                  {/* Flashcard */}
                   <div 
                     className="relative bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-8 min-h-32 cursor-pointer transform transition-all duration-300 hover:scale-105 border-2 border-blue-200 dark:border-blue-700"
                     onClick={() => toggleCardFlip(cardId)}
@@ -312,7 +260,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
                       {!isFlipped ? (
                         <>
                           <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                            {flashcard.front}
+                            {String(flashcard.front)}
                           </h4>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
                             Click to reveal answer
@@ -321,7 +269,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
                       ) : (
                         <>
                           <h4 className="text-lg font-medium text-blue-600 dark:text-blue-400 mb-2">
-                            {flashcard.back}
+                            {String(flashcard.back)}
                           </h4>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
                             Click to flip back
@@ -330,7 +278,6 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
                       )}
                     </div>
                     
-                    {/* Flip icon */}
                     <div className="absolute top-3 right-3">
                       <RotateCcw className="h-4 w-4 text-gray-400" />
                     </div>
@@ -339,7 +286,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
               );
             })}
             
-            {/* Automatycznie oznacz jako "odpowiedziane" po zobaczeniu wszystkich kart */}
+            {/* Auto mark as completed */}
             {parseFlashcards(currentExercise).every((_, index) => {
               const cardId = `${currentExercise.id}-${index}`;
               return flippedCards[cardId];
@@ -360,14 +307,13 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
               </div>
             )}
             
-            {/* Instrukcja */}
             <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
               Click on flashcards to study them. After viewing all cards, you can continue to the next exercise.
             </div>
           </div>
         )}
 
-        {/* Tekstowe Type */}
+        {/* ✅ Tekstowe Type */}
         {currentExercise.exercise_type === 'Tekstowe' && (
           <>
             <p className="text-gray-700 dark:text-gray-300 mb-6">
