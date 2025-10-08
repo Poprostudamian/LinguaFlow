@@ -1,6 +1,7 @@
-// src/components/ExerciseViewer.tsx - NAPRAWIONA WERSJA
+// src/components/ExerciseViewer.tsx - WITH DETAILED RESULTS HISTORY
+
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, ArrowRight, ArrowLeft, RotateCcw } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowRight, ArrowLeft, RotateCcw, Eye, EyeOff } from 'lucide-react';
 
 export interface Exercise {
   id: string;
@@ -29,6 +30,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [showExplanation, setShowExplanation] = useState(false);
   const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({});
+  const [expandedResults, setExpandedResults] = useState<Record<number, boolean>>({});
 
   const currentExercise = exercises[currentIndex];
 
@@ -95,23 +97,25 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
     }));
   };
 
-  // ✅ NAPRAWIONA funkcja parseFlashcards - zawsze zwraca poprawny array
+  const toggleResultExpanded = (index: number) => {
+    setExpandedResults(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
   const parseFlashcards = (exercise: Exercise): Array<{front: string, back: string}> => {
     try {
-      // Jeśli options to string JSON
       if (typeof exercise.options === 'string') {
         const parsed = JSON.parse(exercise.options);
-        
         if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.front && parsed[0]?.back) {
           return parsed;
         }
       } 
-      // Jeśli options to już array obiektów
       else if (Array.isArray(exercise.options) && exercise.options.length > 0 && exercise.options[0]?.front && exercise.options[0]?.back) {
         return exercise.options;
       }
       
-      // Fallback - użyj question i correct_answer
       return [{
         front: exercise.question || 'No question',
         back: exercise.correct_answer || 'No answer'
@@ -133,6 +137,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
     );
   }
 
+  // ✅ DETAILED RESULTS VIEW
   if (showResults) {
     const totalPoints = exercises.reduce((sum, ex) => sum + ex.points, 0);
     const earnedPoints = exercises.reduce((sum, ex) => {
@@ -151,16 +156,27 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
     const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
 
     return (
-      <div className="text-center py-8">
-        <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Exercises Completed!
-        </h3>
-        <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">
-          Your Score: {score}% ({earnedPoints}/{totalPoints} points)
-        </p>
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 max-w-md mx-auto">
-          <h4 className="font-medium text-gray-900 dark:text-white mb-2">Results Summary:</h4>
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Score Header */}
+        <div className="text-center py-8 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border-2 border-green-200 dark:border-green-800">
+          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+          <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Exercises Completed!
+          </h3>
+          <p className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">
+            Your Score: {score}%
+          </p>
+          <p className="text-gray-600 dark:text-gray-400">
+            {earnedPoints} out of {totalPoints} points
+          </p>
+        </div>
+
+        {/* Detailed Results */}
+        <div className="space-y-4">
+          <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+            📊 Detailed Results
+          </h4>
+          
           {exercises.map((ex, index) => {
             const userAnswer = userAnswers[ex.id];
             let isCorrect = false;
@@ -170,16 +186,202 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
             } else {
               isCorrect = userAnswer?.toLowerCase().trim() === ex.correct_answer.toLowerCase().trim();
             }
+
+            const isExpanded = expandedResults[index];
             
             return (
-              <div key={ex.id} className="flex items-center justify-between py-1">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Exercise {index + 1} ({ex.exercise_type})
-                </span>
-                {isCorrect ? (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                ) : (
-                  <XCircle className="h-4 w-4 text-red-500" />
+              <div 
+                key={ex.id} 
+                className={`border-2 rounded-xl overflow-hidden transition-all ${
+                  isCorrect 
+                    ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/10' 
+                    : 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10'
+                }`}
+              >
+                {/* Summary Header */}
+                <button
+                  onClick={() => toggleResultExpanded(index)}
+                  className="w-full p-4 flex items-center justify-between hover:bg-white/50 dark:hover:bg-gray-800/50 transition-colors"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      isCorrect 
+                        ? 'bg-green-200 dark:bg-green-800' 
+                        : 'bg-red-200 dark:bg-red-800'
+                    }`}>
+                      {isCorrect ? (
+                        <CheckCircle className="h-6 w-6 text-green-700 dark:text-green-300" />
+                      ) : (
+                        <XCircle className="h-6 w-6 text-red-700 dark:text-red-300" />
+                      )}
+                    </div>
+                    <div className="text-left">
+                      <h5 className="font-semibold text-gray-900 dark:text-white">
+                        Exercise {index + 1}: {ex.title}
+                      </h5>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {ex.exercise_type} • {ex.points} {ex.points === 1 ? 'point' : 'points'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      isCorrect 
+                        ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200' 
+                        : 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200'
+                    }`}>
+                      {isCorrect ? 'Correct' : 'Incorrect'}
+                    </span>
+                    {isExpanded ? (
+                      <EyeOff className="h-5 w-5 text-gray-500" />
+                    ) : (
+                      <Eye className="h-5 w-5 text-gray-500" />
+                    )}
+                  </div>
+                </button>
+
+                {/* Detailed View */}
+                {isExpanded && (
+                  <div className="p-6 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 space-y-4">
+                    {/* Question */}
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                        Question:
+                      </p>
+                      <p className="text-gray-900 dark:text-white">
+                        {ex.question}
+                      </p>
+                    </div>
+
+                    {/* ABCD Details */}
+                    {ex.exercise_type === 'ABCD' && Array.isArray(ex.options) && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                          Answer Options:
+                        </p>
+                        <div className="space-y-2">
+                          {ex.options.map((option, optIndex) => {
+                            const optionLetter = String.fromCharCode(65 + optIndex);
+                            const isUserAnswer = userAnswer === optionLetter;
+                            const isCorrectOption = ex.correct_answer === optionLetter;
+                            
+                            return (
+                              <div 
+                                key={optIndex}
+                                className={`p-3 rounded-lg border-2 ${
+                                  isCorrectOption 
+                                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20' 
+                                    : isUserAnswer 
+                                    ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                                    : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'
+                                }`}
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className={`font-bold ${
+                                    isCorrectOption ? 'text-green-700 dark:text-green-300' :
+                                    isUserAnswer ? 'text-red-700 dark:text-red-300' :
+                                    'text-gray-600 dark:text-gray-400'
+                                  }`}>
+                                    {optionLetter}.
+                                  </span>
+                                  <span className="text-gray-900 dark:text-white flex-1">
+                                    {option}
+                                  </span>
+                                  {isCorrectOption && (
+                                    <span className="text-xs font-medium text-green-700 dark:text-green-300 bg-green-200 dark:bg-green-800 px-2 py-1 rounded">
+                                      ✓ Correct Answer
+                                    </span>
+                                  )}
+                                  {isUserAnswer && !isCorrectOption && (
+                                    <span className="text-xs font-medium text-red-700 dark:text-red-300 bg-red-200 dark:bg-red-800 px-2 py-1 rounded">
+                                      Your Answer
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Flashcard Details */}
+                    {ex.exercise_type === 'Fiszki' && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                          Flashcards:
+                        </p>
+                        <div className="space-y-3">
+                          {parseFlashcards(ex).map((card, cardIndex) => (
+                            <div key={cardIndex} className="grid grid-cols-2 gap-3">
+                              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+                                <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">
+                                  Front:
+                                </p>
+                                <p className="text-gray-900 dark:text-white">
+                                  {String(card.front)}
+                                </p>
+                              </div>
+                              <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg">
+                                <p className="text-xs font-medium text-purple-600 dark:text-purple-400 mb-1">
+                                  Back:
+                                </p>
+                                <p className="text-gray-900 dark:text-white">
+                                  {String(card.back)}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Text Answer Details */}
+                    {ex.exercise_type === 'Tekstowe' && (
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                            Your Answer:
+                          </p>
+                          <div className={`p-3 rounded-lg border-2 ${
+                            isCorrect 
+                              ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                              : 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                          }`}>
+                            <p className="text-gray-900 dark:text-white">
+                              {userAnswer || '(No answer provided)'}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {!isCorrect && (
+                          <div>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                              Expected Answer:
+                            </p>
+                            <div className="p-3 bg-green-50 dark:bg-green-900/20 border-2 border-green-500 rounded-lg">
+                              <p className="text-gray-900 dark:text-white">
+                                {ex.correct_answer}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Explanation */}
+                    {ex.explanation && (
+                      <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <p className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
+                          💡 Explanation:
+                        </p>
+                        <p className="text-blue-800 dark:text-blue-200">
+                          {ex.explanation}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             );
@@ -189,6 +391,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
     );
   }
 
+  // EXERCISE SOLVING VIEW (unchanged)
   return (
     <div className="max-w-2xl mx-auto">
       {/* Progress indicator */}
@@ -211,7 +414,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
           {currentExercise.title}
         </h3>
         
-        {/* ✅ ABCD Type */}
+        {/* ABCD Type */}
         {currentExercise.exercise_type === 'ABCD' && currentExercise.options && (
           <>
             <p className="text-gray-700 dark:text-gray-300 mb-6">
@@ -243,7 +446,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
           </>
         )}
 
-        {/* ✅ NAPRAWIONA Fiszki Type */}
+        {/* Fiszki Type */}
         {currentExercise.exercise_type === 'Fiszki' && (
           <div className="space-y-6">
             {parseFlashcards(currentExercise).map((flashcard, cardIndex) => {
@@ -286,7 +489,6 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
               );
             })}
             
-            {/* Auto mark as completed */}
             {parseFlashcards(currentExercise).every((_, index) => {
               const cardId = `${currentExercise.id}-${index}`;
               return flippedCards[cardId];
@@ -313,7 +515,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
           </div>
         )}
 
-        {/* ✅ Tekstowe Type */}
+        {/* Tekstowe Type */}
         {currentExercise.exercise_type === 'Tekstowe' && (
           <>
             <p className="text-gray-700 dark:text-gray-300 mb-6">
