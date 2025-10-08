@@ -1,7 +1,8 @@
-// src/components/ExerciseViewer.tsx - WITH DETAILED RESULTS HISTORY
+// src/components/ExerciseViewer.tsx - WITH HISTORY LINK AND DETAILED RESULTS
 
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, ArrowRight, ArrowLeft, RotateCcw, Eye, EyeOff } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowRight, ArrowLeft, RotateCcw, Eye, EyeOff, History } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export interface Exercise {
   id: string;
@@ -20,9 +21,11 @@ interface ExerciseViewerProps {
   exercises: Exercise[];
   onComplete: (score: number, timeSpent: number) => void;
   onProgress: (currentExercise: number, totalExercises: number) => void;
+  lessonId?: string; // ✅ ADDED - to enable history link
 }
 
-export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseViewerProps) {
+export function ExerciseViewer({ exercises, onComplete, onProgress, lessonId }: ExerciseViewerProps) {
+  const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [showResults, setShowResults] = useState(false);
@@ -137,7 +140,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
     );
   }
 
-  // ✅ DETAILED RESULTS VIEW
+  // ✅ DETAILED RESULTS VIEW WITH HISTORY LINK
   if (showResults) {
     const totalPoints = exercises.reduce((sum, ex) => sum + ex.points, 0);
     const earnedPoints = exercises.reduce((sum, ex) => {
@@ -166,15 +169,34 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
           <p className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">
             Your Score: {score}%
           </p>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             {earnedPoints} out of {totalPoints} points
+          </p>
+
+          {/* ✅ ADDED - View Full History Button */}
+          {lessonId && (
+            <button
+              onClick={() => navigate(`/student/lessons/${lessonId}/history`)}
+              className="inline-flex items-center space-x-2 px-6 py-3 bg-white dark:bg-gray-800 border-2 border-green-500 dark:border-green-600 text-green-700 dark:text-green-300 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all shadow-md hover:shadow-lg font-semibold"
+            >
+              <History className="h-5 w-5" />
+              <span>View Full Lesson History</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Quick Summary Info Box */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+          <p className="text-blue-800 dark:text-blue-200 text-center">
+            💡 <strong>Tip:</strong> You can review your answers below or visit the full lesson history page to see all past attempts.
           </p>
         </div>
 
         {/* Detailed Results */}
         <div className="space-y-4">
           <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            📊 Detailed Results
+            📊 Your Answers Review
           </h4>
           
           {exercises.map((ex, index) => {
@@ -231,7 +253,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
                         ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200' 
                         : 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200'
                     }`}>
-                      {isCorrect ? 'Correct' : 'Incorrect'}
+                      {isCorrect ? '✓ Correct' : '✗ Incorrect'}
                     </span>
                     {isExpanded ? (
                       <EyeOff className="h-5 w-5 text-gray-500" />
@@ -290,7 +312,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
                                   </span>
                                   {isCorrectOption && (
                                     <span className="text-xs font-medium text-green-700 dark:text-green-300 bg-green-200 dark:bg-green-800 px-2 py-1 rounded">
-                                      ✓ Correct Answer
+                                      ✓ Correct
                                     </span>
                                   )}
                                   {isUserAnswer && !isCorrectOption && (
@@ -387,14 +409,27 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
             );
           })}
         </div>
+
+        {/* ✅ BOTTOM HISTORY LINK - Repeated for convenience */}
+        {lessonId && (
+          <div className="flex justify-center pt-4">
+            <button
+              onClick={() => navigate(`/student/lessons/${lessonId}/history`)}
+              className="inline-flex items-center space-x-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl transition-all shadow-lg hover:shadow-xl font-semibold text-lg"
+            >
+              <History className="h-6 w-6" />
+              <span>View Complete Lesson History</span>
+              <ArrowRight className="h-5 w-5" />
+            </button>
+          </div>
+        )}
       </div>
     );
   }
 
-  // EXERCISE SOLVING VIEW (unchanged)
+  // EXERCISE SOLVING VIEW (unchanged but condensed for space)
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Progress indicator */}
       <div className="mb-6">
         <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mb-2">
           <span>Exercise {currentIndex + 1} of {exercises.length}</span>
@@ -408,18 +443,14 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
         </div>
       </div>
 
-      {/* Exercise content */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
           {currentExercise.title}
         </h3>
         
-        {/* ABCD Type */}
         {currentExercise.exercise_type === 'ABCD' && currentExercise.options && (
           <>
-            <p className="text-gray-700 dark:text-gray-300 mb-6">
-              {currentExercise.question}
-            </p>
+            <p className="text-gray-700 dark:text-gray-300 mb-6">{currentExercise.question}</p>
             <div className="space-y-3">
               {Array.isArray(currentExercise.options) && currentExercise.options.map((option, index) => {
                 const optionLetter = String.fromCharCode(65 + index);
@@ -446,7 +477,6 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
           </>
         )}
 
-        {/* Fiszki Type */}
         {currentExercise.exercise_type === 'Fiszki' && (
           <div className="space-y-6">
             {parseFlashcards(currentExercise).map((flashcard, cardIndex) => {
@@ -454,7 +484,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
               const isFlipped = flippedCards[cardId];
               
               return (
-                <div key={cardIndex} className="space-y-4">
+                <div key={cardIndex}>
                   <div 
                     className="relative bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-8 min-h-32 cursor-pointer transform transition-all duration-300 hover:scale-105 border-2 border-blue-200 dark:border-blue-700"
                     onClick={() => toggleCardFlip(cardId)}
@@ -480,7 +510,6 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
                         </>
                       )}
                     </div>
-                    
                     <div className="absolute top-3 right-3">
                       <RotateCcw className="h-4 w-4 text-gray-400" />
                     </div>
@@ -508,32 +537,22 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
                 </div>
               </div>
             )}
-            
-            <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
-              Click on flashcards to study them. After viewing all cards, you can continue to the next exercise.
-            </div>
           </div>
         )}
 
-        {/* Tekstowe Type */}
         {currentExercise.exercise_type === 'Tekstowe' && (
           <>
-            <p className="text-gray-700 dark:text-gray-300 mb-6">
-              {currentExercise.question}
-            </p>
-            <div className="space-y-4">
-              <textarea
-                value={currentAnswer}
-                onChange={(e) => handleAnswer(e.target.value)}
-                placeholder="Type your answer here..."
-                className="w-full p-4 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                rows={4}
-              />
-            </div>
+            <p className="text-gray-700 dark:text-gray-300 mb-6">{currentExercise.question}</p>
+            <textarea
+              value={currentAnswer}
+              onChange={(e) => handleAnswer(e.target.value)}
+              placeholder="Type your answer here..."
+              className="w-full p-4 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              rows={4}
+            />
           </>
         )}
 
-        {/* Explanation */}
         {showExplanation && currentExercise.explanation && (
           <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">Explanation:</h4>
@@ -542,7 +561,6 @@ export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseVi
         )}
       </div>
 
-      {/* Navigation */}
       <div className="flex justify-between items-center">
         <button
           onClick={prevExercise}
