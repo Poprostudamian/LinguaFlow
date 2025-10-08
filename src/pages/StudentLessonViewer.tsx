@@ -1,12 +1,48 @@
-// src/components/ExerciseViewer.tsx - WITH DETAILED RESULTS HISTORY
+// src/pages/StudentLessonViewer.tsx - COMPLETE FIX WITH INTERACTIVE EXERCISES
 
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, ArrowRight, ArrowLeft, RotateCcw, Eye, EyeOff } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { 
+  BookOpen, 
+  Clock, 
+  User, 
+  ArrowLeft, 
+  CheckCircle, 
+  PlayCircle,
+  FileText,
+  Zap,
+  RefreshCw,
+  Star,
+  TrendingUp
+} from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+import { ExerciseViewer } from '../components/ExerciseViewer'; // ✅ DODANE
 
-export interface Exercise {
+interface LessonDetails {
   id: string;
-  lesson_id: string;
-  exercise_type: 'ABCD' | 'Fiszki' | 'Tekstowe';
+  title: string;
+  description: string;
+  content: string;
+  created_at: string;
+  tutor: {
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+  student_lesson: {
+    status: 'assigned' | 'in_progress' | 'completed';
+    progress: number;
+    score: number | null;
+    time_spent: number;
+    started_at: string | null;
+    completed_at: string | null;
+  };
+}
+
+interface Exercise {
+  id: string;
+  exercise_type: string;
   title: string;
   question: string;
   correct_answer: string;
@@ -16,565 +52,427 @@ export interface Exercise {
   points: number;
 }
 
-interface ExerciseViewerProps {
-  exercises: Exercise[];
-  onComplete: (score: number, timeSpent: number) => void;
-  onProgress: (currentExercise: number, totalExercises: number) => void;
-}
+export function StudentLessonViewer() {
+  const { lessonId } = useParams<{ lessonId: string }>();
+  const navigate = useNavigate();
+  const { session } = useAuth();
+  
+  const [lesson, setLesson] = useState<LessonDetails | null>(null);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'content' | 'exercises'>('content');
+  const [isStarting, setIsStarting] = useState(false);
+  const [startTime] = useState<number>(Date.now());
 
-export function ExerciseViewer({ exercises, onComplete, onProgress }: ExerciseViewerProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
-  const [showResults, setShowResults] = useState(false);
-  const [startTime] = useState(Date.now());
-  const [currentAnswer, setCurrentAnswer] = useState('');
-  const [showExplanation, setShowExplanation] = useState(false);
-  const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({});
-  const [expandedResults, setExpandedResults] = useState<Record<number, boolean>>({});
-
-  const currentExercise = exercises[currentIndex];
+  const hasExercises = exercises.length > 0;
 
   useEffect(() => {
-    if (onProgress) {
-      onProgress(currentIndex + 1, exercises.length);
+    if (lessonId && session?.user?.id) {
+      loadLessonData();
     }
-  }, [currentIndex, exercises.length, onProgress]);
+  }, [lessonId, session?.user?.id]);
 
-  const handleAnswer = (answer: string) => {
-    setUserAnswers(prev => ({
-      ...prev,
-      [currentExercise.id]: answer
-    }));
-    setCurrentAnswer(answer);
-  };
+  const loadLessonData = async () => {
+    if (!lessonId || !session?.user?.id) return;
 
-  const nextExercise = () => {
-    if (currentIndex < exercises.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setCurrentAnswer(userAnswers[exercises[currentIndex + 1]?.id] || '');
-      setShowExplanation(false);
-    } else {
-      finishExercises();
-    }
-  };
-
-  const prevExercise = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-      setCurrentAnswer(userAnswers[exercises[currentIndex - 1]?.id] || '');
-      setShowExplanation(false);
-    }
-  };
-
-  const finishExercises = () => {
-    const totalPoints = exercises.reduce((sum, ex) => sum + ex.points, 0);
-    const earnedPoints = exercises.reduce((sum, ex) => {
-      const userAnswer = userAnswers[ex.id];
-      let isCorrect = false;
-      
-      if (ex.exercise_type === 'Fiszki') {
-        isCorrect = !!userAnswer;
-      } else {
-        isCorrect = userAnswer?.toLowerCase().trim() === ex.correct_answer.toLowerCase().trim();
-      }
-      
-      return sum + (isCorrect ? ex.points : 0);
-    }, 0);
-
-    const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
-    const timeSpent = Math.floor((Date.now() - startTime) / 1000);
-
-    setShowResults(true);
-    if (onComplete) {
-      onComplete(score, timeSpent);
-    }
-  };
-
-  const toggleCardFlip = (cardId: string) => {
-    setFlippedCards(prev => ({
-      ...prev,
-      [cardId]: !prev[cardId]
-    }));
-  };
-
-  const toggleResultExpanded = (index: number) => {
-    setExpandedResults(prev => ({
-      ...prev,
-      [index]: !prev[index]
-    }));
-  };
-
-  const parseFlashcards = (exercise: Exercise): Array<{front: string, back: string}> => {
     try {
-      if (typeof exercise.options === 'string') {
-        const parsed = JSON.parse(exercise.options);
-        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.front && parsed[0]?.back) {
-          return parsed;
-        }
-      } 
-      else if (Array.isArray(exercise.options) && exercise.options.length > 0 && exercise.options[0]?.front && exercise.options[0]?.back) {
-        return exercise.options;
+      setIsLoading(true);
+      setError(null);
+
+      // Get lesson details
+      const { data, error: lessonError } = await supabase
+        .from('student_lessons')
+        .select(`
+          id,
+          status,
+          progress,
+          score,
+          time_spent,
+          started_at,
+          completed_at,
+          lessons!inner (
+            id,
+            title,
+            description,
+            content,
+            created_at,
+            users!lessons_tutor_id_fkey (
+              first_name,
+              last_name,
+              email
+            )
+          )
+        `)
+        .eq('lesson_id', lessonId)
+        .eq('student_id', session.user.id)
+        .single();
+
+      if (lessonError) throw lessonError;
+
+      if (!data) {
+        setError('Lesson not found or not assigned to you');
+        return;
       }
-      
-      return [{
-        front: exercise.question || 'No question',
-        back: exercise.correct_answer || 'No answer'
-      }];
-    } catch (error) {
-      console.error('Error parsing flashcards:', error);
-      return [{
-        front: exercise.question || 'No question',
-        back: exercise.correct_answer || 'No answer'
-      }];
+
+      const lessonData: LessonDetails = {
+        id: data.lessons.id,
+        title: data.lessons.title,
+        description: data.lessons.description || '',
+        content: data.lessons.content || 'No content available.',
+        created_at: data.lessons.created_at,
+        tutor: data.lessons.users,
+        student_lesson: {
+          status: data.status,
+          progress: data.progress,
+          score: data.score,
+          time_spent: data.time_spent,
+          started_at: data.started_at,
+          completed_at: data.completed_at
+        }
+      };
+
+      setLesson(lessonData);
+
+      // Get exercises (if they exist)
+      const { data: exercisesData } = await supabase
+        .from('lesson_exercises')
+        .select('*')
+        .eq('lesson_id', lessonId)
+        .order('order_number');
+
+      // ✅ Parse exercises and convert types
+      const parsedExercises = (exercisesData || []).map(ex => ({
+        ...ex,
+        // Convert database types to ExerciseViewer types
+        exercise_type: ex.exercise_type === 'multiple_choice' ? 'ABCD' :
+                      ex.exercise_type === 'flashcard' ? 'Fiszki' :
+                      ex.exercise_type === 'text_answer' ? 'Tekstowe' : 'ABCD',
+        // Parse options if string
+        options: ex.options ? (typeof ex.options === 'string' ? JSON.parse(ex.options) : ex.options) : null
+      }));
+
+      setExercises(parsedExercises);
+
+    } catch (err: any) {
+      setError(err.message || 'Failed to load lesson');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (exercises.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-500 dark:text-gray-400">No exercises available for this lesson.</p>
-      </div>
-    );
-  }
+  const handleStartLesson = async () => {
+    if (!lessonId || !session?.user?.id) return;
 
-  // ✅ DETAILED RESULTS VIEW
-  if (showResults) {
-    const totalPoints = exercises.reduce((sum, ex) => sum + ex.points, 0);
-    const earnedPoints = exercises.reduce((sum, ex) => {
-      const userAnswer = userAnswers[ex.id];
-      let isCorrect = false;
+    try {
+      setIsStarting(true);
+
+      await supabase
+        .from('student_lessons')
+        .update({
+          status: 'in_progress',
+          started_at: new Date().toISOString(),
+          progress: 10
+        })
+        .eq('lesson_id', lessonId)
+        .eq('student_id', session.user.id);
+
+      await loadLessonData();
       
-      if (ex.exercise_type === 'Fiszki') {
-        isCorrect = !!userAnswer;
-      } else {
-        isCorrect = userAnswer?.toLowerCase().trim() === ex.correct_answer.toLowerCase().trim();
+      // Automatically switch to exercises tab if available
+      if (exercises.length > 0) {
+        setActiveTab('exercises');
       }
-      
-      return sum + (isCorrect ? ex.points : 0);
-    }, 0);
+    } catch (err) {
+      console.error('Error starting lesson:', err);
+    } finally {
+      setIsStarting(false);
+    }
+  };
 
-    const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
+  // ✅ NOWY HANDLER - Called when exercises are completed
+  const handleCompleteExercises = async (score: number, timeSpent: number) => {
+    if (!lessonId || !session?.user?.id || !lesson) return;
 
+    try {
+      const totalTimeSpent = lesson.student_lesson.time_spent + timeSpent;
+
+      await supabase
+        .from('student_lessons')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          progress: 100,
+          time_spent: totalTimeSpent,
+          score: score
+        })
+        .eq('lesson_id', lessonId)
+        .eq('student_id', session.user.id);
+
+      await loadLessonData();
+    } catch (err) {
+      console.error('Error completing exercises:', err);
+    }
+  };
+
+  // ✅ NOWY HANDLER - Called when student progresses through exercises
+  const handleExerciseProgress = (current: number, total: number) => {
+    if (!lessonId || !session?.user?.id) return;
+
+    // Calculate progress based on exercise completion
+    const exerciseProgress = Math.round((current / total) * 60);
+    const totalProgress = 30 + exerciseProgress; // 30% for reading, 60% for exercises
+
+    supabase
+      .from('student_lessons')
+      .update({
+        progress: Math.min(totalProgress, 90) // Max 90% until fully complete
+      })
+      .eq('lesson_id', lessonId)
+      .eq('student_id', session.user.id)
+      .then(() => {
+        // Optionally refresh lesson data
+      })
+      .catch(console.error);
+  };
+
+  if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Score Header */}
-        <div className="text-center py-8 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border-2 border-green-200 dark:border-green-800">
-          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Exercises Completed!
-          </h3>
-          <p className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">
-            Your Score: {score}%
-          </p>
-          <p className="text-gray-600 dark:text-gray-400">
-            {earnedPoints} out of {totalPoints} points
-          </p>
-        </div>
-
-        {/* Detailed Results */}
-        <div className="space-y-4">
-          <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            📊 Detailed Results
-          </h4>
-          
-          {exercises.map((ex, index) => {
-            const userAnswer = userAnswers[ex.id];
-            let isCorrect = false;
-            
-            if (ex.exercise_type === 'Fiszki') {
-              isCorrect = !!userAnswer;
-            } else {
-              isCorrect = userAnswer?.toLowerCase().trim() === ex.correct_answer.toLowerCase().trim();
-            }
-
-            const isExpanded = expandedResults[index];
-            
-            return (
-              <div 
-                key={ex.id} 
-                className={`border-2 rounded-xl overflow-hidden transition-all ${
-                  isCorrect 
-                    ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/10' 
-                    : 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10'
-                }`}
-              >
-                {/* Summary Header */}
-                <button
-                  onClick={() => toggleResultExpanded(index)}
-                  className="w-full p-4 flex items-center justify-between hover:bg-white/50 dark:hover:bg-gray-800/50 transition-colors"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      isCorrect 
-                        ? 'bg-green-200 dark:bg-green-800' 
-                        : 'bg-red-200 dark:bg-red-800'
-                    }`}>
-                      {isCorrect ? (
-                        <CheckCircle className="h-6 w-6 text-green-700 dark:text-green-300" />
-                      ) : (
-                        <XCircle className="h-6 w-6 text-red-700 dark:text-red-300" />
-                      )}
-                    </div>
-                    <div className="text-left">
-                      <h5 className="font-semibold text-gray-900 dark:text-white">
-                        Exercise {index + 1}: {ex.title}
-                      </h5>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {ex.exercise_type} • {ex.points} {ex.points === 1 ? 'point' : 'points'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      isCorrect 
-                        ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200' 
-                        : 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200'
-                    }`}>
-                      {isCorrect ? 'Correct' : 'Incorrect'}
-                    </span>
-                    {isExpanded ? (
-                      <EyeOff className="h-5 w-5 text-gray-500" />
-                    ) : (
-                      <Eye className="h-5 w-5 text-gray-500" />
-                    )}
-                  </div>
-                </button>
-
-                {/* Detailed View */}
-                {isExpanded && (
-                  <div className="p-6 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 space-y-4">
-                    {/* Question */}
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                        Question:
-                      </p>
-                      <p className="text-gray-900 dark:text-white">
-                        {ex.question}
-                      </p>
-                    </div>
-
-                    {/* ABCD Details */}
-                    {ex.exercise_type === 'ABCD' && Array.isArray(ex.options) && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                          Answer Options:
-                        </p>
-                        <div className="space-y-2">
-                          {ex.options.map((option, optIndex) => {
-                            const optionLetter = String.fromCharCode(65 + optIndex);
-                            const isUserAnswer = userAnswer === optionLetter;
-                            const isCorrectOption = ex.correct_answer === optionLetter;
-                            
-                            return (
-                              <div 
-                                key={optIndex}
-                                className={`p-3 rounded-lg border-2 ${
-                                  isCorrectOption 
-                                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20' 
-                                    : isUserAnswer 
-                                    ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
-                                    : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'
-                                }`}
-                              >
-                                <div className="flex items-center space-x-3">
-                                  <span className={`font-bold ${
-                                    isCorrectOption ? 'text-green-700 dark:text-green-300' :
-                                    isUserAnswer ? 'text-red-700 dark:text-red-300' :
-                                    'text-gray-600 dark:text-gray-400'
-                                  }`}>
-                                    {optionLetter}.
-                                  </span>
-                                  <span className="text-gray-900 dark:text-white flex-1">
-                                    {option}
-                                  </span>
-                                  {isCorrectOption && (
-                                    <span className="text-xs font-medium text-green-700 dark:text-green-300 bg-green-200 dark:bg-green-800 px-2 py-1 rounded">
-                                      ✓ Correct Answer
-                                    </span>
-                                  )}
-                                  {isUserAnswer && !isCorrectOption && (
-                                    <span className="text-xs font-medium text-red-700 dark:text-red-300 bg-red-200 dark:bg-red-800 px-2 py-1 rounded">
-                                      Your Answer
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Flashcard Details */}
-                    {ex.exercise_type === 'Fiszki' && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                          Flashcards:
-                        </p>
-                        <div className="space-y-3">
-                          {parseFlashcards(ex).map((card, cardIndex) => (
-                            <div key={cardIndex} className="grid grid-cols-2 gap-3">
-                              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
-                                <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">
-                                  Front:
-                                </p>
-                                <p className="text-gray-900 dark:text-white">
-                                  {String(card.front)}
-                                </p>
-                              </div>
-                              <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg">
-                                <p className="text-xs font-medium text-purple-600 dark:text-purple-400 mb-1">
-                                  Back:
-                                </p>
-                                <p className="text-gray-900 dark:text-white">
-                                  {String(card.back)}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Text Answer Details */}
-                    {ex.exercise_type === 'Tekstowe' && (
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                            Your Answer:
-                          </p>
-                          <div className={`p-3 rounded-lg border-2 ${
-                            isCorrect 
-                              ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                              : 'border-red-500 bg-red-50 dark:bg-red-900/20'
-                          }`}>
-                            <p className="text-gray-900 dark:text-white">
-                              {userAnswer || '(No answer provided)'}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {!isCorrect && (
-                          <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                              Expected Answer:
-                            </p>
-                            <div className="p-3 bg-green-50 dark:bg-green-900/20 border-2 border-green-500 rounded-lg">
-                              <p className="text-gray-900 dark:text-white">
-                                {ex.correct_answer}
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Explanation */}
-                    {ex.explanation && (
-                      <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                        <p className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
-                          💡 Explanation:
-                        </p>
-                        <p className="text-blue-800 dark:text-blue-200">
-                          {ex.explanation}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <RefreshCw className="h-12 w-12 animate-spin text-purple-600 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Loading lesson...</p>
         </div>
       </div>
     );
   }
 
-  // EXERCISE SOLVING VIEW (unchanged)
+  if (error || !lesson) {
+    return (
+      <div className="max-w-2xl mx-auto py-8">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+          <h3 className="text-red-800 dark:text-red-200 font-medium mb-2">Error</h3>
+          <p className="text-red-600 dark:text-red-300">{error || 'Lesson not found'}</p>
+          <button
+            onClick={() => navigate('/student/lessons')}
+            className="mt-4 px-4 py-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-md hover:bg-red-200 dark:hover:bg-red-700"
+          >
+            Back to Lessons
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const { student_lesson } = lesson;
+
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* Progress indicator */}
-      <div className="mb-6">
-        <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mb-2">
-          <span>Exercise {currentIndex + 1} of {exercises.length}</span>
-          <span>{currentExercise.exercise_type}</span>
-        </div>
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-          <div
-            className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${((currentIndex + 1) / exercises.length) * 100}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Exercise content */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-          {currentExercise.title}
-        </h3>
-        
-        {/* ABCD Type */}
-        {currentExercise.exercise_type === 'ABCD' && currentExercise.options && (
-          <>
-            <p className="text-gray-700 dark:text-gray-300 mb-6">
-              {currentExercise.question}
-            </p>
-            <div className="space-y-3">
-              {Array.isArray(currentExercise.options) && currentExercise.options.map((option, index) => {
-                const optionLetter = String.fromCharCode(65 + index);
-                const isSelected = currentAnswer === optionLetter;
-                
-                return (
-                  <button
-                    key={index}
-                    onClick={() => handleAnswer(optionLetter)}
-                    className={`w-full text-left p-4 rounded-lg border transition-colors ${
-                      isSelected
-                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                    }`}
-                  >
-                    <span className="font-medium text-purple-600 dark:text-purple-400 mr-3">
-                      {optionLetter}.
-                    </span>
-                    <span className="text-gray-900 dark:text-white">{option}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        {/* Fiszki Type */}
-        {currentExercise.exercise_type === 'Fiszki' && (
-          <div className="space-y-6">
-            {parseFlashcards(currentExercise).map((flashcard, cardIndex) => {
-              const cardId = `${currentExercise.id}-${cardIndex}`;
-              const isFlipped = flippedCards[cardId];
-              
-              return (
-                <div key={cardIndex} className="space-y-4">
-                  <div 
-                    className="relative bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-8 min-h-32 cursor-pointer transform transition-all duration-300 hover:scale-105 border-2 border-blue-200 dark:border-blue-700"
-                    onClick={() => toggleCardFlip(cardId)}
-                  >
-                    <div className="text-center">
-                      {!isFlipped ? (
-                        <>
-                          <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                            {String(flashcard.front)}
-                          </h4>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Click to reveal answer
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <h4 className="text-lg font-medium text-blue-600 dark:text-blue-400 mb-2">
-                            {String(flashcard.back)}
-                          </h4>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Click to flip back
-                          </p>
-                        </>
-                      )}
-                    </div>
-                    
-                    <div className="absolute top-3 right-3">
-                      <RotateCcw className="h-4 w-4 text-gray-400" />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            
-            {parseFlashcards(currentExercise).every((_, index) => {
-              const cardId = `${currentExercise.id}-${index}`;
-              return flippedCards[cardId];
-            }) && !currentAnswer && (
-              <div className="text-center py-4">
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                  <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                  <p className="text-green-600 dark:text-green-400 font-medium">
-                    You've viewed all flashcards! Ready to continue.
-                  </p>
-                  <button
-                    onClick={() => handleAnswer('completed')}
-                    className="mt-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                  >
-                    Mark as Studied
-                  </button>
-                </div>
-              </div>
-            )}
-            
-            <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
-              Click on flashcards to study them. After viewing all cards, you can continue to the next exercise.
-            </div>
-          </div>
-        )}
-
-        {/* Tekstowe Type */}
-        {currentExercise.exercise_type === 'Tekstowe' && (
-          <>
-            <p className="text-gray-700 dark:text-gray-300 mb-6">
-              {currentExercise.question}
-            </p>
-            <div className="space-y-4">
-              <textarea
-                value={currentAnswer}
-                onChange={(e) => handleAnswer(e.target.value)}
-                placeholder="Type your answer here..."
-                className="w-full p-4 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                rows={4}
-              />
-            </div>
-          </>
-        )}
-
-        {/* Explanation */}
-        {showExplanation && currentExercise.explanation && (
-          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">Explanation:</h4>
-            <p className="text-blue-800 dark:text-blue-200">{currentExercise.explanation}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Navigation */}
-      <div className="flex justify-between items-center">
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center space-x-4 mb-6">
         <button
-          onClick={prevExercise}
-          disabled={currentIndex === 0}
-          className="flex items-center space-x-2 px-4 py-2 text-gray-600 dark:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed hover:text-gray-900 dark:hover:text-white"
+          onClick={() => navigate('/student/lessons')}
+          className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
         >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Previous</span>
+          <ArrowLeft className="h-5 w-5" />
         </button>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {lesson.title}
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            {lesson.description}
+          </p>
+        </div>
+      </div>
 
-        <div className="flex space-x-3">
-          {currentExercise.explanation && (
+      {/* Lesson metadata */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">
+                Progress
+              </p>
+              <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                {student_lesson.progress}%
+              </p>
+            </div>
+            <div className="bg-blue-200 dark:bg-blue-900/40 p-3 rounded-lg">
+              <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+        </div>
+
+        {student_lesson.score !== null && (
+          <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400 mb-1">
+                  Score
+                </p>
+                <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">
+                  {student_lesson.score}%
+                </p>
+              </div>
+              <div className="bg-yellow-200 dark:bg-yellow-900/40 p-3 rounded-lg">
+                <Star className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-800 rounded-xl p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-green-600 dark:text-green-400 mb-1">
+                Tutor
+              </p>
+              <p className="text-sm font-bold text-green-900 dark:text-green-100">
+                {lesson.tutor.first_name} {lesson.tutor.last_name}
+              </p>
+            </div>
+            <div className="bg-green-200 dark:bg-green-900/40 p-3 rounded-lg">
+              <User className="h-6 w-6 text-green-600 dark:text-green-400" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Start Lesson Button */}
+      {student_lesson.status === 'assigned' && (
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-xl p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-purple-100 dark:bg-purple-900/40 p-4 rounded-xl">
+                <PlayCircle className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                  Ready to start learning?
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Begin this lesson and track your progress
+                </p>
+              </div>
+            </div>
             <button
-              onClick={() => setShowExplanation(!showExplanation)}
-              className="px-4 py-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+              onClick={handleStartLesson}
+              disabled={isStarting}
+              className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-xl transition-all duration-200 hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
-              {showExplanation ? 'Hide' : 'Show'} Explanation
+              {isStarting ? (
+                <>
+                  <RefreshCw className="h-5 w-5 animate-spin" />
+                  <span>Starting...</span>
+                </>
+              ) : (
+                <>
+                  <PlayCircle className="h-5 w-5" />
+                  <span>Start Lesson</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs Navigation */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="flex border-b border-gray-200 dark:border-gray-700">
+          <button
+            onClick={() => setActiveTab('content')}
+            className={`flex-1 px-6 py-4 font-medium transition-all ${
+              activeTab === 'content'
+                ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-b-2 border-purple-600'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+            }`}
+          >
+            <div className="flex items-center justify-center space-x-2">
+              <FileText className="h-5 w-5" />
+              <span>Lesson Content</span>
+            </div>
+          </button>
+          
+          {hasExercises && (
+            <button
+              onClick={() => setActiveTab('exercises')}
+              className={`flex-1 px-6 py-4 font-medium transition-all ${
+                activeTab === 'exercises'
+                  ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-b-2 border-purple-600'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+              }`}
+            >
+              <div className="flex items-center justify-center space-x-2">
+                <Zap className="h-5 w-5" />
+                <span>Exercises ({exercises.length})</span>
+              </div>
             </button>
           )}
+        </div>
 
-          <button
-            onClick={nextExercise}
-            disabled={!currentAnswer || (currentExercise.exercise_type === 'Fiszki' && !Object.values(flippedCards).some(flipped => flipped))}
-            className="flex items-center space-x-2 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span>{currentIndex === exercises.length - 1 ? 'Finish' : 'Next'}</span>
-            {currentIndex === exercises.length - 1 ? (
-              <CheckCircle className="h-4 w-4" />
-            ) : (
-              <ArrowRight className="h-4 w-4" />
-            )}
-          </button>
+        {/* Tab Content */}
+        <div className="p-8">
+          {activeTab === 'content' && (
+            <div className="prose prose-lg dark:prose-invert max-w-none">
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-xl p-8 border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="bg-purple-100 dark:bg-purple-900/40 p-3 rounded-lg">
+                    <BookOpen className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white m-0">
+                    Lesson Material
+                  </h2>
+                </div>
+                <div 
+                  className="text-gray-700 dark:text-gray-300 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: lesson.content }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ✅ NAPRAWIONE - Using ExerciseViewer component */}
+          {activeTab === 'exercises' && hasExercises && (
+            <div>
+              {student_lesson.status === 'assigned' ? (
+                <div className="text-center py-8">
+                  <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Start the lesson first
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    You need to start the lesson before accessing exercises.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab('content')}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                  >
+                    Go to Lesson Content
+                  </button>
+                </div>
+              ) : student_lesson.status === 'completed' ? (
+                <div className="text-center py-8">
+                  <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Exercises Completed!
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-2">
+                    You've already completed all exercises for this lesson.
+                  </p>
+                  <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                    Final Score: {student_lesson.score}%
+                  </p>
+                </div>
+              ) : (
+                <ExerciseViewer
+                  exercises={exercises}
+                  onComplete={handleCompleteExercises}
+                  onProgress={handleExerciseProgress}
+                />
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
