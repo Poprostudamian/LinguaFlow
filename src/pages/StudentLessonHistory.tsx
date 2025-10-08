@@ -26,19 +26,25 @@ interface LessonHistoryItem {
   completed_at: string;
   score: number;
   time_spent: number;
+  progress: number;
   lesson_title: string;
   lesson_description: string;
   tutor_name: string;
   exercises_count: number;
-  progress: number;
-  exercises: Array<{
+  exercises: {
     id: string;
     exercise_type: string;
     title: string;
     question: string;
     correct_answer: string;
-    options?: string[] | { front: string; back: string } | null;
-  }>;
+    options?: string[] | { front: string; back: string }[] | null;
+    explanation?: string;
+    points: number;
+    // NEW FIELDS for student answers:
+    student_answer: string | null;
+    is_correct: boolean;
+    submitted_at: string | null;
+  }[];
 }
 
 export function StudentLessonHistory() {
