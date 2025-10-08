@@ -407,7 +407,7 @@ export function StudentLessonHistory() {
         </div>
       </div>
 
-      {/* Exercises Review */}
+     {/* Exercises Review */}
       {lessonHistory.exercises_count > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center space-x-3 mb-6">
@@ -425,202 +425,204 @@ export function StudentLessonHistory() {
           </div>
 
           {/* Exercise Details */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            Exercise Results
-          </h2>
-          
-          {lessonHistory.exercises.map((exercise, idx) => (
-            <div
-              key={exercise.id}
-              className={`
-                p-6 rounded-xl border-2 transition-all
-                ${exercise.is_correct 
-                  ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20' 
-                  : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
-                }
-              `}
-            >
-              {/* Exercise Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    {exercise.is_correct ? (
-                      <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400 flex-shrink-0" />
-                    ) : (
-                      <XCircle className="h-6 w-6 text-red-600 dark:text-red-400 flex-shrink-0" />
-                    )}
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      Exercise {idx + 1}: {exercise.title}
-                    </h3>
-                  </div>
-                  <p className="text-gray-700 dark:text-gray-300 ml-9">
-                    {exercise.question}
-                  </p>
-                </div>
-                <div className="ml-4 px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-sm font-medium">
-                  {exercise.points} {exercise.points === 1 ? 'point' : 'points'}
-                </div>
-              </div>
-
-              {/* Answer Details */}
-              <div className="ml-9 space-y-3">
-                {/* Multiple Choice */}
-                {exercise.exercise_type === 'multiple_choice' && (
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">Your answer:</span>
-                      <span className={`
-                        font-semibold px-3 py-1 rounded-lg
-                        ${exercise.is_correct 
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
-                          : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                        }
-                      `}>
-                        {exercise.student_answer || 'No answer'}
-                      </span>
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Exercise Results
+            </h2>
+            
+            {lessonHistory.exercises.map((exercise, idx) => (
+              <div
+                key={exercise.id}
+                className={`
+                  p-6 rounded-xl border-2 transition-all
+                  ${exercise.is_correct 
+                    ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20' 
+                    : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
+                  }
+                `}
+              >
+                {/* Exercise Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      {exercise.is_correct ? (
+                        <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400 flex-shrink-0" />
+                      ) : (
+                        <XCircle className="h-6 w-6 text-red-600 dark:text-red-400 flex-shrink-0" />
+                      )}
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        Exercise {idx + 1}: {exercise.title}
+                      </h3>
                     </div>
-                    
-                    {!exercise.is_correct && (
+                    <p className="text-gray-700 dark:text-gray-300 ml-9">
+                      {exercise.question}
+                    </p>
+                  </div>
+                  <div className="ml-4 px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-sm font-medium">
+                    {exercise.points} {exercise.points === 1 ? 'point' : 'points'}
+                  </div>
+                </div>
+
+                {/* Answer Details */}
+                <div className="ml-9 space-y-3">
+                  {/* Multiple Choice */}
+                  {exercise.exercise_type === 'multiple_choice' && (
+                    <div className="space-y-2">
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Correct answer:</span>
-                        <span className="font-semibold px-3 py-1 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                          {exercise.correct_answer}
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Your answer:</span>
+                        <span className={`
+                          font-semibold px-3 py-1 rounded-lg
+                          ${exercise.is_correct 
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
+                            : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                          }
+                        `}>
+                          {exercise.student_answer || 'No answer'}
                         </span>
                       </div>
-                    )}
-
-                    {/* Show all options */}
-                    {exercise.options && Array.isArray(exercise.options) && (
-                      <div className="mt-3 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">All options:</p>
-                        <div className="space-y-1">
-                          {(exercise.options as string[]).map((option, optIdx) => {
-                            const letter = String.fromCharCode(65 + optIdx);
-                            const isUserAnswer = exercise.student_answer === letter;
-                            const isCorrectAnswer = exercise.correct_answer === letter;
-                            
-                            return (
-                              <div 
-                                key={optIdx}
-                                className={`
-                                  flex items-center space-x-2 p-2 rounded text-sm
-                                  ${isCorrectAnswer ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' : ''}
-                                  ${isUserAnswer && !isCorrectAnswer ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800' : ''}
-                                `}
-                              >
-                                <span className={`
-                                  font-bold w-6 text-center
-                                  ${isCorrectAnswer ? 'text-green-600 dark:text-green-400' : ''}
-                                  ${isUserAnswer && !isCorrectAnswer ? 'text-red-600 dark:text-red-400' : ''}
-                                  ${!isUserAnswer && !isCorrectAnswer ? 'text-gray-500 dark:text-gray-400' : ''}
-                                `}>
-                                  {letter}.
-                                </span>
-                                <span className="flex-1 text-gray-700 dark:text-gray-300">
-                                  {option}
-                                </span>
-                                {isCorrectAnswer && (
-                                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                )}
-                                {isUserAnswer && !isCorrectAnswer && (
-                                  <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Text Answer */}
-                {exercise.exercise_type === 'text_answer' && (
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Your answer:</p>
-                      <div className={`
-                        p-3 rounded-lg border
-                        ${exercise.is_correct 
-                          ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
-                          : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-                        }
-                      `}>
-                        <p className="text-gray-900 dark:text-white">
-                          {exercise.student_answer || 'No answer provided'}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {!exercise.is_correct && (
-                      <div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Expected answer:</p>
-                        <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                          <p className="text-gray-900 dark:text-white">
+                      
+                      {!exercise.is_correct && (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Correct answer:</span>
+                          <span className="font-semibold px-3 py-1 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
                             {exercise.correct_answer}
-                          </p>
+                          </span>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      )}
 
-                {/* Flashcard */}
-                {exercise.exercise_type === 'flashcard' && (
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Flashcards learned:</p>
-                      <div className="space-y-2">
-                        {Array.isArray(exercise.options) && 
-                          (exercise.options as { front: string; back: string }[]).map((card, cardIdx) => (
-                            <div key={cardIdx} className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                              <div className="font-medium text-gray-900 dark:text-white mb-1">
-                                {card.front}
-                              </div>
-                              <div className="text-gray-600 dark:text-gray-400 text-sm">
-                                {card.back}
-                              </div>
-                            </div>
-                          ))
-                        }
-                      </div>
+                      {/* Show all options */}
+                      {exercise.options && Array.isArray(exercise.options) && (
+                        <div className="mt-3 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">All options:</p>
+                          <div className="space-y-1">
+                            {(exercise.options as string[]).map((option, optIdx) => {
+                              const letter = String.fromCharCode(65 + optIdx);
+                              const isUserAnswer = exercise.student_answer === letter;
+                              const isCorrectAnswer = exercise.correct_answer === letter;
+                              
+                              return (
+                                <div 
+                                  key={optIdx}
+                                  className={`
+                                    flex items-center space-x-2 p-2 rounded text-sm
+                                    ${isCorrectAnswer ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' : ''}
+                                    ${isUserAnswer && !isCorrectAnswer ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800' : ''}
+                                  `}
+                                >
+                                  <span className={`
+                                    font-bold w-6 text-center
+                                    ${isCorrectAnswer ? 'text-green-600 dark:text-green-400' : ''}
+                                    ${isUserAnswer && !isCorrectAnswer ? 'text-red-600 dark:text-red-400' : ''}
+                                    ${!isUserAnswer && !isCorrectAnswer ? 'text-gray-500 dark:text-gray-400' : ''}
+                                  `}>
+                                    {letter}.
+                                  </span>
+                                  <span className="flex-1 text-gray-700 dark:text-gray-300">
+                                    {option}
+                                  </span>
+                                  {isCorrectAnswer && (
+                                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                  )}
+                                  {isUserAnswer && !isCorrectAnswer && (
+                                    <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    
-                    {exercise.student_answer && (
+                  )}
+
+                  {/* Text Answer */}
+                  {exercise.exercise_type === 'text_answer' && (
+                    <div className="space-y-3">
                       <div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Your summary:</p>
-                        <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Your answer:</p>
+                        <div className={`
+                          p-3 rounded-lg border
+                          ${exercise.is_correct 
+                            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+                            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                          }
+                        `}>
                           <p className="text-gray-900 dark:text-white">
-                            {exercise.student_answer}
+                            {exercise.student_answer || 'No answer provided'}
                           </p>
                         </div>
                       </div>
-                    )}
-                  </div>
-                )}
+                      
+                      {!exercise.is_correct && (
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Expected answer:</p>
+                          <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                            <p className="text-gray-900 dark:text-white">
+                              {exercise.correct_answer}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-                {/* Explanation */}
-                {exercise.explanation && (
-                  <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <div className="flex items-start space-x-2">
-                      <Lightbulb className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                  {/* Flashcard */}
+                  {exercise.exercise_type === 'flashcard' && (
+                    <div className="space-y-3">
                       <div>
-                        <p className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-1">
-                          Explanation:
-                        </p>
-                        <p className="text-sm text-blue-800 dark:text-blue-400">
-                          {exercise.explanation}
-                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Flashcards learned:</p>
+                        <div className="space-y-2">
+                          {Array.isArray(exercise.options) && 
+                            (exercise.options as { front: string; back: string }[]).map((card, cardIdx) => (
+                              <div key={cardIdx} className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <div className="font-medium text-gray-900 dark:text-white mb-1">
+                                  {card.front}
+                                </div>
+                                <div className="text-gray-600 dark:text-gray-400 text-sm">
+                                  {card.back}
+                                </div>
+                              </div>
+                            ))
+                          }
+                        </div>
+                      </div>
+                      
+                      {exercise.student_answer && (
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Your summary:</p>
+                          <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                            <p className="text-gray-900 dark:text-white">
+                              {exercise.student_answer}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Explanation */}
+                  {exercise.explanation && (
+                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-start space-x-2">
+                        <Lightbulb className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-1">
+                            Explanation:
+                          </p>
+                          <p className="text-sm text-blue-800 dark:text-blue-400">
+                            {exercise.explanation}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div> 
-</div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex items-center justify-between bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
         <div className="flex items-center space-x-3">
