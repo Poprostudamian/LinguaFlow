@@ -15,7 +15,9 @@ import {
   TrendingUp,
   Zap,
   User,
-  FileText
+  FileText,
+  Lightbulb,
+  XCircle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
