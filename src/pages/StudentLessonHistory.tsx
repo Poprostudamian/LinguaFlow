@@ -107,6 +107,29 @@ export function StudentLessonHistory() {
         console.error('Error loading exercises:', exercisesError);
       }
 
+      // Get student's answers - THIS IS THE KEY PART!
+      const { data: studentAnswers, error: answersError } = await supabase
+        .from('student_exercise_answers')
+        .select('*')
+        .eq('student_id', session.user.id)
+        .in('exercise_id', (exercises || []).map(ex => ex.id));
+
+      if (answersError) {
+        console.error('Error loading student answers:', answersError);
+      }
+
+      console.log('📊 Student answers loaded:', studentAnswers);
+
+      // Create a map of exercise_id -> student answer
+      const answersMap = new Map();
+      (studentAnswers || []).forEach(answer => {
+        answersMap.set(answer.exercise_id, {
+          answer: answer.answer,
+          is_correct: answer.is_correct,
+          submitted_at: answer.submitted_at
+        });
+      });
+
       const historyItem: LessonHistoryItem = {
         id: studentLesson.id,
         lesson_id: studentLesson.lesson_id,
@@ -118,14 +141,24 @@ export function StudentLessonHistory() {
         lesson_description: studentLesson.lessons.description || '',
         tutor_name: `${studentLesson.lessons.users.first_name} ${studentLesson.lessons.users.last_name}`,
         exercises_count: exercises?.length || 0,
-        exercises: (exercises || []).map(exercise => ({
-          id: exercise.id,
-          exercise_type: exercise.exercise_type,
-          title: exercise.title,
-          question: exercise.question,
-          correct_answer: exercise.correct_answer,
-          options: exercise.options ? (typeof exercise.options === 'string' ? JSON.parse(exercise.options) : exercise.options) : null
-        }))
+        exercises: (exercises || []).map(exercise => {
+          const studentAnswer = answersMap.get(exercise.id);
+          
+          return {
+            id: exercise.id,
+            exercise_type: exercise.exercise_type,
+            title: exercise.title,
+            question: exercise.question,
+            correct_answer: exercise.correct_answer,
+            options: exercise.options ? (typeof exercise.options === 'string' ? JSON.parse(exercise.options) : exercise.options) : null,
+            explanation: exercise.explanation,
+            points: exercise.points,
+            // Add student's answer data
+            student_answer: studentAnswer?.answer || null,
+            is_correct: studentAnswer?.is_correct || false,
+            submitted_at: studentAnswer?.submitted_at || null
+          };
+        })
       };
 
       setLessonHistory(historyItem);
