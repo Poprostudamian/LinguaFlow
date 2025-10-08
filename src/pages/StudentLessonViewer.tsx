@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { ExerciseViewer } from '../components/ExerciseViewer'; // ✅ DODANE
+import { ExerciseViewer } from '../components/ExerciseViewer';
 
 interface LessonDetails {
   id: string;
