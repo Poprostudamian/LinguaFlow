@@ -619,8 +619,6 @@ export function StudentLessonHistory() {
               </div>
             </div>
           ))}
-        </div>
-</div>
       {/* Actions */}
       <div className="flex items-center justify-between bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
         <div className="flex items-center space-x-3">
