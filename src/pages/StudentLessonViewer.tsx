@@ -469,6 +469,7 @@ export function StudentLessonViewer() {
                   exercises={exercises}
                   onComplete={handleCompleteExercises}
                   onProgress={handleExerciseProgress}
+                  lessonId={lessonId}
                 />
               )}
             </div>
