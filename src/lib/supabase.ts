@@ -1533,16 +1533,45 @@ export const saveStudentExerciseAnswers = async (
     exercise_id: string;
     answer: string;
     is_correct: boolean;
-    time_spent: number;
   }>
 ): Promise<void> => {
   try {
-    console.log('💾 Saving exercise answers:', { studentId, lessonId, count: exerciseAnswers.length });
+    console.log('💾 Saving exercise answers:', { 
+      studentId, 
+      lessonId, 
+      count: exerciseAnswers.length 
+    });
 
-    // Opcjonalnie: zapisz odpowiedzi w tabeli student_exercise_answers
-    // Obecnie zapisujemy tylko końcowy wynik w student_lessons
-    
-    console.log('✅ Exercise answers processed');
+    // Najpierw usuń stare odpowiedzi dla tej lekcji (jeśli istnieją)
+    const { error: deleteError } = await supabase
+      .from('student_exercise_answers')
+      .delete()
+      .eq('student_id', studentId)
+      .in('exercise_id', exerciseAnswers.map(a => a.exercise_id));
+
+    if (deleteError) {
+      console.warn('Warning deleting old answers:', deleteError);
+    }
+
+    // Zapisz nowe odpowiedzi
+    const answersData = exerciseAnswers.map(answer => ({
+      student_id: studentId,
+      exercise_id: answer.exercise_id,
+      answer: answer.answer,
+      is_correct: answer.is_correct,
+      submitted_at: new Date().toISOString()
+    }));
+
+    const { error: insertError } = await supabase
+      .from('student_exercise_answers')
+      .insert(answersData);
+
+    if (insertError) {
+      console.error('❌ Error inserting answers:', insertError);
+      throw insertError;
+    }
+
+    console.log('✅ Exercise answers saved successfully');
 
   } catch (error) {
     console.error('Error saving exercise answers:', error);
