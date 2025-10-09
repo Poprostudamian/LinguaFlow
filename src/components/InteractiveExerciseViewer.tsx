@@ -1,6 +1,6 @@
 // src/components/InteractiveExerciseViewer.tsx
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, AlertCircle, Lightbulb } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Lightbulb, RotateCw } from 'lucide-react';
 
 interface Exercise {
   id: string;
@@ -30,6 +30,7 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Props) {
   const [showResults, setShowResults] = useState(false);
   const [results, setResults] = useState<ExerciseAnswer[]>([]);
   const [score, setScore] = useState(0);
+  const [flippedCards, setFlippedCards] = useState<Record<number, boolean>>({});
 
   const currentExercise = exercises[currentExerciseIndex];
   const totalExercises = exercises.length;
@@ -42,15 +43,24 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Props) {
     }));
   };
 
+  const toggleCardFlip = (cardIndex: number) => {
+    setFlippedCards(prev => ({
+      ...prev,
+      [cardIndex]: !prev[cardIndex]
+    }));
+  };
+
   const handleNext = () => {
     if (currentExerciseIndex < totalExercises - 1) {
       setCurrentExerciseIndex(prev => prev + 1);
+      setFlippedCards({}); // Reset flipped cards for next exercise
     }
   };
 
   const handlePrevious = () => {
     if (currentExerciseIndex > 0) {
       setCurrentExerciseIndex(prev => prev - 1);
+      setFlippedCards({}); // Reset flipped cards
     }
   };
 
@@ -61,13 +71,15 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Props) {
       let isCorrect = false;
 
       if (exercise.exercise_type === 'multiple_choice') {
+        // ABCD - sprawdzamy poprawność
         isCorrect = userAnswer.trim() === exercise.correct_answer?.trim();
       } else if (exercise.exercise_type === 'text_answer') {
-        // Porównanie case-insensitive
-        isCorrect = userAnswer.toLowerCase().trim() === 
-                    exercise.correct_answer?.toLowerCase().trim();
+        // ✅ ZMIANA: Text answer idzie do sprawdzenia przez tutora
+        // Zawsze ustawiamy is_correct = true (pending review)
+        // Tutor później oceni
+        isCorrect = true; // Tymczasowo "zaliczone" - czeka na ocenę tutora
       } else if (exercise.exercise_type === 'flashcard') {
-        // Dla fiszek sprawdzamy czy użytkownik odpowiedział
+        // Fiszki - sprawdzamy czy użytkownik coś napisał
         isCorrect = userAnswer.trim().length > 0;
       }
 
@@ -78,16 +90,28 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Props) {
       };
     });
 
-    const totalPoints = exercises.reduce((sum, ex) => sum + ex.points, 0);
-    const earnedPoints = calculatedResults.reduce((sum, result, idx) => 
-      sum + (result.is_correct ? exercises[idx].points : 0), 0
+    // Oblicz score tylko z multiple_choice (text_answer nie wliczamy bo czeka na ocenę)
+    const gradableExercises = exercises.filter(ex => ex.exercise_type !== 'text_answer');
+    const gradableResults = calculatedResults.filter((_, idx) => 
+      exercises[idx].exercise_type !== 'text_answer'
     );
-    const calculatedScore = Math.round((earnedPoints / totalPoints) * 100);
+
+    if (gradableExercises.length > 0) {
+      const totalPoints = gradableExercises.reduce((sum, ex) => sum + ex.points, 0);
+      const earnedPoints = gradableResults.reduce((sum, result, idx) => {
+        const exercise = gradableExercises[idx];
+        return sum + (result.is_correct ? exercise.points : 0);
+      }, 0);
+      const calculatedScore = Math.round((earnedPoints / totalPoints) * 100);
+      setScore(calculatedScore);
+    } else {
+      // Jeśli wszystkie ćwiczenia to text_answer, ustaw 100% (czeka na ocenę)
+      setScore(100);
+    }
 
     setResults(calculatedResults);
-    setScore(calculatedScore);
     setShowResults(true);
-    onComplete(calculatedResults, calculatedScore);
+    onComplete(calculatedResults, score);
   };
 
   const renderExerciseInput = () => {
@@ -139,13 +163,28 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Props) {
 
       case 'text_answer':
         return (
-          <textarea
-            value={userAnswer}
-            onChange={(e) => handleAnswerChange(e.target.value)}
-            placeholder="Type your answer here..."
-            className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:bg-gray-800 dark:text-white resize-none"
-            rows={4}
-          />
+          <div className="space-y-3">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+              <div className="flex items-start space-x-2">
+                <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-blue-800 dark:text-blue-300">
+                  This is an open-ended question. Your answer will be reviewed by your tutor.
+                </p>
+              </div>
+            </div>
+            <textarea
+              value={userAnswer}
+              onChange={(e) => handleAnswerChange(e.target.value)}
+              placeholder="Type your answer here... (minimum 10 characters)"
+              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:bg-gray-800 dark:text-white resize-none"
+              rows={6}
+            />
+            {userAnswer.length > 0 && userAnswer.length < 10 && (
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                Please write at least 10 characters ({userAnswer.length}/10)
+              </p>
+            )}
+          </div>
         );
 
       case 'flashcard':
@@ -153,31 +192,78 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Props) {
         
         return (
           <div className="space-y-4">
-            <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-xl p-6">
-              <p className="text-sm text-purple-600 dark:text-purple-400 font-medium mb-2">
-                Flashcards to learn:
-              </p>
-              <div className="space-y-3">
-                {flashcards?.map((card, idx) => (
-                  <div key={idx} className="bg-white dark:bg-gray-800 p-4 rounded-lg">
-                    <div className="font-semibold text-gray-900 dark:text-white mb-1">
-                      {card.front}
-                    </div>
-                    <div className="text-gray-600 dark:text-gray-400">
-                      {card.back}
+            {/* Flipable Flashcards */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <RotateCw className="h-4 w-4" />
+                <span>Click on any card to flip it and see the answer</span>
+              </div>
+              
+              {flashcards?.map((card, idx) => {
+                const isFlipped = flippedCards[idx] || false;
+                
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => toggleCardFlip(idx)}
+                    className="relative h-48 cursor-pointer group"
+                    style={{ perspective: '1000px' }}
+                  >
+                    <div
+                      className={`
+                        relative w-full h-full transition-transform duration-500 transform-gpu
+                        ${isFlipped ? 'rotate-y-180' : ''}
+                      `}
+                      style={{
+                        transformStyle: 'preserve-3d',
+                        transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+                      }}
+                    >
+                      {/* Front of card */}
+                      <div
+                        className="absolute w-full h-full bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl p-6 flex flex-col items-center justify-center text-white shadow-xl border-4 border-white dark:border-gray-800"
+                        style={{
+                          backfaceVisibility: 'hidden',
+                          WebkitBackfaceVisibility: 'hidden'
+                        }}
+                      >
+                        <div className="text-center">
+                          <p className="text-sm font-medium mb-2 opacity-80">Front</p>
+                          <p className="text-2xl font-bold">{card.front}</p>
+                          <p className="text-sm mt-4 opacity-60">Click to flip</p>
+                        </div>
+                      </div>
+
+                      {/* Back of card */}
+                      <div
+                        className="absolute w-full h-full bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl p-6 flex flex-col items-center justify-center text-white shadow-xl border-4 border-white dark:border-gray-800"
+                        style={{
+                          backfaceVisibility: 'hidden',
+                          WebkitBackfaceVisibility: 'hidden',
+                          transform: 'rotateY(180deg)'
+                        }}
+                      >
+                        <div className="text-center">
+                          <p className="text-sm font-medium mb-2 opacity-80">Back</p>
+                          <p className="text-2xl font-bold">{card.back}</p>
+                          <p className="text-sm mt-4 opacity-60">Click to flip</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
-            <div>
+
+            {/* Summary input */}
+            <div className="border-t-2 border-gray-200 dark:border-gray-700 pt-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Write what you learned:
+                What did you learn from these flashcards?
               </label>
               <textarea
                 value={userAnswer}
                 onChange={(e) => handleAnswerChange(e.target.value)}
-                placeholder="Summarize what you learned from these flashcards..."
+                placeholder="Write a brief summary of what you learned..."
                 className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-purple-500 dark:bg-gray-800 dark:text-white resize-none"
                 rows={3}
               />
@@ -205,9 +291,16 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Props) {
           </div>
           <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
             <span>
-              {results.filter(r => r.is_correct).length} / {totalExercises} correct
+              {results.filter(r => r.is_correct).length} / {totalExercises} completed
             </span>
           </div>
+          {exercises.some(ex => ex.exercise_type === 'text_answer') && (
+            <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                📝 Some answers need to be reviewed by your tutor
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Exercise Results */}
@@ -221,14 +314,18 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Props) {
                 key={exercise.id}
                 className={`
                   p-5 rounded-xl border-2 
-                  ${result.is_correct 
-                    ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20' 
-                    : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
+                  ${exercise.exercise_type === 'text_answer'
+                    ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
+                    : result.is_correct 
+                      ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20' 
+                      : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
                   }
                 `}
               >
                 <div className="flex items-start space-x-3 mb-3">
-                  {result.is_correct ? (
+                  {exercise.exercise_type === 'text_answer' ? (
+                    <AlertCircle className="h-6 w-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-1" />
+                  ) : result.is_correct ? (
                     <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-1" />
                   ) : (
                     <XCircle className="h-6 w-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-1" />
@@ -264,24 +361,30 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Props) {
 
                 {exercise.exercise_type === 'text_answer' && (
                   <div className="ml-9 space-y-2">
-                    <div className="text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">Your answer: </span>
-                      <div className={`mt-1 p-2 rounded ${result.is_correct ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
-                        {userAnswer || 'No answer'}
-                      </div>
+                    <div className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-700">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Your answer:</p>
+                      <p className="text-gray-900 dark:text-white">
+                        {userAnswer || 'No answer provided'}
+                      </p>
                     </div>
-                    {!result.is_correct && (
-                      <div className="text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">Expected answer: </span>
-                        <div className="mt-1 p-2 rounded bg-green-100 dark:bg-green-900/30">
-                          {exercise.correct_answer}
-                        </div>
-                      </div>
-                    )}
+                    <p className="text-sm text-blue-600 dark:text-blue-400">
+                      ⏳ Waiting for tutor review
+                    </p>
                   </div>
                 )}
 
-                {exercise.explanation && (
+                {exercise.exercise_type === 'flashcard' && userAnswer && (
+                  <div className="ml-9 space-y-2">
+                    <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Your summary:</p>
+                      <p className="text-gray-900 dark:text-white">
+                        {userAnswer}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {exercise.explanation && exercise.exercise_type !== 'text_answer' && (
                   <div className="ml-9 mt-3 flex items-start space-x-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                     <Lightbulb className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                     <div>
@@ -350,7 +453,10 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Props) {
         {currentExerciseIndex === totalExercises - 1 ? (
           <button
             onClick={handleSubmit}
-            className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
+            disabled={!userAnswers[currentExercise.id] || 
+                     (currentExercise.exercise_type === 'text_answer' && 
+                      userAnswers[currentExercise.id]?.length < 10)}
+            className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Submit Answers
           </button>
