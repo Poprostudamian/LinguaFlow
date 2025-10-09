@@ -65,30 +65,40 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Props) {
   };
 
   const handleSubmit = () => {
+    console.log('🎯 Starting submission process...');
+    
     // Oblicz wyniki
     const calculatedResults: ExerciseAnswer[] = exercises.map(exercise => {
       const userAnswer = userAnswers[exercise.id] || '';
       let isCorrect = false;
 
+      console.log(`📝 Processing exercise: ${exercise.title}`, {
+        type: exercise.exercise_type,
+        answer: userAnswer,
+        correctAnswer: exercise.correct_answer
+      });
+
       if (exercise.exercise_type === 'multiple_choice') {
         // ABCD - sprawdzamy poprawność
         isCorrect = userAnswer.trim() === exercise.correct_answer?.trim();
       } else if (exercise.exercise_type === 'text_answer') {
-        // ✅ ZMIANA: Text answer idzie do sprawdzenia przez tutora
-        // Zawsze ustawiamy is_correct = true (pending review)
-        // Tutor później oceni
-        isCorrect = true; // Tymczasowo "zaliczone" - czeka na ocenę tutora
+        // Text answer idzie do sprawdzenia przez tutora
+        // Zawsze ustawiamy is_correct = true jeśli jest odpowiedź
+        isCorrect = userAnswer.trim().length >= 10;
       } else if (exercise.exercise_type === 'flashcard') {
-        // Fiszki - sprawdzamy czy użytkownik coś napisał
-        isCorrect = userAnswer.trim().length > 0;
+        // Fiszki - zawsze zaliczone jeśli student je przejrzał
+        // Komentarz jest opcjonalny
+        isCorrect = true;
       }
 
       return {
         exercise_id: exercise.id,
-        answer: userAnswer,
+        answer: userAnswer || 'Completed', // Dla fiszek bez komentarza
         is_correct: isCorrect
       };
     });
+
+    console.log('✅ Calculated results:', calculatedResults);
 
     // Oblicz score tylko z multiple_choice (text_answer nie wliczamy bo czeka na ocenę)
     const gradableExercises = exercises.filter(ex => ex.exercise_type !== 'text_answer');
@@ -96,22 +106,27 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Props) {
       exercises[idx].exercise_type !== 'text_answer'
     );
 
+    let calculatedScore = 0;
     if (gradableExercises.length > 0) {
       const totalPoints = gradableExercises.reduce((sum, ex) => sum + ex.points, 0);
       const earnedPoints = gradableResults.reduce((sum, result, idx) => {
         const exercise = gradableExercises[idx];
         return sum + (result.is_correct ? exercise.points : 0);
       }, 0);
-      const calculatedScore = Math.round((earnedPoints / totalPoints) * 100);
-      setScore(calculatedScore);
+      calculatedScore = Math.round((earnedPoints / totalPoints) * 100);
     } else {
       // Jeśli wszystkie ćwiczenia to text_answer, ustaw 100% (czeka na ocenę)
-      setScore(100);
+      calculatedScore = 100;
     }
 
+    console.log('📊 Final score:', calculatedScore);
+
     setResults(calculatedResults);
+    setScore(calculatedScore);
     setShowResults(true);
-    onComplete(calculatedResults, score);
+    
+    // Wywołaj callback
+    onComplete(calculatedResults, calculatedScore);
   };
 
   const renderExerciseInput = () => {
