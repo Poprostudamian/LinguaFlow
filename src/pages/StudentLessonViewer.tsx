@@ -182,30 +182,51 @@ export function StudentLessonViewer() {
     }
   };
 
-  const handleExercisesComplete = async (answers: any[], score: number) => {
-    if (!lessonId || !session?.user?.id) return;
+ const handleExercisesComplete = async (answers: any[], score: number) => {
+    if (!lessonId || !session?.user?.id) {
+      console.error('❌ Missing lessonId or session');
+      return;
+    }
 
     try {
-      console.log('📝 Exercises completed:', { answers, score });
+      console.log('📝 Exercises completed:', { 
+        answersCount: answers.length, 
+        score,
+        answers: answers 
+      });
+      
+      // Najpierw ustaw state (nawet jeśli zapis się nie powiedzie)
+      setExerciseAnswers(answers);
+      setCalculatedScore(score);
       
       // ✅ ZAPISZ ODPOWIEDZI OD RAZU!
       if (answers.length > 0) {
         console.log('💾 Saving answers to database immediately...');
-        await saveStudentExerciseAnswers(
-          session.user.id,
-          lessonId,
-          answers
-        );
-        console.log('✅ Answers saved successfully!');
+        
+        try {
+          await saveStudentExerciseAnswers(
+            session.user.id,
+            lessonId,
+            answers
+          );
+          console.log('✅ Answers saved successfully!');
+        } catch (saveError: any) {
+          console.error('❌ Failed to save answers:', saveError);
+          
+          // Pokaż szczegółowy komunikat błędu
+          const errorMessage = saveError.message || 'Unknown error';
+          alert(`Failed to save your answers: ${errorMessage}\n\nPlease check the console for details.`);
+          
+          // NIE przerywaj - pozwól użytkownikowi ukończyć lekcję
+          console.warn('⚠️ Continuing despite save error...');
+        }
+      } else {
+        console.warn('⚠️ No answers to save');
       }
 
-      // Ustaw state dla UI
-      setExerciseAnswers(answers);
-      setCalculatedScore(score);
-
-    } catch (err) {
-      console.error('❌ Error saving answers:', err);
-      alert('Failed to save your answers. Please try again.');
+    } catch (err: any) {
+      console.error('❌ Error in handleExercisesComplete:', err);
+      alert(`Error: ${err.message || 'Unknown error occurred'}`);
     }
   };
 
