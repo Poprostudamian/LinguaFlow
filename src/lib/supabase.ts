@@ -1526,6 +1526,9 @@ export const updateStudentLessonProgress = async (
 /**
  * Get student's exercise answers (for future implementation)
  */
+/**
+ * Save student's exercise answers to the database
+ */
 export const saveStudentExerciseAnswers = async (
   studentId: string,
   lessonId: string,
@@ -1539,42 +1542,67 @@ export const saveStudentExerciseAnswers = async (
     console.log('💾 Saving exercise answers:', { 
       studentId, 
       lessonId, 
-      count: exerciseAnswers.length 
+      count: exerciseAnswers.length,
+      answers: exerciseAnswers
     });
 
+    // Walidacja danych wejściowych
+    if (!studentId || !lessonId) {
+      throw new Error('Missing studentId or lessonId');
+    }
+
+    if (!exerciseAnswers || exerciseAnswers.length === 0) {
+      console.warn('⚠️ No answers to save');
+      return;
+    }
+
     // Najpierw usuń stare odpowiedzi dla tej lekcji (jeśli istnieją)
+    const exerciseIds = exerciseAnswers.map(a => a.exercise_id);
+    
+    console.log('🗑️ Deleting old answers for exercises:', exerciseIds);
     const { error: deleteError } = await supabase
       .from('student_exercise_answers')
       .delete()
       .eq('student_id', studentId)
-      .in('exercise_id', exerciseAnswers.map(a => a.exercise_id));
+      .in('exercise_id', exerciseIds);
 
     if (deleteError) {
-      console.warn('Warning deleting old answers:', deleteError);
+      console.warn('⚠️ Warning deleting old answers:', deleteError);
+      // Nie rzucamy błędu - może po prostu nie było starych odpowiedzi
     }
 
-    // Zapisz nowe odpowiedzi
+    // Przygotuj dane do wstawienia
     const answersData = exerciseAnswers.map(answer => ({
       student_id: studentId,
       exercise_id: answer.exercise_id,
-      answer: answer.answer,
-      is_correct: answer.is_correct,
+      answer: String(answer.answer || ''), // Ensure string
+      is_correct: Boolean(answer.is_correct),
       submitted_at: new Date().toISOString()
     }));
 
-    const { error: insertError } = await supabase
+    console.log('📝 Prepared data for insertion:', answersData);
+
+    // Zapisz nowe odpowiedzi
+    const { data: insertedData, error: insertError } = await supabase
       .from('student_exercise_answers')
-      .insert(answersData);
+      .insert(answersData)
+      .select();
 
     if (insertError) {
       console.error('❌ Error inserting answers:', insertError);
-      throw insertError;
+      console.error('Error details:', {
+        message: insertError.message,
+        details: insertError.details,
+        hint: insertError.hint,
+        code: insertError.code
+      });
+      throw new Error(`Failed to save answers: ${insertError.message}`);
     }
 
-    console.log('✅ Exercise answers saved successfully');
+    console.log('✅ Exercise answers saved successfully:', insertedData);
 
-  } catch (error) {
-    console.error('Error saving exercise answers:', error);
+  } catch (error: any) {
+    console.error('❌ Error in saveStudentExerciseAnswers:', error);
     throw error;
   }
 };
