@@ -453,9 +453,14 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Props) {
         {currentExerciseIndex === totalExercises - 1 ? (
           <button
             onClick={handleSubmit}
-            disabled={!userAnswers[currentExercise.id] || 
-                     (currentExercise.exercise_type === 'text_answer' && 
-                      userAnswers[currentExercise.id]?.length < 10)}
+            disabled={
+              // ✅ NOWA LOGIKA: Tylko multiple_choice i text_answer wymagają odpowiedzi
+              currentExercise.exercise_type === 'multiple_choice' 
+                ? !userAnswers[currentExercise.id]
+                : currentExercise.exercise_type === 'text_answer'
+                  ? !userAnswers[currentExercise.id] || userAnswers[currentExercise.id]?.length < 10
+                  : false // Flashcard NIE wymaga odpowiedzi (komentarz opcjonalny)
+            }
             className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Submit Answers
@@ -471,7 +476,7 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Props) {
       </div>
 
       {/* Answer Status Indicator */}
-      {!userAnswers[currentExercise.id] && (
+      {currentExercise.exercise_type !== 'flashcard' && !userAnswers[currentExercise.id] && (
         <div className="flex items-center space-x-2 text-amber-600 dark:text-amber-400 text-sm">
           <AlertCircle className="h-4 w-4" />
           <span>Please provide an answer before moving forward</span>
