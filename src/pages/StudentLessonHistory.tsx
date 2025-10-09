@@ -539,34 +539,24 @@ export function StudentLessonHistory() {
 
                   {/* Text Answer */}
                   {exercise.exercise_type === 'text_answer' && (
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Your answer:</p>
-                        <div className={`
-                          p-3 rounded-lg border
-                          ${exercise.is_correct 
-                            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
-                            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-                          }
-                        `}>
-                          <p className="text-gray-900 dark:text-white">
-                            {exercise.student_answer || 'No answer provided'}
-                          </p>
-                        </div>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Your answer:</p>
+                      <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                        <p className="text-gray-900 dark:text-white">
+                          {exercise.student_answer || 'No answer provided'}
+                        </p>
                       </div>
-                      
-                      {!exercise.is_correct && (
-                        <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Expected answer:</p>
-                          <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                            <p className="text-gray-900 dark:text-white">
-                              {exercise.correct_answer}
-                            </p>
-                          </div>
-                        </div>
-                      )}
                     </div>
-                  )}
+                    
+                    <div className="flex items-center space-x-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                      <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                      <p className="text-sm text-amber-800 dark:text-amber-300">
+                        This answer is pending review by your tutor
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                   {/* Flashcard */}
                   {exercise.exercise_type === 'flashcard' && (
