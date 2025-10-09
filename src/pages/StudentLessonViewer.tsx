@@ -183,9 +183,30 @@ export function StudentLessonViewer() {
   };
 
   const handleExercisesComplete = async (answers: any[], score: number) => {
-    console.log('📝 Exercises completed:', { answers, score });
-    setExerciseAnswers(answers);
-    setCalculatedScore(score);
+    if (!lessonId || !session?.user?.id) return;
+
+    try {
+      console.log('📝 Exercises completed:', { answers, score });
+      
+      // ✅ ZAPISZ ODPOWIEDZI OD RAZU!
+      if (answers.length > 0) {
+        console.log('💾 Saving answers to database immediately...');
+        await saveStudentExerciseAnswers(
+          session.user.id,
+          lessonId,
+          answers
+        );
+        console.log('✅ Answers saved successfully!');
+      }
+
+      // Ustaw state dla UI
+      setExerciseAnswers(answers);
+      setCalculatedScore(score);
+
+    } catch (err) {
+      console.error('❌ Error saving answers:', err);
+      alert('Failed to save your answers. Please try again.');
+    }
   };
 
   const handleCompleteLesson = async () => {
