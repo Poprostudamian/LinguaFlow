@@ -209,24 +209,16 @@ export function StudentLessonViewer() {
     }
   };
 
-  const handleCompleteLesson = async () => {
+const handleCompleteLesson = async () => {
     if (!lessonId || !session?.user?.id || !lesson) return;
 
     try {
       setIsCompleting(true);
       const timeSpent = Math.floor((Date.now() - startTime) / 1000);
 
-      // 1. Zapisz odpowiedzi do bazy danych
-      if (exerciseAnswers.length > 0) {
-        console.log('💾 Saving answers to database...');
-        await saveStudentExerciseAnswers(
-          session.user.id,
-          lessonId,
-          exerciseAnswers
-        );
-      }
+      console.log('🏁 Completing lesson with score:', calculatedScore);
 
-      // 2. Zaktualizuj status lekcji
+      // Zaktualizuj status lekcji (odpowiedzi są już zapisane w handleExercisesComplete)
       await supabase
         .from('student_lessons')
         .update({
@@ -234,18 +226,19 @@ export function StudentLessonViewer() {
           completed_at: new Date().toISOString(),
           progress: 100,
           time_spent: lesson.student_lesson.time_spent + timeSpent,
-          score: calculatedScore // Użyj obliczonego score z ćwiczeń
+          score: calculatedScore || 0 // Użyj obliczonego score z ćwiczeń
         })
         .eq('lesson_id', lessonId)
         .eq('student_id', session.user.id);
 
       console.log('✅ Lesson completed successfully');
       
-      // 3. Przekieruj do historii
+      // Przekieruj do historii
       navigate(`/student/lessons/${lessonId}/history`);
 
     } catch (err) {
-      console.error('Error completing lesson:', err);
+      console.error('❌ Error completing lesson:', err);
+      alert('Failed to complete lesson. Please try again.');
     } finally {
       setIsCompleting(false);
     }
