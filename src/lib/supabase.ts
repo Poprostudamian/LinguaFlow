@@ -1524,10 +1524,8 @@ export const updateStudentLessonProgress = async (
 };
 
 /**
- * Get student's exercise answers (for future implementation)
- */
-/**
  * Save student's exercise answers to the database
+ * Uses delete + insert strategy since we don't have a unique constraint for upsert
  */
 export const saveStudentExerciseAnswers = async (
   studentId: string,
@@ -1556,9 +1554,12 @@ export const saveStudentExerciseAnswers = async (
       return;
     }
 
-    // Najpierw usuń stare odpowiedzi dla tej lekcji (jeśli istnieją)
+    // Strategy: Delete old answers first, then insert new ones
+    // This works even without unique constraints
+    
     const exerciseIds = exerciseAnswers.map(a => a.exercise_id);
     
+    // Step 1: Delete any existing answers for these exercises
     console.log('🗑️ Deleting old answers for exercises:', exerciseIds);
     const { error: deleteError } = await supabase
       .from('student_exercise_answers')
@@ -1568,35 +1569,43 @@ export const saveStudentExerciseAnswers = async (
 
     if (deleteError) {
       console.warn('⚠️ Warning deleting old answers:', deleteError);
-      // Nie rzucamy błędu - może po prostu nie było starych odpowiedzi
+      // Continue anyway - maybe there were no old answers
+    } else {
+      console.log('✅ Old answers deleted (if any existed)');
     }
 
-    // Przygotuj dane do wstawienia
+    // Step 2: Insert new answers
     const answersData = exerciseAnswers.map(answer => ({
       student_id: studentId,
       exercise_id: answer.exercise_id,
-      answer: String(answer.answer || ''), // Ensure string
+      answer: String(answer.answer || ''),
       is_correct: Boolean(answer.is_correct),
       submitted_at: new Date().toISOString()
     }));
 
-    console.log('📝 Prepared data for insertion:', answersData);
+    console.log('📝 Inserting new answers:', answersData);
 
-    // Zapisz nowe odpowiedzi
     const { data: insertedData, error: insertError } = await supabase
       .from('student_exercise_answers')
       .insert(answersData)
       .select();
 
     if (insertError) {
-      console.error('❌ Error inserting answers:', insertError);
-      console.error('Error details:', {
+      console.error('❌ Error inserting answers:', {
         message: insertError.message,
         details: insertError.details,
         hint: insertError.hint,
         code: insertError.code
       });
-      throw new Error(`Failed to save answers: ${insertError.message}`);
+      
+      // Provide helpful error message
+      if (insertError.code === '23505') {
+        throw new Error('Duplicate answer detected. Please try again or contact support.');
+      } else if (insertError.code === '23503') {
+        throw new Error('Invalid exercise or student ID. Please refresh and try again.');
+      } else {
+        throw new Error(`Failed to save answers: ${insertError.message}`);
+      }
     }
 
     console.log('✅ Exercise answers saved successfully:', insertedData);
