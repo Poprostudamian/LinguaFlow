@@ -482,6 +482,6 @@ export default function TutorDashboard() {
           </div>
         </div>
       </div>
-    </div>
+    </div> 
   );
 }
