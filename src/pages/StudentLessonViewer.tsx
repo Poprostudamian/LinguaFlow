@@ -461,7 +461,30 @@ export function StudentLessonViewer() {
                     Start Lesson
                   </button>
                 </div>
+              ) : student_lesson.status === 'completed' ? (
+                // ✅ NEW: Show message for completed lessons instead of allowing re-submission
+                <div className="text-center py-12 bg-green-50 dark:bg-green-900/20 rounded-xl border-2 border-green-200 dark:border-green-800">
+                  <Award className="h-16 w-16 mx-auto mb-4 text-green-600 dark:text-green-400" />
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                    Lesson Completed!
+                  </h3>
+                  <p className="text-gray-700 dark:text-gray-300 mb-2">
+                    You've already completed this lesson with a score of <span className="font-bold text-green-600 dark:text-green-400">{student_lesson.score}%</span>
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    View your detailed results and answers in the lesson history
+                  </p>
+                  <button
+                    onClick={() => navigate(`/student/lessons/${lessonId}/history`)}
+                    className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-xl transition-all duration-200 hover:shadow-xl hover:scale-105 flex items-center space-x-2 mx-auto"
+                  >
+                    <Clock className="h-5 w-5" />
+                    <span>View History & Results</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
               ) : (
+                // Only show interactive exercises for 'in_progress' lessons
                 <InteractiveExerciseViewer 
                   exercises={exercises}
                   onComplete={handleExercisesComplete}
