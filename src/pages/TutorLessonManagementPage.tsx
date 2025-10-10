@@ -1,4 +1,4 @@
-// src/pages/TutorLessonManagementPage.tsx - WITH EXERCISE BUILDER
+// src/pages/TutorLessonManagementPage.tsx - WITH VIEW/EDIT & VALIDATION
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
@@ -27,7 +27,8 @@ import {
   Plus,
   Trash,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Save
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -51,6 +52,7 @@ interface LessonWithAssignments {
 
 type TabType = 'all' | 'published' | 'draft';
 type ModalTab = 'info' | 'exercises';
+type ModalMode = 'create' | 'view' | 'edit';
 type ExerciseType = 'multiple_choice' | 'flashcard' | 'text_answer';
 
 interface Exercise {
@@ -71,7 +73,7 @@ interface Exercise {
 // ============================================================================
 interface ToastProps {
   message: string;
-  type: 'success' | 'error';
+  type: 'success' | 'error' | 'warning';
   onClose: () => void;
 }
 
@@ -83,12 +85,14 @@ function Toast({ message, type, onClose }: ToastProps) {
 
   const colors = {
     success: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200',
-    error: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200'
+    error: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200',
+    warning: 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200'
   };
 
   const icons = {
     success: <CheckCircle className="h-5 w-5 text-green-600" />,
-    error: <AlertCircle className="h-5 w-5 text-red-600" />
+    error: <AlertCircle className="h-5 w-5 text-red-600" />,
+    warning: <AlertCircle className="h-5 w-5 text-yellow-600" />
   };
 
   return (
@@ -167,7 +171,6 @@ function EnhancedLessonCard({ lesson, onView, onEdit, onDelete }: EnhancedLesson
 
   return (
     <div className="group bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-200">
-      {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors mb-2">
@@ -185,7 +188,6 @@ function EnhancedLessonCard({ lesson, onView, onEdit, onDelete }: EnhancedLesson
         </span>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-3 gap-4 mb-4">
         <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
           <Users className="h-5 w-5 text-blue-500" />
@@ -212,13 +214,11 @@ function EnhancedLessonCard({ lesson, onView, onEdit, onDelete }: EnhancedLesson
         </div>
       </div>
 
-      {/* Created Date */}
       <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400 mb-4">
         <Calendar className="h-3 w-3" />
         <span>Created {new Date(lesson.created_at).toLocaleDateString()}</span>
       </div>
 
-      {/* Actions */}
       <div className="flex items-center space-x-2">
         <button
           onClick={() => onView(lesson)}
@@ -250,10 +250,9 @@ function EnhancedLessonCard({ lesson, onView, onEdit, onDelete }: EnhancedLesson
 }
 
 // ============================================================================
-// EXERCISE BUILDER COMPONENTS
+// EXERCISE BUILDER COMPONENTS (same as before)
 // ============================================================================
 
-// Exercise Type Selector
 function ExerciseTypeSelector({ onSelect }: { onSelect: (type: ExerciseType) => void }) {
   const types = [
     { value: 'multiple_choice' as ExerciseType, label: 'ABCD Question', icon: List, color: 'blue' },
@@ -269,9 +268,9 @@ function ExerciseTypeSelector({ onSelect }: { onSelect: (type: ExerciseType) => 
           <button
             key={type.value}
             onClick={() => onSelect(type.value)}
-            className={`p-6 rounded-xl border-2 border-dashed hover:border-${type.color}-500 hover:bg-${type.color}-50 dark:hover:bg-${type.color}-900/20 transition-all group`}
+            className="p-6 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all group"
           >
-            <Icon className={`h-8 w-8 text-${type.color}-500 mx-auto mb-3`} />
+            <Icon className="h-8 w-8 text-purple-500 mx-auto mb-3" />
             <p className="text-sm font-medium text-gray-900 dark:text-white">{type.label}</p>
           </button>
         );
@@ -280,7 +279,6 @@ function ExerciseTypeSelector({ onSelect }: { onSelect: (type: ExerciseType) => 
   );
 }
 
-// Multiple Choice Builder
 function MultipleChoiceBuilder({ exercise, onChange }: { exercise: Exercise; onChange: (ex: Exercise) => void }) {
   return (
     <div className="space-y-4">
@@ -354,7 +352,6 @@ function MultipleChoiceBuilder({ exercise, onChange }: { exercise: Exercise; onC
   );
 }
 
-// Flashcard Builder
 function FlashcardBuilder({ exercise, onChange }: { exercise: Exercise; onChange: (ex: Exercise) => void }) {
   const flashcards = exercise.flashcards || [];
 
@@ -396,6 +393,7 @@ function FlashcardBuilder({ exercise, onChange }: { exercise: Exercise; onChange
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Flashcards</label>
           <button
             onClick={addFlashcard}
+            type="button"
             className="flex items-center space-x-1 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700"
           >
             <Plus className="h-4 w-4" />
@@ -416,6 +414,7 @@ function FlashcardBuilder({ exercise, onChange }: { exercise: Exercise; onChange
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Card {idx + 1}</span>
                   <button
                     onClick={() => removeFlashcard(idx)}
+                    type="button"
                     className="text-red-600 dark:text-red-400 hover:text-red-700"
                   >
                     <Trash className="h-4 w-4" />
@@ -463,7 +462,6 @@ function FlashcardBuilder({ exercise, onChange }: { exercise: Exercise; onChange
   );
 }
 
-// Text Answer Builder
 function TextAnswerBuilder({ exercise, onChange }: { exercise: Exercise; onChange: (ex: Exercise) => void }) {
   return (
     <div className="space-y-4">
@@ -514,8 +512,13 @@ function TextAnswerBuilder({ exercise, onChange }: { exercise: Exercise; onChang
   );
 }
 
-// Exercise List Item
-function ExerciseListItem({ exercise, index, onEdit, onDelete }: { exercise: Exercise; index: number; onEdit: () => void; onDelete: () => void }) {
+function ExerciseListItem({ exercise, index, onEdit, onDelete, readOnly = false }: { 
+  exercise: Exercise; 
+  index: number; 
+  onEdit?: () => void; 
+  onDelete?: () => void;
+  readOnly?: boolean;
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getTypeIcon = (type: ExerciseType) => {
@@ -554,22 +557,29 @@ function ExerciseListItem({ exercise, index, onEdit, onDelete }: { exercise: Exe
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
+            type="button"
             className="p-1 text-gray-400 hover:text-gray-600"
           >
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
-          <button
-            onClick={onEdit}
-            className="p-1 text-purple-600 hover:text-purple-700"
-          >
-            <Edit className="h-4 w-4" />
-          </button>
-          <button
-            onClick={onDelete}
-            className="p-1 text-red-600 hover:text-red-700"
-          >
-            <Trash className="h-4 w-4" />
-          </button>
+          {!readOnly && onEdit && (
+            <button
+              onClick={onEdit}
+              type="button"
+              className="p-1 text-purple-600 hover:text-purple-700"
+            >
+              <Edit className="h-4 w-4" />
+            </button>
+          )}
+          {!readOnly && onDelete && (
+            <button
+              onClick={onDelete}
+              type="button"
+              className="p-1 text-red-600 hover:text-red-700"
+            >
+              <Trash className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -610,12 +620,14 @@ export function TutorLessonManagementPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<TabType>('all');
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState<ModalMode>('create');
   const [modalTab, setModalTab] = useState<ModalTab>('info');
-  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [currentLesson, setCurrentLesson] = useState<LessonWithAssignments | null>(null);
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null);
 
-  // Create form state
-  const [newLesson, setNewLesson] = useState({
+  // Form state
+  const [lessonForm, setLessonForm] = useState({
     title: '',
     description: '',
     content: '',
@@ -624,7 +636,7 @@ export function TutorLessonManagementPage() {
   });
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load lessons
   useEffect(() => {
@@ -677,6 +689,57 @@ export function TutorLessonManagementPage() {
     }
   };
 
+  // Load exercises for a lesson
+  const loadExercises = async (lessonId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('lesson_exercises')
+        .select('*')
+        .eq('lesson_id', lessonId)
+        .order('order_number', { ascending: true });
+
+      if (error && error.code !== '42P01') throw error;
+
+      const loadedExercises: Exercise[] = (data || []).map(ex => {
+        const baseExercise = {
+          id: ex.id,
+          type: ex.exercise_type as ExerciseType,
+          title: ex.title,
+          question: ex.question,
+          points: ex.points,
+          explanation: ex.explanation
+        };
+
+        if (ex.exercise_type === 'multiple_choice') {
+          return {
+            ...baseExercise,
+            options: JSON.parse(ex.options || '[]'),
+            correctAnswer: ex.correct_answer
+          };
+        } else if (ex.exercise_type === 'flashcard') {
+          return {
+            ...baseExercise,
+            flashcards: JSON.parse(ex.options || '[]')
+          };
+        } else if (ex.exercise_type === 'text_answer') {
+          const opts = JSON.parse(ex.options || '{}');
+          return {
+            ...baseExercise,
+            correctAnswer: ex.correct_answer,
+            maxLength: opts.maxLength || 500
+          };
+        }
+
+        return baseExercise;
+      });
+
+      setExercises(loadedExercises);
+    } catch (err) {
+      console.error('Error loading exercises:', err);
+      setExercises([]);
+    }
+  };
+
   // Filter lessons
   const filteredLessons = useMemo(() => {
     let filtered = lessons;
@@ -706,6 +769,69 @@ export function TutorLessonManagementPage() {
 
     return { total, published, draft, avgAssignments };
   }, [lessons]);
+
+  // Modal handlers
+  const openCreateModal = () => {
+    setModalMode('create');
+    setLessonForm({
+      title: '',
+      description: '',
+      content: '',
+      assignedStudentIds: [],
+      status: 'published'
+    });
+    setExercises([]);
+    setEditingExercise(null);
+    setModalTab('info');
+    setShowModal(true);
+  };
+
+  const openViewModal = async (lesson: LessonWithAssignments) => {
+    setModalMode('view');
+    setCurrentLesson(lesson);
+    setLessonForm({
+      title: lesson.title,
+      description: lesson.description || '',
+      content: lesson.content || '',
+      assignedStudentIds: [],
+      status: lesson.status
+    });
+    await loadExercises(lesson.id);
+    setEditingExercise(null);
+    setModalTab('info');
+    setShowModal(true);
+  };
+
+  const openEditModal = async (lesson: LessonWithAssignments) => {
+    setModalMode('edit');
+    setCurrentLesson(lesson);
+    
+    // Load assigned students
+    const { data: assignedData } = await supabase
+      .from('student_lessons')
+      .select('student_id')
+      .eq('lesson_id', lesson.id);
+    
+    setLessonForm({
+      title: lesson.title,
+      description: lesson.description || '',
+      content: lesson.content || '',
+      assignedStudentIds: assignedData?.map(a => a.student_id) || [],
+      status: lesson.status
+    });
+    
+    await loadExercises(lesson.id);
+    setEditingExercise(null);
+    setModalTab('info');
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setCurrentLesson(null);
+    setEditingExercise(null);
+    setModalTab('info');
+  };
 
   // Exercise handlers
   const handleAddExercise = (type: ExerciseType) => {
@@ -745,52 +871,59 @@ export function TutorLessonManagementPage() {
     setExercises(exercises.filter(ex => ex.id !== exerciseId));
   };
 
-  // Handle create lesson
-  const handleCreateLesson = async () => {
-    if (!session?.user?.id || !newLesson.title.trim()) {
+  // Create/Update lesson
+  const handleSubmitLesson = async () => {
+    if (!session?.user?.id || !lessonForm.title.trim()) {
       setToast({ type: 'error', message: 'Please enter a lesson title' });
       return;
     }
 
-    setIsCreating(true);
+    // ✅ VALIDATION: Require at least 1 exercise
+    if (exercises.length === 0) {
+      setToast({ type: 'warning', message: 'Please add at least one exercise before creating the lesson' });
+      setModalTab('exercises');
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
-      // Create lesson
-      const { data: lesson, error: lessonError } = await supabase
-        .from('lessons')
-        .insert({
-          tutor_id: session.user.id,
-          title: newLesson.title.trim(),
-          description: newLesson.description.trim() || null,
-          content: newLesson.content.trim() || `<h2>${newLesson.title}</h2>`,
-          status: newLesson.status,
-          is_published: newLesson.status === 'published'
-        })
-        .select()
-        .single();
+      if (modalMode === 'create') {
+        // Create new lesson
+        const { data: lesson, error: lessonError } = await supabase
+          .from('lessons')
+          .insert({
+            tutor_id: session.user.id,
+            title: lessonForm.title.trim(),
+            description: lessonForm.description.trim() || null,
+            content: lessonForm.content.trim() || `<h2>${lessonForm.title}</h2>`,
+            status: lessonForm.status,
+            is_published: lessonForm.status === 'published'
+          })
+          .select()
+          .single();
 
-      if (lessonError) throw lessonError;
+        if (lessonError) throw lessonError;
 
-      // Assign students
-      if (newLesson.assignedStudentIds.length > 0) {
-        const assignments = newLesson.assignedStudentIds.map(studentId => ({
-          lesson_id: lesson.id,
-          student_id: studentId,
-          status: 'assigned' as const,
-          progress: 0,
-          score: null,
-          time_spent: 0
-        }));
+        // Assign students
+        if (lessonForm.assignedStudentIds.length > 0) {
+          const assignments = lessonForm.assignedStudentIds.map(studentId => ({
+            lesson_id: lesson.id,
+            student_id: studentId,
+            status: 'assigned' as const,
+            progress: 0,
+            score: null,
+            time_spent: 0
+          }));
 
-        const { error: assignError } = await supabase
-          .from('student_lessons')
-          .insert(assignments);
+          const { error: assignError } = await supabase
+            .from('student_lessons')
+            .insert(assignments);
 
-        if (assignError) throw assignError;
-      }
+          if (assignError) throw assignError;
+        }
 
-      // Create exercises if any
-      if (exercises.length > 0) {
+        // Create exercises
         const exercisesData = exercises.map((exercise, index) => {
           const baseExercise = {
             lesson_id: lesson.id,
@@ -832,34 +965,109 @@ export function TutorLessonManagementPage() {
         if (exercisesError && exercisesError.code !== '42P01') {
           console.error('Error creating exercises:', exercisesError);
         }
+
+        setToast({ 
+          type: 'success', 
+          message: `Lesson "${lessonForm.title}" created with ${exercises.length} exercise(s)!` 
+        });
+      } else if (modalMode === 'edit' && currentLesson) {
+        // Update existing lesson
+        const { error: updateError } = await supabase
+          .from('lessons')
+          .update({
+            title: lessonForm.title.trim(),
+            description: lessonForm.description.trim() || null,
+            content: lessonForm.content.trim() || null,
+            status: lessonForm.status,
+            is_published: lessonForm.status === 'published',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', currentLesson.id);
+
+        if (updateError) throw updateError;
+
+        // Update student assignments (remove old, add new)
+        await supabase
+          .from('student_lessons')
+          .delete()
+          .eq('lesson_id', currentLesson.id);
+
+        if (lessonForm.assignedStudentIds.length > 0) {
+          const assignments = lessonForm.assignedStudentIds.map(studentId => ({
+            lesson_id: currentLesson.id,
+            student_id: studentId,
+            status: 'assigned' as const,
+            progress: 0,
+            score: null,
+            time_spent: 0
+          }));
+
+          await supabase
+            .from('student_lessons')
+            .insert(assignments);
+        }
+
+        // Update exercises (simple approach: delete all and recreate)
+        await supabase
+          .from('lesson_exercises')
+          .delete()
+          .eq('lesson_id', currentLesson.id);
+
+        const exercisesData = exercises.map((exercise, index) => {
+          const baseExercise = {
+            lesson_id: currentLesson.id,
+            exercise_type: exercise.type,
+            title: exercise.title || exercise.question,
+            question: exercise.question,
+            order_number: index + 1,
+            points: exercise.points || 1,
+            explanation: exercise.explanation || null
+          };
+
+          if (exercise.type === 'multiple_choice') {
+            return {
+              ...baseExercise,
+              correct_answer: exercise.correctAnswer || 'A',
+              options: JSON.stringify(exercise.options || [])
+            };
+          } else if (exercise.type === 'flashcard') {
+            return {
+              ...baseExercise,
+              correct_answer: exercise.flashcards?.[0]?.back || '',
+              options: JSON.stringify(exercise.flashcards || [])
+            };
+          } else if (exercise.type === 'text_answer') {
+            return {
+              ...baseExercise,
+              correct_answer: exercise.correctAnswer || '',
+              options: JSON.stringify({ maxLength: exercise.maxLength || 500 })
+            };
+          }
+
+          return baseExercise;
+        });
+
+        await supabase
+          .from('lesson_exercises')
+          .insert(exercisesData);
+
+        setToast({ 
+          type: 'success', 
+          message: `Lesson "${lessonForm.title}" updated successfully!` 
+        });
       }
 
-      setToast({ 
-        type: 'success', 
-        message: `Lesson "${newLesson.title}" created with ${exercises.length} exercise(s) and assigned to ${newLesson.assignedStudentIds.length} student(s)!` 
-      });
-
-      // Reset and reload
-      setNewLesson({
-        title: '',
-        description: '',
-        content: '',
-        assignedStudentIds: [],
-        status: 'published'
-      });
-      setExercises([]);
-      setShowCreateModal(false);
-      setModalTab('info');
+      closeModal();
       loadLessons();
 
     } catch (err: any) {
-      setToast({ type: 'error', message: err.message || 'Failed to create lesson' });
+      setToast({ type: 'error', message: err.message || 'Failed to save lesson' });
     } finally {
-      setIsCreating(false);
+      setIsSubmitting(false);
     }
   };
 
-  // Handle delete
+  // Delete lesson
   const handleDelete = async (lessonId: string) => {
     try {
       const { error } = await supabase
@@ -935,7 +1143,7 @@ export function TutorLessonManagementPage() {
             <span>Refresh</span>
           </button>
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={openCreateModal}
             className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
           >
             <PlusCircle className="h-4 w-4" />
@@ -1012,7 +1220,7 @@ export function TutorLessonManagementPage() {
           </p>
           {!searchTerm && (
             <button
-              onClick={() => setShowCreateModal(true)}
+              onClick={openCreateModal}
               className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
             >
               <PlusCircle className="h-4 w-4" />
@@ -1026,31 +1234,33 @@ export function TutorLessonManagementPage() {
             <EnhancedLessonCard
               key={lesson.id}
               lesson={lesson}
-              onView={(l) => console.log('View:', l)}
-              onEdit={(l) => console.log('Edit:', l)}
+              onView={openViewModal}
+              onEdit={openEditModal}
               onDelete={handleDelete}
             />
           ))}
         </div>
       )}
 
-      {/* Create Modal */}
-      {showCreateModal && (
+      {/* Modal (Create/View/Edit) */}
+      {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-fade-in">
             {/* Modal Header */}
             <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 z-10">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
-                  <PlusCircle className="h-5 w-5 text-purple-600" />
-                  <span>Create New Lesson</span>
+                  {modalMode === 'create' && <PlusCircle className="h-5 w-5 text-purple-600" />}
+                  {modalMode === 'view' && <Eye className="h-5 w-5 text-blue-600" />}
+                  {modalMode === 'edit' && <Edit className="h-5 w-5 text-purple-600" />}
+                  <span>
+                    {modalMode === 'create' && 'Create New Lesson'}
+                    {modalMode === 'view' && 'View Lesson'}
+                    {modalMode === 'edit' && 'Edit Lesson'}
+                  </span>
                 </h2>
                 <button
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    setModalTab('info');
-                    setEditingExercise(null);
-                  }}
+                  onClick={closeModal}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   <X className="h-5 w-5" />
@@ -1068,6 +1278,7 @@ export function TutorLessonManagementPage() {
                     <button
                       key={tab.id}
                       onClick={() => setModalTab(tab.id)}
+                      type="button"
                       className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                         modalTab === tab.id
                           ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
@@ -1086,49 +1297,48 @@ export function TutorLessonManagementPage() {
             <div className="p-6">
               {modalTab === 'info' ? (
                 <div className="space-y-4">
-                  {/* Title */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Lesson Title *
                     </label>
                     <input
                       type="text"
-                      value={newLesson.title}
-                      onChange={(e) => setNewLesson({ ...newLesson, title: e.target.value })}
+                      value={lessonForm.title}
+                      onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
+                      disabled={modalMode === 'view'}
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white disabled:opacity-50"
                       placeholder="e.g., Spanish Grammar Basics"
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                     />
                   </div>
 
-                  {/* Description */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Description
                     </label>
                     <textarea
-                      value={newLesson.description}
-                      onChange={(e) => setNewLesson({ ...newLesson, description: e.target.value })}
+                      value={lessonForm.description}
+                      onChange={(e) => setLessonForm({ ...lessonForm, description: e.target.value })}
+                      disabled={modalMode === 'view'}
                       placeholder="Brief description of the lesson..."
                       rows={2}
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none disabled:opacity-50"
                     />
                   </div>
 
-                  {/* Content */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Lesson Content
                     </label>
                     <textarea
-                      value={newLesson.content}
-                      onChange={(e) => setNewLesson({ ...newLesson, content: e.target.value })}
+                      value={lessonForm.content}
+                      onChange={(e) => setLessonForm({ ...lessonForm, content: e.target.value })}
+                      disabled={modalMode === 'view'}
                       placeholder="Enter lesson content, instructions..."
                       rows={6}
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white font-mono text-sm resize-none"
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white font-mono text-sm resize-none disabled:opacity-50"
                     />
                   </div>
 
-                  {/* Status */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Status
@@ -1142,12 +1352,14 @@ export function TutorLessonManagementPage() {
                         return (
                           <button
                             key={option.value}
-                            onClick={() => setNewLesson({ ...newLesson, status: option.value })}
+                            onClick={() => modalMode !== 'view' && setLessonForm({ ...lessonForm, status: option.value })}
+                            disabled={modalMode === 'view'}
+                            type="button"
                             className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg border-2 transition-all ${
-                              newLesson.status === option.value
+                              lessonForm.status === option.value
                                 ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
                                 : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-purple-300'
-                            }`}
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
                           >
                             <Icon className="h-4 w-4" />
                             <span className="font-medium">{option.label}</span>
@@ -1157,52 +1369,52 @@ export function TutorLessonManagementPage() {
                     </div>
                   </div>
 
-                  {/* Assign Students */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Assign to Students ({newLesson.assignedStudentIds.length} selected)
-                    </label>
-                    <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 max-h-48 overflow-y-auto space-y-2">
-                      {students.length === 0 ? (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                          No students available
-                        </p>
-                      ) : (
-                        students.map(student => (
-                          <label
-                            key={student.student_id}
-                            className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={newLesson.assignedStudentIds.includes(student.student_id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setNewLesson({
-                                    ...newLesson,
-                                    assignedStudentIds: [...newLesson.assignedStudentIds, student.student_id]
-                                  });
-                                } else {
-                                  setNewLesson({
-                                    ...newLesson,
-                                    assignedStudentIds: newLesson.assignedStudentIds.filter(id => id !== student.student_id)
-                                  });
-                                }
-                              }}
-                              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                            />
-                            <span className="text-sm text-gray-900 dark:text-white">
-                              {student.student_first_name} {student.student_last_name}
-                            </span>
-                          </label>
-                        ))
-                      )}
+                  {modalMode !== 'view' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Assign to Students ({lessonForm.assignedStudentIds.length} selected)
+                      </label>
+                      <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 max-h-48 overflow-y-auto space-y-2">
+                        {students.length === 0 ? (
+                          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                            No students available
+                          </p>
+                        ) : (
+                          students.map(student => (
+                            <label
+                              key={student.student_id}
+                              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={lessonForm.assignedStudentIds.includes(student.student_id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setLessonForm({
+                                      ...lessonForm,
+                                      assignedStudentIds: [...lessonForm.assignedStudentIds, student.student_id]
+                                    });
+                                  } else {
+                                    setLessonForm({
+                                      ...lessonForm,
+                                      assignedStudentIds: lessonForm.assignedStudentIds.filter(id => id !== student.student_id)
+                                    });
+                                  }
+                                }}
+                                className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                              />
+                              <span className="text-sm text-gray-900 dark:text-white">
+                                {student.student_first_name} {student.student_last_name}
+                              </span>
+                            </label>
+                          ))
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {/* Exercise Builder */}
                   {editingExercise ? (
                     <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 border border-gray-200 dark:border-gray-600">
                       <div className="flex items-center justify-between mb-4">
@@ -1212,6 +1424,7 @@ export function TutorLessonManagementPage() {
                         </h3>
                         <button
                           onClick={() => setEditingExercise(null)}
+                          type="button"
                           className="text-gray-400 hover:text-gray-600"
                         >
                           <X className="h-5 w-5" />
@@ -1231,12 +1444,14 @@ export function TutorLessonManagementPage() {
                       <div className="flex space-x-3 mt-6">
                         <button
                           onClick={handleSaveExercise}
+                          type="button"
                           className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all"
                         >
                           Save Exercise
                         </button>
                         <button
                           onClick={() => setEditingExercise(null)}
+                          type="button"
                           className="px-6 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
                         >
                           Cancel
@@ -1245,17 +1460,25 @@ export function TutorLessonManagementPage() {
                     </div>
                   ) : (
                     <>
-                      {/* Exercise Type Selector */}
                       {exercises.length === 0 ? (
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                            Choose an exercise type to add to your lesson:
-                          </p>
-                          <ExerciseTypeSelector onSelect={handleAddExercise} />
+                          {modalMode !== 'view' && (
+                            <>
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                Choose an exercise type to add to your lesson:
+                              </p>
+                              <ExerciseTypeSelector onSelect={handleAddExercise} />
+                            </>
+                          )}
+                          {modalMode === 'view' && (
+                            <div className="text-center py-8">
+                              <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                              <p className="text-gray-500 dark:text-gray-400">No exercises in this lesson</p>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <>
-                          {/* Exercise List */}
                           <div>
                             <div className="flex items-center justify-between mb-4">
                               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -1268,18 +1491,20 @@ export function TutorLessonManagementPage() {
                                   key={exercise.id}
                                   exercise={exercise}
                                   index={index}
-                                  onEdit={() => handleEditExercise(exercise)}
-                                  onDelete={() => handleDeleteExercise(exercise.id)}
+                                  onEdit={modalMode !== 'view' ? () => handleEditExercise(exercise) : undefined}
+                                  onDelete={modalMode !== 'view' ? () => handleDeleteExercise(exercise.id) : undefined}
+                                  readOnly={modalMode === 'view'}
                                 />
                               ))}
                             </div>
                           </div>
 
-                          {/* Add More Button */}
-                          <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Add another exercise:</p>
-                            <ExerciseTypeSelector onSelect={handleAddExercise} />
-                          </div>
+                          {modalMode !== 'view' && (
+                            <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Add another exercise:</p>
+                              <ExerciseTypeSelector onSelect={handleAddExercise} />
+                            </div>
+                          )}
                         </>
                       )}
                     </>
@@ -1298,35 +1523,41 @@ export function TutorLessonManagementPage() {
                       <span>{exercises.length} exercise(s) added</span>
                     </span>
                   )}
+                  {exercises.length === 0 && modalMode !== 'view' && (
+                    <span className="flex items-center space-x-1 text-yellow-600 dark:text-yellow-400">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>At least 1 exercise required</span>
+                    </span>
+                  )}
                 </div>
                 <div className="flex space-x-3">
                   <button
-                    onClick={() => {
-                      setShowCreateModal(false);
-                      setModalTab('info');
-                      setEditingExercise(null);
-                    }}
+                    onClick={closeModal}
+                    type="button"
                     className="px-6 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
                   >
-                    Cancel
+                    {modalMode === 'view' ? 'Close' : 'Cancel'}
                   </button>
-                  <button
-                    onClick={handleCreateLesson}
-                    disabled={isCreating || !newLesson.title.trim()}
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium py-2.5 px-8 rounded-lg transition-all duration-200 flex items-center space-x-2 disabled:cursor-not-allowed shadow-lg"
-                  >
-                    {isCreating ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        <span>Creating...</span>
-                      </>
-                    ) : (
-                      <>
-                        <PlusCircle className="h-4 w-4" />
-                        <span>Create Lesson</span>
-                      </>
-                    )}
-                  </button>
+                  {modalMode !== 'view' && (
+                    <button
+                      onClick={handleSubmitLesson}
+                      disabled={isSubmitting || !lessonForm.title.trim() || exercises.length === 0}
+                      type="button"
+                      className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium py-2.5 px-8 rounded-lg transition-all duration-200 flex items-center space-x-2 disabled:cursor-not-allowed shadow-lg"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                          <span>{modalMode === 'create' ? 'Creating...' : 'Saving...'}</span>
+                        </>
+                      ) : (
+                        <>
+                          {modalMode === 'create' ? <PlusCircle className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+                          <span>{modalMode === 'create' ? 'Create Lesson' : 'Save Changes'}</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
