@@ -645,5 +645,3 @@ export default function TutorSchedulePage() {
     </div>
   );
 } 
-
-export default TutorSchedulePage;
