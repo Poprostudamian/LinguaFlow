@@ -18,7 +18,7 @@ import { StudentLessonViewer } from './pages/StudentLessonViewer';
 import { StudentLessonHistory } from './pages/StudentLessonHistory';
 import { StudentSchedulePage } from './pages/StudentSchedulePage';
 import { StudentMessagesPage } from './pages/StudentMessagesPage';
-import { LandingPage } from './pages/LandingPage';
+import LandingPage from './pages/LandingPage';
 
 function App() {
   return (
