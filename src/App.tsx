@@ -7,6 +7,7 @@ import { Layout } from './components/Layout';
 import { RouteGuard } from './components/RouteGuard';
 import { Login } from './pages/Login';
 import { SignUp } from './pages/SignUp';
+import { LandingPage } from './pages/LandingPage';
 import { StudentDashboard } from './pages/StudentDashboard';
 import { TutorDashboard } from './pages/TutorDashboard';
 import { TutorStudentsPage } from './pages/TutorStudentsPage';
@@ -18,7 +19,6 @@ import { StudentLessonViewer } from './pages/StudentLessonViewer';
 import { StudentLessonHistory } from './pages/StudentLessonHistory';
 import { StudentSchedulePage } from './pages/StudentSchedulePage';
 import { StudentMessagesPage } from './pages/StudentMessagesPage';
-import LandingPage from './pages/LandingPage';
 
 function App() {
   return (
