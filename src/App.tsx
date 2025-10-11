@@ -5,7 +5,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { StudentsProvider } from './contexts/StudentsContext';
 import { Layout } from './components/Layout';
 import { RouteGuard } from './components/RouteGuard';
-import { LandingPage } from './pages/LandingPage';
+import  LandingPage  from './pages/LandingPage';
 import { Login } from './pages/Login';
 import { SignUp } from './pages/SignUp';
 import { StudentDashboard } from './pages/StudentDashboard';
