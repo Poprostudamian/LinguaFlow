@@ -611,6 +611,3 @@ export function TutorSchedulePage() {
     </div>
   );
 }
-
-// Default export for compatibility
-export default TutorSchedulePage;
