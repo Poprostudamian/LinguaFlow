@@ -24,7 +24,7 @@ import { StudentMessagesPage } from './pages/StudentMessagesPage';
 function App() {
   return (
     <ThemeProvider>
-      <LanguageProvider> {/* ← DODAJ WRAPPER */}
+      <LanguageProvider>
         <AuthProvider>
           <StudentsProvider>
             <Router>
@@ -73,7 +73,7 @@ function App() {
             </Router>
           </StudentsProvider>
         </AuthProvider>
-      </LanguageProvider> {/* ← ZAMKNIJ WRAPPER */}
+      </LanguageProvider>
     </ThemeProvider>
   );
 }
