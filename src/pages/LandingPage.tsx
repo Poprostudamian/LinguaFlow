@@ -149,7 +149,7 @@ export default function LandingPage() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </a>
               
-                href="/signup"
+                <a href="/signup"
                 className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-purple-600 dark:text-purple-400 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-2 border-purple-600 dark:border-purple-400"
               >
                 Start Learning
