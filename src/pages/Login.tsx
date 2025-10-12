@@ -11,7 +11,7 @@ export function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  const { session, login } = useAuth();
+  const { session } = useAuth();
 
   if (session.isAuthenticated) {
     const redirectPath = session.user?.role === 'student' ? '/student' : '/tutor';
@@ -24,7 +24,6 @@ export function Login() {
     setIsLoading(true);
 
     try {
-      // Use Supabase authentication
       const signInData: SignInData = {
         email: email.trim(),
         password: password,
@@ -32,13 +31,9 @@ export function Login() {
 
       await signIn(signInData);
       
-      // The AuthContext will handle the session update automatically
-      // through the Supabase auth state change listener
-      
     } catch (err: any) {
       console.error('Sign in error:', err);
       
-      // Handle specific Supabase errors
       if (err.message?.includes('Invalid login credentials')) {
         setError('Invalid email or password. Please check your credentials and try again.');
       } else if (err.message?.includes('Email not confirmed')) {
@@ -54,18 +49,35 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-purple-900/20 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-gray-200 dark:border-gray-700">
+        {/* Logo with back link */}
+        <Link to="/" className="flex items-center justify-center space-x-2 mb-8 group">
+          <BookOpen className="h-10 w-10 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform" />
+          <span className="text-3xl font-bold text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+            LinguaFlow
+          </span>
+        </Link>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="h-8 w-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome to LinguaFlow</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">Sign in to your account</p>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Welcome Back
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Sign in to continue your learning journey
+            </p>
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Email
@@ -83,6 +95,7 @@ export function Login() {
               />
             </div>
 
+            {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Password
@@ -113,12 +126,7 @@ export function Login() {
               </div>
             </div>
 
-            {error && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-              </div>
-            )}
-
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
@@ -139,13 +147,6 @@ export function Login() {
                 Sign up here
               </Link>
             </p>
-          </div>
-
-          <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Need help getting started?</h3>
-            <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-              <p>Create a new account or contact support if you need assistance.</p>
-            </div>
           </div>
         </div>
       </div>
