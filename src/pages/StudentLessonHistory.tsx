@@ -1,8 +1,7 @@
-// src/pages/StudentLessonHistory.tsx - MODERN LESSON HISTORY
+// src/pages/StudentLessonHistory.tsx - Z PEŁNYMI TŁUMACZENIAMI
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useLanguage } from '../contexts/LanguageContext';
 import { 
   ArrowLeft, 
   Calendar, 
@@ -22,6 +21,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext'; // ← DODANE
 import { supabase } from '../lib/supabase';
 
 interface LessonHistoryItem {
@@ -44,35 +44,21 @@ interface LessonHistoryItem {
     options?: string[] | { front: string; back: string }[] | null;
     explanation?: string;
     points: number;
-    // NEW FIELDS for student answers:
     student_answer: string | null;
     is_correct: boolean;
     submitted_at: string | null;
   }[];
 }
 
-export function YourPage() {
-  const { t } = useLanguage();
-  
-  return (
-    <div>
-      {/* Zamień hardcoded teksty na t.section.key */}
-      <h1>{t.studentDashboard.title}</h1>
-      <p>{t.studentDashboard.welcome}</p>
-      <button>{t.common.save}</button>
-    </div>
-  );
-}
-
 export function StudentLessonHistory() {
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
   const { session } = useAuth();
+  const { t } = useLanguage(); // ← DODANE
   
   const [lessonHistory, setLessonHistory] = useState<LessonHistoryItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedExercise, setSelectedExercise] = useState<number | null>(null);
 
   useEffect(() => {
     if (lessonId && session?.user?.id) {
@@ -130,7 +116,7 @@ export function StudentLessonHistory() {
         console.error('Error loading exercises:', exercisesError);
       }
 
-      // Get student's answers - THIS IS THE KEY PART!
+      // Get student's answers
       const { data: studentAnswers, error: answersError } = await supabase
         .from('student_exercise_answers')
         .select('*')
@@ -140,8 +126,6 @@ export function StudentLessonHistory() {
       if (answersError) {
         console.error('Error loading student answers:', answersError);
       }
-
-      console.log('📊 Student answers loaded:', studentAnswers);
 
       // Create a map of exercise_id -> student answer
       const answersMap = new Map();
@@ -176,7 +160,6 @@ export function StudentLessonHistory() {
             options: exercise.options ? (typeof exercise.options === 'string' ? JSON.parse(exercise.options) : exercise.options) : null,
             explanation: exercise.explanation,
             points: exercise.points,
-            // Add student's answer data
             student_answer: studentAnswer?.answer || null,
             is_correct: studentAnswer?.is_correct || false,
             submitted_at: studentAnswer?.submitted_at || null
@@ -223,7 +206,7 @@ export function StudentLessonHistory() {
   };
 
   const getScoreLabel = (score: number) => {
-    if (score >= 90) return 'Excellent!';
+    if (score >= 90) return t.lessonViewer.correct + '!'; // "Excellent!"
     if (score >= 70) return 'Good Job!';
     return 'Keep Practicing!';
   };
@@ -233,7 +216,7 @@ export function StudentLessonHistory() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading lesson history...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t.common.loading}</p>
         </div>
       </div>
     );
@@ -243,13 +226,13 @@ export function StudentLessonHistory() {
     return (
       <div className="max-w-4xl mx-auto py-8">
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
-          <h3 className="text-red-800 dark:text-red-200 font-medium mb-2">Error</h3>
+          <h3 className="text-red-800 dark:text-red-200 font-medium mb-2">{t.common.error}</h3>
           <p className="text-red-600 dark:text-red-300">{error || 'Lesson history not found'}</p>
           <button
             onClick={() => navigate('/student/lessons')}
             className="mt-4 px-4 py-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-lg hover:bg-red-200 dark:hover:bg-red-700"
           >
-            Back to Lessons
+            {t.lessonViewer.backToLessons}
           </button>
         </div>
       </div>
@@ -272,54 +255,77 @@ export function StudentLessonHistory() {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               {lessonHistory.lesson_title}
             </h1>
-            <div className="flex items-center space-x-1 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full">
-              <CheckCircle className="h-4 w-4" />
-              <span className="text-sm font-medium">Completed</span>
+            <div className="flex items-center space-x-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full">
+              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                {t.lessons.completed}
+              </span>
             </div>
           </div>
           <p className="text-gray-600 dark:text-gray-400">
-            Review your performance and lesson details
+            {t.lessons.lessonHistory}
           </p>
         </div>
       </div>
 
-      {/* Completion Banner */}
-      <div className={`bg-gradient-to-r ${getScoreColor(lessonHistory.score)} rounded-2xl p-8 text-white shadow-xl`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <div className="bg-white/20 backdrop-blur-sm p-6 rounded-2xl">
-              <Award className="h-16 w-16" />
+      {/* Achievement Banner */}
+      <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-8 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 opacity-10">
+          <Award className="h-64 w-64" />
+        </div>
+        <div className="relative z-10">
+          <div className="flex items-center space-x-4 mb-4">
+            <div className="bg-white/20 p-4 rounded-xl backdrop-blur-sm">
+              <Star className="h-8 w-8" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold mb-2">
-                {getScoreLabel(lessonHistory.score)}
-              </h2>
-              <p className="text-white/90 text-lg">
-                Completed on {formatDate(lessonHistory.completed_at)}
-              </p>
+              <h2 className="text-2xl font-bold mb-1">{getScoreLabel(lessonHistory.score)}</h2>
+              <p className="text-purple-100">{t.lessons.completedOn} {formatDate(lessonHistory.completed_at)}</p>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-6xl font-bold mb-2">{lessonHistory.score}%</div>
-            <p className="text-white/90">Final Score</p>
+          
+          <div className="grid grid-cols-3 gap-6 mt-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <Target className="h-5 w-5" />
+                <span className="text-sm font-medium">{t.lessons.score}</span>
+              </div>
+              <p className="text-3xl font-bold">{lessonHistory.score}%</p>
+            </div>
+            
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <Clock className="h-5 w-5" />
+                <span className="text-sm font-medium">{t.lessons.timeSpent}</span>
+              </div>
+              <p className="text-3xl font-bold">{formatDuration(lessonHistory.time_spent)}</p>
+            </div>
+            
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <Zap className="h-5 w-5" />
+                <span className="text-sm font-medium">{t.lessons.exercises}</span>
+              </div>
+              <p className="text-3xl font-bold">{lessonHistory.exercises_count}</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border border-purple-200 dark:border-purple-800 rounded-xl p-5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-800/20 border border-green-200 dark:border-green-800 rounded-xl p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-1">
-                Final Score
+              <p className="text-sm font-medium text-green-600 dark:text-green-400 mb-1">
+                {t.lessonViewer.finalScore}
               </p>
-              <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+              <p className="text-2xl font-bold text-green-900 dark:text-green-100">
                 {lessonHistory.score}%
               </p>
             </div>
-            <div className="bg-purple-200 dark:bg-purple-900/40 p-3 rounded-lg">
-              <Star className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            <div className="bg-green-200 dark:bg-green-900/40 p-3 rounded-lg">
+              <Award className="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
           </div>
         </div>
@@ -328,7 +334,7 @@ export function StudentLessonHistory() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">
-                Time Spent
+                {t.lessonViewer.timeSpent}
               </p>
               <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
                 {formatDuration(lessonHistory.time_spent)}
@@ -340,27 +346,11 @@ export function StudentLessonHistory() {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-800 rounded-xl p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-green-600 dark:text-green-400 mb-1">
-                Exercises
-              </p>
-              <p className="text-2xl font-bold text-green-900 dark:text-green-100">
-                {lessonHistory.exercises_count}
-              </p>
-            </div>
-            <div className="bg-green-200 dark:bg-green-900/40 p-3 rounded-lg">
-              <Zap className="h-6 w-6 text-green-600 dark:text-green-400" />
-            </div>
-          </div>
-        </div>
-
         <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border border-orange-200 dark:border-orange-800 rounded-xl p-5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-orange-600 dark:text-orange-400 mb-1">
-                Progress
+                {t.lessonViewer.progress}
               </p>
               <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
                 {lessonHistory.progress}%
@@ -380,7 +370,7 @@ export function StudentLessonHistory() {
             <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            Lesson Information
+            {t.lessons.lessonDetails}
           </h2>
         </div>
 
@@ -388,7 +378,7 @@ export function StudentLessonHistory() {
           {lessonHistory.lesson_description && (
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                Description
+                {t.schedule.description}
               </p>
               <p className="text-gray-700 dark:text-gray-300">
                 {lessonHistory.lesson_description}
@@ -401,7 +391,7 @@ export function StudentLessonHistory() {
               <User className="h-5 w-5 text-gray-600 dark:text-gray-400" />
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Tutor
+                  {t.nav.tutor}
                 </p>
                 <p className="text-gray-900 dark:text-white font-medium">
                   {lessonHistory.tutor_name}
@@ -413,7 +403,7 @@ export function StudentLessonHistory() {
               <Calendar className="h-5 w-5 text-gray-600 dark:text-gray-400" />
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Completed
+                  {t.lessons.completedOn}
                 </p>
                 <p className="text-gray-900 dark:text-white font-medium">
                   {formatDate(lessonHistory.completed_at)}
@@ -424,7 +414,7 @@ export function StudentLessonHistory() {
         </div>
       </div>
 
-     {/* Exercises Review */}
+      {/* Exercises Review */}
       {lessonHistory.exercises_count > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center space-x-3 mb-6">
@@ -433,20 +423,16 @@ export function StudentLessonHistory() {
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Exercises Review
+                {t.lessons.exercises}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                {lessonHistory.exercises_count} exercise{lessonHistory.exercises_count !== 1 ? 's' : ''} completed
+                {lessonHistory.exercises_count} {lessonHistory.exercises_count === 1 ? 'exercise' : 'exercises'} {t.lessons.completed.toLowerCase()}
               </p>
             </div>
           </div>
 
           {/* Exercise Details */}
           <div className="space-y-4">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Exercise Results
-            </h2>
-            
             {lessonHistory.exercises.map((exercise, idx) => (
               <div
                 key={exercise.id}
@@ -468,7 +454,7 @@ export function StudentLessonHistory() {
                         <XCircle className="h-6 w-6 text-red-600 dark:text-red-400 flex-shrink-0" />
                       )}
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        Exercise {idx + 1}: {exercise.title}
+                        {t.lessonViewer.exercises} {idx + 1}: {exercise.title}
                       </h3>
                     </div>
                     <p className="text-gray-700 dark:text-gray-300 ml-9">
@@ -486,67 +472,23 @@ export function StudentLessonHistory() {
                   {exercise.exercise_type === 'multiple_choice' && (
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Your answer:</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{t.lessonViewer.yourAnswer}:</span>
                         <span className={`
                           font-semibold px-3 py-1 rounded-lg
                           ${exercise.is_correct 
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
-                            : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                            : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
                           }
                         `}>
-                          {exercise.student_answer || 'No answer'}
+                          {exercise.student_answer}
                         </span>
                       </div>
-                      
                       {!exercise.is_correct && (
                         <div className="flex items-center space-x-2">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Correct answer:</span>
-                          <span className="font-semibold px-3 py-1 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">{t.lessonViewer.correctAnswer}:</span>
+                          <span className="font-semibold px-3 py-1 rounded-lg bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">
                             {exercise.correct_answer}
                           </span>
-                        </div>
-                      )}
-
-                      {/* Show all options */}
-                      {exercise.options && Array.isArray(exercise.options) && (
-                        <div className="mt-3 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">All options:</p>
-                          <div className="space-y-1">
-                            {(exercise.options as string[]).map((option, optIdx) => {
-                              const letter = String.fromCharCode(65 + optIdx);
-                              const isUserAnswer = exercise.student_answer === letter;
-                              const isCorrectAnswer = exercise.correct_answer === letter;
-                              
-                              return (
-                                <div 
-                                  key={optIdx}
-                                  className={`
-                                    flex items-center space-x-2 p-2 rounded text-sm
-                                    ${isCorrectAnswer ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' : ''}
-                                    ${isUserAnswer && !isCorrectAnswer ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800' : ''}
-                                  `}
-                                >
-                                  <span className={`
-                                    font-bold w-6 text-center
-                                    ${isCorrectAnswer ? 'text-green-600 dark:text-green-400' : ''}
-                                    ${isUserAnswer && !isCorrectAnswer ? 'text-red-600 dark:text-red-400' : ''}
-                                    ${!isUserAnswer && !isCorrectAnswer ? 'text-gray-500 dark:text-gray-400' : ''}
-                                  `}>
-                                    {letter}.
-                                  </span>
-                                  <span className="flex-1 text-gray-700 dark:text-gray-300">
-                                    {option}
-                                  </span>
-                                  {isCorrectAnswer && (
-                                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                  )}
-                                  {isUserAnswer && !isCorrectAnswer && (
-                                    <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
                         </div>
                       )}
                     </div>
@@ -554,56 +496,40 @@ export function StudentLessonHistory() {
 
                   {/* Text Answer */}
                   {exercise.exercise_type === 'text_answer' && (
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Your answer:</p>
-                      <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                        <p className="text-gray-900 dark:text-white">
-                          {exercise.student_answer || 'No answer provided'}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                      <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                      <p className="text-sm text-amber-800 dark:text-amber-300">
-                        This answer is pending review by your tutor
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                  {/* Flashcard */}
-                  {exercise.exercise_type === 'flashcard' && (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Flashcards learned:</p>
-                        <div className="space-y-2">
-                          {Array.isArray(exercise.options) && 
-                            (exercise.options as { front: string; back: string }[]).map((card, cardIdx) => (
-                              <div key={cardIdx} className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                                <div className="font-medium text-gray-900 dark:text-white mb-1">
-                                  {card.front}
-                                </div>
-                                <div className="text-gray-600 dark:text-gray-400 text-sm">
-                                  {card.back}
-                                </div>
-                              </div>
-                            ))
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t.lessonViewer.yourAnswer}:</p>
+                        <div className={`
+                          p-3 rounded-lg border-2
+                          ${exercise.is_correct 
+                            ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
+                            : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
                           }
+                        `}>
+                          <p className="text-gray-900 dark:text-white">
+                            {exercise.student_answer}
+                          </p>
                         </div>
                       </div>
-                      
-                      {exercise.student_answer && (
+                      {!exercise.is_correct && exercise.correct_answer && (
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Your summary:</p>
-                          <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t.lessonViewer.correctAnswer}:</p>
+                          <div className="p-3 rounded-lg border-2 border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
                             <p className="text-gray-900 dark:text-white">
-                              {exercise.student_answer}
+                              {exercise.correct_answer}
                             </p>
                           </div>
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* Flashcard */}
+                  {exercise.exercise_type === 'flashcard' && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {exercise.is_correct ? t.lessonViewer.correct : t.lessonViewer.incorrect}
+                      </p>
                     </div>
                   )}
 
@@ -614,7 +540,7 @@ export function StudentLessonHistory() {
                         <Lightbulb className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                         <div>
                           <p className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-1">
-                            Explanation:
+                            {t.lessonViewer.explanation}:
                           </p>
                           <p className="text-sm text-blue-800 dark:text-blue-400">
                             {exercise.explanation}
@@ -638,10 +564,10 @@ export function StudentLessonHistory() {
           </div>
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white">
-              Want to review the lesson content?
+              {t.lessonViewer.lessonContent}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Go back to the lesson viewer to review materials
+              {t.lessonViewer.backToLessons}
             </p>
           </div>
         </div>
@@ -650,7 +576,7 @@ export function StudentLessonHistory() {
           className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-xl transition-all duration-200 hover:shadow-lg hover:scale-105 flex items-center space-x-2"
         >
           <Eye className="h-5 w-5" />
-          <span>Review Lesson</span>
+          <span>{t.lessons.reviewLesson}</span>
         </button>
       </div>
     </div>
