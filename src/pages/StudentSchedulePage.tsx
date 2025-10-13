@@ -263,27 +263,27 @@ export function StudentSchedulePage() {
               <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">
                 {t.studentSchedulePage.todaysMeetings} {/* ← ZMIENIONE */}
               </p>
-              <p className="text-3xl font-bold text-white">
+              <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">
                 {todaysMeetings.length}
               </p>
             </div>
-            <div className="bg-blue-600/20 p-4 rounded-xl">
+            <div className="bg-blue-200 dark:bg-blue-900/40 p-3 rounded-lg">
               <Calendar className="h-8 w-8 text-blue-500" />
             </div>
           </div>
         </div>
 
-        <div className="bg-[#1a2332] border border-gray-700 rounded-xl p-5">
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border border-purple-200 dark:border-purple-800 rounded-xl p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-400 mb-1">
+              <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-1">
                 {t.studentSchedulePage.upcomingMeetings} {/* ← ZMIENIONE */}
               </p>
-              <p className="text-3xl font-bold text-white">
+              <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">
                 {upcomingMeetings.length}
               </p>
             </div>
-            <div className="bg-purple-600/20 p-4 rounded-xl">
+            <div className="bg-purple-200 dark:bg-purple-900/40 p-3 rounded-lg">
               <Clock className="h-8 w-8 text-purple-500" />
             </div>
           </div>
