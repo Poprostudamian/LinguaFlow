@@ -505,7 +505,7 @@ export function StudentMessagesPage() {
                         handleSendMessage(e);
                       }
                     }}
-                    placeholder={t.studentMessagesPage.typeMessage} {/* ← ZMIENIONE */}
+                    placeholder={t.studentMessagesPage.typeMessage}
                     className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none min-h-[42px] max-h-[120px]"
                     rows={1}
                     disabled={isSending}
