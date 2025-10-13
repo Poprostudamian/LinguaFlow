@@ -570,7 +570,7 @@ export function StudentSchedulePage() {
                               className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all duration-200"
                             >
                               <Video className="h-4 w-4" />
-                              <span>{t.studentSchedulePage.joinMeeting}</span> {/* ← ZMIENIONE */}
+                              <span>{t.studentSchedulePage.joinMeeting}</span>
                             </button>
                           )}
                         </div>
@@ -581,10 +581,10 @@ export function StudentSchedulePage() {
                   <div className="p-8 text-center">
                     <Calendar className="h-12 w-12 text-gray-600 mx-auto mb-3" />
                     <h3 className="text-lg font-medium text-gray-300 mb-1">
-                      {t.studentSchedulePage.noUpcomingMeetings} {/* ← ZMIENIONE */}
+                      {t.studentSchedulePage.noUpcomingMeetings}
                     </h3>
                     <p className="text-sm text-gray-400">
-                      {t.studentSchedulePage.noUpcomingDescription} {/* ← ZMIENIONE */}
+                      {t.studentSchedulePage.noUpcomingDescription}
                     </p>
                   </div>
                 )}
