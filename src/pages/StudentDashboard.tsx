@@ -54,6 +54,19 @@ interface StudentStats {
   last_activity: string | null;
 }
 
+export function YourPage() {
+  const { t } = useLanguage();
+  
+  return (
+    <div>
+      {/* Zamień hardcoded teksty na t.section.key */}
+      <h1>{t.studentDashboard.title}</h1>
+      <p>{t.studentDashboard.welcome}</p>
+      <button>{t.common.save}</button>
+    </div>
+  );
+}
+
 export function StudentDashboard() {
   const navigate = useNavigate();
   const { session } = useAuth();
