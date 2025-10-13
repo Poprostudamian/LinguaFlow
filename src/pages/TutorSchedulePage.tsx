@@ -1,5 +1,6 @@
 // src/pages/TutorSchedulePage.tsx - FULL VERSION WITH CALENDAR
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Calendar, 
   Clock, 
