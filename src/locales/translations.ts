@@ -740,6 +740,67 @@ export const translations = {
       errorStartingLesson: 'Nie udało się rozpocząć lekcji. Spróbuj ponownie.',
       errorCompletingLesson: 'Nie udało się ukończyć lekcji. Spróbuj ponownie.',
     },
+
+    // Student Messages Page
+    studentMessagesPage: {
+      // Page Title
+      title: 'Wiadomości',
+      
+      // Loading
+      loading: 'Ładowanie wiadomości...',
+      
+      // Search
+      searchPlaceholder: 'Szukaj konwersacji...',
+      
+      // Conversations List
+      conversations: 'Konwersacje',
+      noConversations: 'Brak konwersacji',
+      noConversationsDescription: 'Rozpocznij rozmowę ze swoim korepetytorem',
+      startConversation: 'Rozpocznij rozmowę',
+      newChat: 'Nowa rozmowa',
+      
+      // Empty Selection
+      selectConversation: 'Wybierz konwersację',
+      selectConversationDescription: 'Wybierz konwersację z listy aby rozpocząć rozmowę',
+      
+      // Chat Header
+      online: 'Online',
+      typing: 'pisze...',
+      
+      // Messages
+      today: 'Dzisiaj',
+      yesterday: 'Wczoraj',
+      justNow: 'Przed chwilą',
+      you: 'Ty',
+      
+      // Message Input
+      typeMessage: 'Napisz wiadomość...',
+      sendMessage: 'Wyślij wiadomość',
+      sending: 'Wysyłanie...',
+      
+      // New Chat Modal
+      startNewConversation: 'Rozpocznij nową konwersację',
+      selectTutor: 'Wybierz korepetytora aby rozpocząć rozmowę',
+      noTutorsAvailable: 'Brak dostępnych korepetytorów',
+      noTutorsDescription: 'Musisz najpierw być przypisany do korepetytora',
+      cancel: 'Anuluj',
+      start: 'Rozpocznij',
+      
+      // Errors
+      errorLoading: 'Nie udało się załadować konwersacji',
+      errorSending: 'Nie udało się wysłać wiadomości',
+      tryAgain: 'Spróbuj ponownie',
+      
+      // Unread
+      unread: 'nieprzeczytanych',
+      newMessage: 'Nowa wiadomość',
+      
+      // Time formatting
+      minutes: 'min',
+      hours: 'godz',
+      days: 'dni',
+      weeks: 'tyg',
+    },
   },
 } as const;
 
