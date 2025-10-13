@@ -560,7 +560,7 @@ export function StudentSchedulePage() {
                                 month: 'short',
                                 day: 'numeric'
                               })}{' '}
-                              {t.studentSchedulePage.at} {formatTime(meeting.scheduled_at)} {/* ← ZMIENIONE */}
+                              {t.studentSchedulePage.at} {formatTime(meeting.scheduled_at)}
                             </span>
                           </div>
 
