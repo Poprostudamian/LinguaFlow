@@ -1,6 +1,7 @@
 // src/pages/TutorStudentsPage.tsx - MODERN REDESIGN
 
 import React, { useState, useMemo } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Search, 
   Filter, 
