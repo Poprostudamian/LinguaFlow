@@ -399,6 +399,66 @@ export const translations = {
       days: 'd',
       weeks: 'w',
     },
+
+    // Student Schedule Page
+    studentSchedulePage: {
+      // Page Title & Header
+      title: 'Schedule',
+      description: 'View your upcoming lessons and meetings',
+      refresh: 'Refresh',
+      
+      // Loading
+      loading: 'Loading your schedule...',
+      
+      // Error
+      errorLoading: 'Error loading schedule',
+      
+      // Quick Stats
+      todaysMeetings: "Today's Meetings",
+      upcomingMeetings: 'Upcoming Meetings',
+      scheduled: 'scheduled',
+      
+      // Calendar Navigation
+      today: 'Today',
+      previousMonth: 'Previous month',
+      nextMonth: 'Next month',
+      
+      // Days of Week
+      sunday: 'Sun',
+      monday: 'Mon',
+      tuesday: 'Tue',
+      wednesday: 'Wed',
+      thursday: 'Thu',
+      friday: 'Fri',
+      saturday: 'Sat',
+      
+      // Selected Day Panel
+      selectedDay: 'Selected Day',
+      meetingsOnDay: 'meeting on this day',
+      meetingsOnDayPlural: 'meetings on this day',
+      noMeetingsOnDay: 'No meetings on this day',
+      
+      // Meeting Status
+      statusScheduled: 'Scheduled',
+      statusInProgress: 'In Progress',
+      statusCompleted: 'Completed',
+      statusCancelled: 'Cancelled',
+      statusUnknown: 'Unknown',
+      
+      // Meeting Details
+      duration: 'min',
+      participant: 'participant',
+      participants: 'participants',
+      joinMeeting: 'Join Meeting',
+      
+      // Upcoming Section
+      upcomingMeetingsTitle: 'Upcoming Meetings',
+      noUpcomingMeetings: 'No upcoming meetings',
+      noUpcomingDescription: 'You have no scheduled meetings at the moment',
+      
+      // Time Formatting
+      at: 'at',
+    },
   },
   
   pl: {
