@@ -553,6 +553,7 @@ export const translations = {
       messages: 'Wiadomości',
       settings: 'Ustawienia',
       profile: 'Profil',
+      tutor: 'Nauczyciel',
     },
     
     // Settings
