@@ -260,7 +260,7 @@ export function StudentSchedulePage() {
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-400 mb-1">
+              <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">
                 {t.studentSchedulePage.todaysMeetings} {/* ← ZMIENIONE */}
               </p>
               <p className="text-3xl font-bold text-white">
