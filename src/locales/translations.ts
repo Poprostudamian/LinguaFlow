@@ -625,6 +625,60 @@ export const translations = {
       saveChanges: 'Zapisz Zmiany',
       changesSaved: 'Zmiany zostały zapisane',
     },
+
+    // Student Lesson Viewer
+    studentLessonViewer: {
+      // Loading & Errors
+      loading: 'Ładowanie lekcji...',
+      error: 'Błąd',
+      lessonNotFound: 'Nie znaleziono lekcji',
+      backToLessons: 'Powrót do lekcji',
+      
+      // Header
+      byTutor: 'prowadzący',
+      exercises: 'ćwiczenia',
+      
+      // Status labels
+      statusNotStarted: 'Nie rozpoczęta',
+      statusInProgress: 'W trakcie',
+      statusCompleted: 'Ukończona',
+      
+      // Start Lesson Card
+      readyToStart: 'Gotowy na rozpoczęcie tej lekcji?',
+      beginJourney: 'Rozpocznij swoją naukę już teraz',
+      startLesson: 'Rozpocznij lekcję',
+      starting: 'Rozpoczynanie...',
+      
+      // Progress Stats
+      yourProgress: 'Twój postęp',
+      timeSpent: 'Czas poświęcony',
+      minutes: 'min',
+      startedOn: 'Rozpoczęta',
+      
+      // Lesson Content
+      lessonContent: 'Treść lekcji',
+      
+      // Interactive Exercises
+      exercises: 'Interaktywne ćwiczenia',
+      exercisesDescription: 'Ukończ wszystkie ćwiczenia aby zakończyć lekcję',
+      noExercises: 'Brak dostępnych ćwiczeń',
+      noExercisesDescription: 'Ta lekcja nie ma jeszcze żadnych ćwiczeń',
+      
+      // Completion
+      completing: 'Kończenie lekcji...',
+      
+      // Completed Lesson
+      lessonCompleted: 'Lekcja ukończona!',
+      completedMessage: 'Ukończyłeś już tę lekcję z wynikiem',
+      viewDetailsHistory: 'Zobacz szczegółowe wyniki i odpowiedzi w historii lekcji',
+      viewHistory: 'Zobacz historię i wyniki',
+      viewLessonHistory: 'Zobacz historię lekcji',
+      
+      // Errors
+      errorLoadingLesson: 'Nie udało się załadować szczegółów lekcji. Spróbuj ponownie.',
+      errorStartingLesson: 'Nie udało się rozpocząć lekcji. Spróbuj ponownie.',
+      errorCompletingLesson: 'Nie udało się ukończyć lekcji. Spróbuj ponownie.',
+    },
   },
 } as const;
 
