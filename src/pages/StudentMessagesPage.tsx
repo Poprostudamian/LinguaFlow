@@ -1,7 +1,6 @@
-// src/pages/StudentMessagesPage.tsx - MODERN MESSAGING UI
+// src/pages/StudentMessagesPage.tsx - Z PEŁNYMI TŁUMACZENIAMI
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Send, 
   Search, 
@@ -10,16 +9,10 @@ import {
   AlertCircle, 
   Plus,
   ArrowLeft,
-  MoreVertical,
-  Phone,
-  Video,
-  Paperclip,
-  Smile,
-  Check,
-  CheckCheck,
-  Circle
+  Clock
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext'; // ← DODANE
 import {
   getUserConversations,
   getConversationWithMessages,
@@ -34,25 +27,10 @@ import {
   AuthUser
 } from '../lib/supabase';
 
-export function YourPage() {
-  const { t } = useLanguage();
-  
-  return (
-    <div>
-      {/* Zamień hardcoded teksty na t.section.key */}
-      <h1>{t.studentDashboard.title}</h1>
-      <p>{t.studentDashboard.welcome}</p>
-      <button>{t.common.save}</button>
-    </div>
-  );
-}
-
 export function StudentMessagesPage() {
   const { session } = useAuth();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  // State
+  const { t } = useLanguage(); // ← DODANE
+  
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [currentMessages, setCurrentMessages] = useState<Message[]>([]);
@@ -64,14 +42,17 @@ export function StudentMessagesPage() {
   const [availableTutors, setAvailableTutors] = useState<AuthUser[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Load data
+  // Load conversations on mount
   useEffect(() => {
     loadConversations();
     loadAvailableTutors();
   }, []);
 
-  // Subscribe to real-time updates for selected conversation
+  // Subscribe to messages in selected conversation
   useEffect(() => {
     if (!selectedConversation) return;
 
@@ -96,7 +77,6 @@ export function StudentMessagesPage() {
   // Subscribe to conversation list updates
   useEffect(() => {
     const subscription = subscribeToConversationUpdates(() => {
-      // Reload conversations when any conversation is updated
       loadConversations();
     });
 
@@ -143,7 +123,7 @@ export function StudentMessagesPage() {
       loadConversations();
       scrollToBottom();
     } catch (err: any) {
-      setError('Failed to load messages');
+      setError(t.studentMessagesPage.errorLoading); // ← ZMIENIONE
     }
   };
 
@@ -151,14 +131,22 @@ export function StudentMessagesPage() {
     e.preventDefault();
     if (!newMessage.trim() || !selectedConversation || isSending) return;
 
+    const messageContent = newMessage.trim();
+    setNewMessage('');
+    setIsSending(true);
+
     try {
-      setIsSending(true);
-      const message = await sendMessage(selectedConversation, newMessage);
-      setCurrentMessages(prev => [...prev, message]);
-      setNewMessage('');
+      const message = await sendMessage(selectedConversation, messageContent);
+      setCurrentMessages(prev => {
+        const exists = prev.find(m => m.id === message.id);
+        if (exists) return prev;
+        return [...prev, message];
+      });
       scrollToBottom();
-    } catch (err) {
-      setError('Failed to send message');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setError(t.studentMessagesPage.errorSending); // ← ZMIENIONE
+      setNewMessage(messageContent);
     } finally {
       setIsSending(false);
     }
@@ -166,12 +154,14 @@ export function StudentMessagesPage() {
 
   const startNewConversation = async (tutorId: string) => {
     try {
+      setError(null);
       const conversationId = await createOrGetConversation(tutorId);
       setShowNewChat(false);
       await selectConversation(conversationId);
       loadConversations();
-    } catch (err) {
-      setError('Failed to start conversation');
+    } catch (error: any) {
+      console.error('Error starting conversation:', error);
+      setError(`${t.studentMessagesPage.errorSending}: ${error.message}`); // ← ZMIENIONE
     }
   };
 
@@ -181,31 +171,20 @@ export function StudentMessagesPage() {
     }, 100);
   };
 
-  // Helper functions
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-  };
+    const now = new Date();
+    const diffInMinutes = (now.getTime() - date.getTime()) / (1000 * 60);
 
-  const formatDate = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    if (date.toDateString() === today.toDateString()) {
-      return 'Today';
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
+    if (diffInMinutes < 1) {
+      return t.studentMessagesPage.justNow; // ← ZMIENIONE
+    } else if (diffInMinutes < 60) {
+      return `${Math.floor(diffInMinutes)} ${t.studentMessagesPage.minutes}`; // ← ZMIENIONE
     } else {
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+      return date.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
       });
     }
   };
@@ -266,12 +245,15 @@ export function StudentMessagesPage() {
     e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
   };
 
+  // Loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600 dark:text-gray-400">Loading messages...</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            {t.studentMessagesPage.loading} {/* ← ZMIENIONE */}
+          </p>
         </div>
       </div>
     );
@@ -280,60 +262,54 @@ export function StudentMessagesPage() {
   return (
     <div className="h-[calc(100vh-8rem)] flex bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Conversations Sidebar */}
-      <div className={`w-full md:w-80 lg:w-96 border-r border-gray-200 dark:border-gray-700 flex flex-col ${selectedConversation ? 'hidden md:flex' : ''}`}>
-        {/* Sidebar Header */}
+      <div className={`w-full md:w-80 lg:w-96 border-r border-gray-200 dark:border-gray-700 flex flex-col ${
+        selectedConversation ? 'hidden md:flex' : ''
+      }`}>
+        {/* Header */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Messages</h1>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              {t.studentMessagesPage.conversations} {/* ← ZMIENIONE */}
+            </h2>
             <button
               onClick={() => setShowNewChat(true)}
-              className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all duration-200 hover:scale-105"
+              className="p-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all duration-200 hover:shadow-lg"
             >
               <Plus className="h-5 w-5" />
             </button>
           </div>
-          
+
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search conversations..."
+              placeholder={t.studentMessagesPage.searchPlaceholder} {/* ← ZMIENIONE */}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
             />
           </div>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="p-3 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800">
-            <div className="flex items-center">
-              <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mr-2" />
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-            </div>
-          </div>
-        )}
-
         {/* Conversations List */}
         <div className="flex-1 overflow-y-auto">
-          {filteredConversations.length === 0 ? (
+          {conversations.length === 0 ? (
             <div className="p-8 text-center">
               <div className="bg-gray-100 dark:bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <MessageCircle className="h-8 w-8 text-gray-400" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                No conversations yet
+                {t.studentMessagesPage.noConversations} {/* ← ZMIENIONE */}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 mb-4 text-sm">
-                Start chatting with your tutor
+                {t.studentMessagesPage.noConversationsDescription} {/* ← ZMIENIONE */}
               </p>
               <button
                 onClick={() => setShowNewChat(true)}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-2.5 rounded-lg transition-all duration-200 hover:shadow-lg"
               >
-                Start Conversation
+                {t.studentMessagesPage.startConversation} {/* ← ZMIENIONE */}
               </button>
             </div>
           ) : (
@@ -358,8 +334,7 @@ export function StudentMessagesPage() {
                       <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-lg shadow-md">
                         {user?.first_name?.[0] || '?'}
                       </div>
-                      {/* Online indicator - można dodać logikę online status */}
-                      <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></div>
+                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></div>
                     </div>
 
                     {/* Conversation Info */}
@@ -368,11 +343,9 @@ export function StudentMessagesPage() {
                         <h3 className="font-semibold text-gray-900 dark:text-white truncate">
                           {user?.first_name} {user?.last_name}
                         </h3>
-                        {conversation.last_message_at && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2 flex-shrink-0">
-                            {formatLastMessage(conversation.last_message_at)}
-                          </span>
-                        )}
+                        <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0 ml-2">
+                          {conversation.last_message_at && formatLastMessage(conversation.last_message_at)}
+                        </span>
                       </div>
                       
                       <div className="flex items-center justify-between">
@@ -380,7 +353,7 @@ export function StudentMessagesPage() {
                           {lastMessage || 'No messages yet'}
                         </p>
                         {unreadCount > 0 && (
-                          <span className="ml-2 bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0">
+                          <span className="bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center flex-shrink-0 ml-2">
                             {unreadCount}
                           </span>
                         )}
@@ -395,7 +368,9 @@ export function StudentMessagesPage() {
       </div>
 
       {/* Chat Area */}
-      <div className={`flex-1 flex flex-col ${!selectedConversation ? 'hidden md:flex' : ''}`}>
+      <div className={`flex-1 flex flex-col ${
+        !selectedConversation ? 'hidden md:flex' : ''
+      }`}>
         {!selectedConversation ? (
           <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
             <div className="text-center">
@@ -403,10 +378,10 @@ export function StudentMessagesPage() {
                 <MessageCircle className="h-12 w-12 text-purple-600 dark:text-purple-400" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Select a conversation
+                {t.studentMessagesPage.selectConversation} {/* ← ZMIENIONE */}
               </h3>
               <p className="text-gray-500 dark:text-gray-400">
-                Choose a conversation from the list to start messaging
+                {t.studentMessagesPage.selectConversationDescription} {/* ← ZMIENIONE */}
               </p>
             </div>
           </div>
@@ -437,106 +412,89 @@ export function StudentMessagesPage() {
                       {otherUser?.first_name} {otherUser?.last_name}
                     </h3>
                     <p className="text-xs text-green-600 dark:text-green-400">
-                      {isTyping ? 'typing...' : 'Online'}
+                      {isTyping ? t.studentMessagesPage.typing : t.studentMessagesPage.online} {/* ← ZMIENIONE */}
                     </p>
                   </div>
-                </div>
-
-                {/* Header Actions */}
-                <div className="flex items-center space-x-2">
-                  <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                    <Phone className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                  </button>
-                  <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                    <Video className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                  </button>
-                  <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                    <MoreVertical className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                  </button>
                 </div>
               </div>
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-              {messageGroups.map((group, groupIndex) => (
-                <div key={groupIndex} className="space-y-4">
-                  {/* Date Divider */}
-                  <div className="flex items-center justify-center my-4">
-                    <div className="bg-white dark:bg-gray-800 px-4 py-1.5 rounded-full shadow-sm border border-gray-200 dark:border-gray-700">
-                      <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                        {formatDate(group.messages[0].created_at)}
-                      </span>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900/50">
+              {messageGroups.map((group, groupIdx) => {
+                const groupDate = new Date(group.date);
+                const today = new Date();
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+
+                let dateLabel = groupDate.toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: groupDate.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+                });
+
+                if (groupDate.toDateString() === today.toDateString()) {
+                  dateLabel = t.studentMessagesPage.today; // ← ZMIENIONE
+                } else if (groupDate.toDateString() === yesterday.toDateString()) {
+                  dateLabel = t.studentMessagesPage.yesterday; // ← ZMIENIONE
+                }
+
+                return (
+                  <div key={groupIdx}>
+                    {/* Date Separator */}
+                    <div className="flex items-center justify-center my-4">
+                      <div className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs px-3 py-1 rounded-full">
+                        {dateLabel}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Messages */}
-                  {group.messages.map((message, index) => {
-                    const isOwn = message.sender_id === session.user?.id;
-                    const showAvatar = !isOwn && (
-                      index === group.messages.length - 1 ||
-                      group.messages[index + 1]?.sender_id !== message.sender_id
-                    );
-
-                    return (
-                      <div
-                        key={message.id}
-                        className={`flex items-end space-x-2 ${isOwn ? 'justify-end' : 'justify-start'}`}
-                      >
-                        {/* Avatar for received messages */}
-                        {!isOwn && (
-                          <div className="w-8 h-8 flex-shrink-0">
-                            {showAvatar && (
-                              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-xs font-semibold shadow-sm">
-                                {otherUser?.first_name?.[0] || '?'}
+                    {/* Messages */}
+                    {group.messages.map((message) => {
+                      const isOwn = message.sender_id === session?.user?.id;
+                      return (
+                        <div
+                          key={message.id}
+                          className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-3`}
+                        >
+                          <div className={`flex items-end space-x-2 max-w-[70%] ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                            {!isOwn && (
+                              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                                {message.sender?.first_name?.[0] || '?'}
                               </div>
                             )}
-                          </div>
-                        )}
-
-                        {/* Message Bubble */}
-                        <div className={`group relative max-w-xs lg:max-w-md ${isOwn ? 'order-1' : ''}`}>
-                          <div
-                            className={`px-4 py-2.5 rounded-2xl shadow-sm transition-all duration-200 ${
-                              isOwn
-                                ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-br-none'
-                                : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-bl-none'
-                            }`}
-                          >
-                            <p className="text-sm break-words">{message.content}</p>
-                          </div>
-
-                          {/* Timestamp and Status */}
-                          <div className={`flex items-center space-x-1 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {formatTime(message.created_at)}
-                            </span>
-                            {isOwn && (
-                              <CheckCheck className="h-3.5 w-3.5 text-blue-500" />
-                            )}
+                            
+                            <div>
+                              <div
+                                className={`px-4 py-2 rounded-2xl ${
+                                  isOwn
+                                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
+                                    : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
+                                }`}
+                              >
+                                <p className="text-sm whitespace-pre-wrap break-words">
+                                  {message.content}
+                                </p>
+                              </div>
+                              <div className={`flex items-center mt-1 space-x-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  {formatTime(message.created_at)}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
+                      );
+                    })}
+                  </div>
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
 
             {/* Message Input */}
             <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
               <form onSubmit={handleSendMessage} className="flex items-end space-x-2">
-                {/* Attachment Button */}
-                <button
-                  type="button"
-                  className="p-2.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  <Paperclip className="h-5 w-5" />
-                </button>
-
-                {/* Text Input */}
-                <div className="flex-1 relative">
+                <div className="flex-1">
                   <textarea
                     ref={inputRef}
                     value={newMessage}
@@ -547,27 +505,23 @@ export function StudentMessagesPage() {
                         handleSendMessage(e);
                       }
                     }}
-                    placeholder="Type a message..."
+                    placeholder={t.studentMessagesPage.typeMessage} {/* ← ZMIENIONE */}
+                    className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none min-h-[42px] max-h-[120px]"
                     rows={1}
-                    className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-2xl focus:ring-2 focus:ring-purple-500 resize-none max-h-32 transition-all"
+                    disabled={isSending}
                   />
-                  
-                  {/* Emoji Button */}
-                  <button
-                    type="button"
-                    className="absolute right-3 bottom-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-                  >
-                    <Smile className="h-5 w-5" />
-                  </button>
                 </div>
-
-                {/* Send Button */}
                 <button
                   type="submit"
                   disabled={!newMessage.trim() || isSending}
-                  className="p-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:scale-105 active:scale-95"
+                  className="p-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                  title={t.studentMessagesPage.sendMessage} {/* ← ZMIENIONE */}
                 >
-                  <Send className="h-5 w-5" />
+                  {isSending ? (
+                    <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                  ) : (
+                    <Send className="h-5 w-5" />
+                  )}
                 </button>
               </form>
             </div>
@@ -577,52 +531,69 @@ export function StudentMessagesPage() {
 
       {/* New Chat Modal */}
       {showNewChat && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                  New Conversation
-                </h3>
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div
+              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+              onClick={() => setShowNewChat(false)}
+            />
+
+            <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">
+                      {t.studentMessagesPage.startNewConversation} {/* ← ZMIENIONE */}
+                    </h3>
+                    
+                    {availableTutors.length === 0 ? (
+                      <div className="text-center py-8">
+                        <User className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-gray-600 dark:text-gray-400 mb-2">
+                          {t.studentMessagesPage.noTutorsAvailable} {/* ← ZMIENIONE */}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-500">
+                          {t.studentMessagesPage.noTutorsDescription} {/* ← ZMIENIONE */}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                          {t.studentMessagesPage.selectTutor} {/* ← ZMIENIONE */}
+                        </p>
+                        {availableTutors.map((tutor) => (
+                          <button
+                            key={tutor.id}
+                            onClick={() => startNewConversation(tutor.id)}
+                            className="w-full flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                          >
+                            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+                              {tutor.first_name?.[0] || '?'}
+                            </div>
+                            <div className="flex-1 text-left">
+                              <p className="font-medium text-gray-900 dark:text-white">
+                                {tutor.first_name} {tutor.last_name}
+                              </p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {tutor.email}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 dark:bg-gray-900 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                 <button
                   onClick={() => setShowNewChat(false)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  className="w-full sm:w-auto px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <ArrowLeft className="h-5 w-5" />
+                  {t.studentMessagesPage.cancel} {/* ← ZMIENIONE */}
                 </button>
               </div>
-            </div>
-
-            <div className="p-6 overflow-y-auto max-h-[calc(80vh-88px)]">
-              {availableTutors.length === 0 ? (
-                <p className="text-center text-gray-500 dark:text-gray-400">
-                  No tutors available
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {availableTutors.map(tutor => (
-                    <button
-                      key={tutor.id}
-                      onClick={() => startNewConversation(tutor.id)}
-                      className="w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-all duration-200 text-left"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-lg shadow-md">
-                          {tutor.first_name?.[0] || '?'}
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900 dark:text-white">
-                            {tutor.first_name} {tutor.last_name}
-                          </h4>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {tutor.email}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </div>
