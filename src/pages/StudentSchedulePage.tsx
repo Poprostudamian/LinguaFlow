@@ -334,19 +334,26 @@ export function StudentSchedulePage() {
           </div>
 
           {/* Days of Week */}
-          <div className="grid grid-cols-7 gap-2 mb-2">
-            {daysOfWeek.map((day) => (
-              <div key={day} className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 py-2">
+          <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-700">
+            {daysOfWeek.map((day, index) => (
+              <div 
+                key={day} 
+                className={`text-center text-xs font-medium text-gray-500 dark:text-gray-400 py-2 ${
+                  index < 6 ? 'border-r border-gray-200 dark:border-gray-700' : ''
+                }`}
+              >
                 {day}
               </div>
             ))}
           </div>
 
           {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7">
             {calendarDays.map((day, index) => {
               const dayMeetings = getMeetingsForDay(day);
               const hasMultipleMeetings = dayMeetings.length > 1;
+              const isLastColumn = (index + 1) % 7 === 0;
+              const isLastRow = index >= calendarDays.length - 7;
               
               return (
                 <button
@@ -354,29 +361,52 @@ export function StudentSchedulePage() {
                   onClick={() => handleDayClick(day)}
                   disabled={!day}
                   className={`
-                    relative aspect-square p-2 rounded-lg transition-all duration-200
-                    ${!day ? 'invisible' : ''}
-                    ${isToday(day) ? 'ring-2 ring-purple-500 dark:ring-purple-400' : ''}
-                    ${isSelected(day) ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-900 dark:text-purple-100' : ''}
-                    ${!isSelected(day) && day ? 'hover:bg-gray-100 dark:hover:bg-gray-700' : ''}
-                    ${!isToday(day) && !isSelected(day) ? 'text-gray-700 dark:text-gray-300' : ''}
+                    relative min-h-[80px] p-2 transition-all duration-200
+                    ${!isLastColumn ? 'border-r border-gray-200 dark:border-gray-700' : ''}
+                    ${!isLastRow ? 'border-b border-gray-200 dark:border-gray-700' : ''}
+                    ${!day ? 'bg-gray-50 dark:bg-gray-900/20 cursor-default' : ''}
+                    ${isToday(day) && day ? 'bg-purple-50 dark:bg-purple-900/20' : ''}
+                    ${isSelected(day) && day ? 'bg-purple-100 dark:bg-purple-900/40' : ''}
+                    ${!isSelected(day) && !isToday(day) && day ? 'hover:bg-gray-50 dark:hover:bg-gray-700/50' : ''}
                   `}
                 >
-                  <div className="flex flex-col items-center justify-center h-full">
-                    <span className="text-sm font-medium">{day}</span>
-                    {hasMeetings(day) && (
-                      <div className="flex items-center space-x-0.5 mt-1">
-                        <div className={`w-1.5 h-1.5 rounded-full ${
-                          isSelected(day) ? 'bg-purple-600' : 'bg-blue-500'
-                        }`} />
-                        {hasMultipleMeetings && (
-                          <div className={`w-1.5 h-1.5 rounded-full ${
-                            isSelected(day) ? 'bg-purple-600' : 'bg-blue-500'
-                          }`} />
+                  {day && (
+                    <div className="flex flex-col h-full">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`text-sm font-medium ${
+                          isToday(day) ? 'text-purple-600 dark:text-purple-400 font-bold' : 'text-gray-700 dark:text-gray-300'
+                        }`}>
+                          {day}
+                        </span>
+                        {isToday(day) && (
+                          <div className="w-6 h-6 bg-purple-600 dark:bg-purple-500 rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs font-bold">{day}</span>
+                          </div>
                         )}
                       </div>
-                    )}
-                  </div>
+                      
+                      {hasMeetings(day) && (
+                        <div className="flex flex-col items-start space-y-0.5 mt-1">
+                          {dayMeetings.slice(0, 2).map((meeting, idx) => (
+                            <div 
+                              key={idx}
+                              className="flex items-center space-x-1 text-xs"
+                            >
+                              <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                              <span className="text-blue-600 dark:text-blue-400 font-medium">
+                                {formatTime(meeting.scheduled_at)}
+                              </span>
+                            </div>
+                          ))}
+                          {dayMeetings.length > 2 && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              +{dayMeetings.length - 2} more
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </button>
               );
             })}
