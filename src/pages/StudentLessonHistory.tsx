@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 import { 
   ArrowLeft, 
   Calendar, 
@@ -48,6 +49,19 @@ interface LessonHistoryItem {
     is_correct: boolean;
     submitted_at: string | null;
   }[];
+}
+
+export function YourPage() {
+  const { t } = useLanguage();
+  
+  return (
+    <div>
+      {/* Zamień hardcoded teksty na t.section.key */}
+      <h1>{t.studentDashboard.title}</h1>
+      <p>{t.studentDashboard.welcome}</p>
+      <button>{t.common.save}</button>
+    </div>
+  );
 }
 
 export function StudentLessonHistory() {
