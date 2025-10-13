@@ -1,6 +1,7 @@
 // src/pages/TutorDashboard.tsx - WITH CALENDAR INSTEAD OF CREATE LESSON FORM
 
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Users, 
   BookOpen, 
@@ -29,6 +30,19 @@ interface ToastProps {
   message: string;
   type: 'success' | 'error';
   onClose: () => void;
+}
+
+export function YourPage() {
+  const { t } = useLanguage();
+  
+  return (
+    <div>
+      {/* Zamień hardcoded teksty na t.section.key */}
+      <h1>{t.studentDashboard.title}</h1>
+      <p>{t.studentDashboard.welcome}</p>
+      <button>{t.common.save}</button>
+    </div>
+  );
 }
 
 function Toast({ message, type, onClose }: ToastProps) {
