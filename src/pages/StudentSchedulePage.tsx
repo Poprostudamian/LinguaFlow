@@ -375,7 +375,7 @@ export function StudentSchedulePage() {
                       {/* Day number with optional today indicator */}
                       <div className="flex items-center justify-between">
                         {isToday(day) ? (
-                          <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                          <div className="text-sm font-medium flex items-center justify-center">
                             <span className="text-white text-sm font-bold">{day}</span>
                           </div>
                         ) : (
