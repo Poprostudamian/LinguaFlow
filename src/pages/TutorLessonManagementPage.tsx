@@ -1,6 +1,7 @@
 // src/pages/TutorLessonManagementPage.tsx - WITH VIEW/EDIT & VALIDATION
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Search, 
   PlusCircle,
