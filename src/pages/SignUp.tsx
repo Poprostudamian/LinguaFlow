@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Eye, EyeOff, User, Mail, Lock, UserCheck, CheckCircle } from 'lucide-react';
 import { signUp, SignUpData } from '../lib/supabase';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface FormData extends SignUpData {
   confirmPassword: string;
@@ -20,6 +21,7 @@ interface FormErrors {
 
 export function SignUp() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   
   const [formData, setFormData] = useState<FormData>({
     email: '',
