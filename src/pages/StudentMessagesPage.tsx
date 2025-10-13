@@ -515,7 +515,7 @@ export function StudentMessagesPage() {
                   type="submit"
                   disabled={!newMessage.trim() || isSending}
                   className="p-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                  title={t.studentMessagesPage.sendMessage} {/* ← ZMIENIONE */}
+                  title={t.studentMessagesPage.sendMessage}
                 >
                   {isSending ? (
                     <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
