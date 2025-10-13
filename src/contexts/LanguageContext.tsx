@@ -5,6 +5,7 @@ import { translations, Language, TranslationKeys } from '../locales/translations
 interface LanguageContextType {
   language: Language;
   toggleLanguage: () => void;
+  setLanguage: (lang: Language) => void;
   t: TranslationKeys;
 }
 
@@ -22,7 +23,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     // Zapisz do localStorage
     localStorage.setItem('language', language);
     
-    // Opcjonalnie: ustaw atrybut lang w HTML
+    // Ustaw atrybut lang w HTML
     document.documentElement.setAttribute('lang', language);
   }, [language]);
 
@@ -30,10 +31,19 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     setLanguage(prev => prev === 'en' ? 'pl' : 'en');
   };
 
+  const handleSetLanguage = (lang: Language) => {
+    setLanguage(lang);
+  };
+
   const t = translations[language];
 
   return (
-    <LanguageContext.Provider value={{ language, toggleLanguage, t }}>
+    <LanguageContext.Provider value={{ 
+      language, 
+      toggleLanguage, 
+      setLanguage: handleSetLanguage,
+      t 
+    }}>
       {children}
     </LanguageContext.Provider>
   );
