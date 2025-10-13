@@ -1,8 +1,7 @@
-// src/pages/StudentLessonsPage.tsx - MODERN LESSONS LIBRARY
+// src/pages/StudentLessonsPage.tsx - Z PEŁNYMI TŁUMACZENIAMI
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Search, 
   BookOpen, 
@@ -24,6 +23,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext'; // ← DODANE
 import { getStudentLessons } from '../lib/supabase';
 
 interface StudentLessonData {
@@ -55,22 +55,10 @@ type ViewMode = 'grid' | 'list';
 type TabFilter = 'all' | 'assigned' | 'in_progress' | 'completed';
 type SortOption = 'recent' | 'progress' | 'score' | 'alphabetical';
 
-export function YourPage() {
-  const { t } = useLanguage();
-  
-  return (
-    <div>
-      {/* Zamień hardcoded teksty na t.section.key */}
-      <h1>{t.studentDashboard.title}</h1>
-      <p>{t.studentDashboard.welcome}</p>
-      <button>{t.common.save}</button>
-    </div>
-  );
-}
-
 export function StudentLessonsPage() {
   const navigate = useNavigate();
   const { session } = useAuth();
+  const { t } = useLanguage(); // ← DODANE
   
   // State
   const [lessons, setLessons] = useState<StudentLessonData[]>([]);
@@ -165,30 +153,31 @@ export function StudentLessonsPage() {
     });
   };
 
+  // Helper function to get status config - ZAMIENIONE NA TŁUMACZENIA
   const getStatusConfig = (status: string) => {
     switch (status) {
       case 'assigned':
         return {
-          label: 'Not Started',
+          label: t.lessons.notStarted,
           color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
           icon: BookOpen,
-          action: 'Start Lesson',
+          action: t.lessons.startLesson,
           actionColor: 'from-blue-600 to-blue-700'
         };
       case 'in_progress':
         return {
-          label: 'In Progress',
+          label: t.lessons.inProgress,
           color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
           icon: Zap,
-          action: 'Continue',
+          action: t.lessons.continueLesson,
           actionColor: 'from-purple-600 to-purple-700'
         };
       case 'completed':
         return {
-          label: 'Completed',
+          label: t.lessons.completed,
           color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
           icon: CheckCircle,
-          action: 'Review',
+          action: t.lessons.reviewLesson,
           actionColor: 'from-green-600 to-green-700'
         };
       default:
@@ -196,7 +185,7 @@ export function StudentLessonsPage() {
           label: 'Unknown',
           color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
           icon: AlertCircle,
-          action: 'View',
+          action: t.lessons.viewLesson,
           actionColor: 'from-gray-600 to-gray-700'
         };
     }
@@ -266,7 +255,7 @@ export function StudentLessonsPage() {
               <div className="flex items-center space-x-1 text-sm">
                 <Target className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {lesson.progress}% complete
+                  {lesson.progress}% {t.lessonViewer.complete}
                 </span>
               </div>
             </div>
@@ -361,7 +350,7 @@ export function StudentLessonsPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <RefreshCw className="h-12 w-12 animate-spin text-purple-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Loading your lessons...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t.common.loading}</p>
         </div>
       </div>
     );
@@ -373,10 +362,10 @@ export function StudentLessonsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            My Lessons
+            {t.lessons.myLessons}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Track your learning journey and progress
+            {t.studentDashboard.progress}
           </p>
         </div>
 
@@ -385,7 +374,7 @@ export function StudentLessonsPage() {
           className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
         >
           <RefreshCw className="h-4 w-4" />
-          <span>Refresh</span>
+          <span>{t.common.loading}</span>
         </button>
       </div>
 
@@ -394,140 +383,114 @@ export function StudentLessonsPage() {
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
           <div className="flex items-center space-x-2">
             <AlertCircle className="h-5 w-5 text-red-600" />
-            <div>
-              <h3 className="text-red-800 dark:text-red-200 font-medium">Error loading lessons</h3>
-              <p className="text-red-600 dark:text-red-300 text-sm">{error}</p>
-            </div>
+            <p className="text-red-600 dark:text-red-300">{error}</p>
           </div>
         </div>
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border border-purple-200 dark:border-purple-800 rounded-xl p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-1">
-                Total Lessons
-              </p>
-              <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">
-                {stats.total}
-              </p>
-            </div>
-            <div className="bg-purple-200 dark:bg-purple-900/40 p-3 rounded-lg">
-              <BookOpen className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-            </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <span className="text-sm font-medium text-blue-900 dark:text-blue-300">{t.lessons.assignedLessons}</span>
           </div>
+          <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.assigned}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-800 rounded-xl p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-green-600 dark:text-green-400 mb-1">
-                Completed
-              </p>
-              <p className="text-3xl font-bold text-green-900 dark:text-green-100">
-                {stats.completed}
-              </p>
-            </div>
-            <div className="bg-green-200 dark:bg-green-900/40 p-3 rounded-lg">
-              <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-            </div>
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <Zap className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            <span className="text-sm font-medium text-purple-900 dark:text-purple-300">{t.lessons.inProgress}</span>
           </div>
+          <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{stats.inProgress}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">
-                Avg Progress
-              </p>
-              <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">
-                {stats.averageProgress}%
-              </p>
-            </div>
-            <div className="bg-blue-200 dark:bg-blue-900/40 p-3 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            </div>
+        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+            <span className="text-sm font-medium text-green-900 dark:text-green-300">{t.lessons.completed}</span>
           </div>
+          <p className="text-2xl font-bold text-green-900 dark:text-green-100">{stats.completed}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400 mb-1">
-                Avg Score
-              </p>
-              <p className="text-3xl font-bold text-yellow-900 dark:text-yellow-100">
-                {stats.averageScore !== null ? `${stats.averageScore}%` : 'N/A'}
-              </p>
-            </div>
-            <div className="bg-yellow-200 dark:bg-yellow-900/40 p-3 rounded-lg">
-              <Award className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-            </div>
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <TrendingUp className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            <span className="text-sm font-medium text-orange-900 dark:text-orange-300">{t.studentDashboard.averageScore}</span>
           </div>
+          <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
+            {stats.averageScore !== null ? `${stats.averageScore}%` : 'N/A'}
+          </p>
         </div>
       </div>
 
-      {/* Filters & Controls */}
+      {/* Filters and Controls */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 gap-4">
-          {/* Tab Filters */}
-          <div className="flex items-center space-x-2 overflow-x-auto">
-            {[
-              { key: 'all', label: 'All', count: stats.total },
-              { key: 'assigned', label: 'Not Started', count: stats.assigned },
-              { key: 'in_progress', label: 'In Progress', count: stats.inProgress },
-              { key: 'completed', label: 'Completed', count: stats.completed }
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setTabFilter(tab.key as TabFilter)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                  tabFilter === tab.key
-                    ? 'bg-purple-600 text-white shadow-md'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
-              >
-                {tab.label} ({tab.count})
-              </button>
-            ))}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
+          {/* Search */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={t.students.searchStudents}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            />
           </div>
 
-          {/* Search, Sort, View Toggle */}
+          {/* Filters */}
           <div className="flex items-center space-x-2">
-            {/* Search */}
-            <div className="relative flex-1 lg:w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search lessons..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-lg focus:ring-2 focus:ring-purple-500 transition-all"
-              />
-            </div>
-
-            {/* Sort */}
-            <div className="relative">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="pl-3 pr-8 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-lg focus:ring-2 focus:ring-purple-500 appearance-none cursor-pointer"
+            {/* Tab Filters */}
+            <div className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+              <button
+                onClick={() => setTabFilter('all')}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  tabFilter === 'all'
+                    ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
               >
-                <option value="recent">Recent</option>
-                <option value="progress">Progress</option>
-                <option value="score">Score</option>
-                <option value="alphabetical">A-Z</option>
-              </select>
-              <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                {t.students.allLevels}
+              </button>
+              <button
+                onClick={() => setTabFilter('assigned')}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  tabFilter === 'assigned'
+                    ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                {t.lessons.notStarted}
+              </button>
+              <button
+                onClick={() => setTabFilter('in_progress')}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  tabFilter === 'in_progress'
+                    ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                {t.lessons.inProgress}
+              </button>
+              <button
+                onClick={() => setTabFilter('completed')}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  tabFilter === 'completed'
+                    ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                {t.lessons.completed}
+              </button>
             </div>
 
-            {/* View Toggle */}
+            {/* View Mode Toggle */}
             <div className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded transition-colors ${
+                className={`p-2 rounded-md transition-colors ${
                   viewMode === 'grid'
                     ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
                     : 'text-gray-600 dark:text-gray-400'
@@ -537,7 +500,7 @@ export function StudentLessonsPage() {
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 rounded transition-colors ${
+                className={`p-2 rounded-md transition-colors ${
                   viewMode === 'list'
                     ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
                     : 'text-gray-600 dark:text-gray-400'
@@ -572,12 +535,12 @@ export function StudentLessonsPage() {
               <BookOpen className="h-8 w-8 text-gray-400" />
             </div>
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              {searchTerm || tabFilter !== 'all' ? 'No lessons found' : 'No lessons yet'}
+              {searchTerm || tabFilter !== 'all' ? t.lessons.noLessons : t.studentDashboard.noLessons}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               {searchTerm || tabFilter !== 'all'
-                ? 'Try adjusting your filters or search query'
-                : 'Your tutor will assign lessons to you soon. Stay tuned!'}
+                ? t.common.filter
+                : t.lessons.noLessons}
             </p>
             {(searchTerm || tabFilter !== 'all') && (
               <button
@@ -587,7 +550,7 @@ export function StudentLessonsPage() {
                 }}
                 className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-200 hover:shadow-lg"
               >
-                Clear Filters
+                {t.common.filter}
               </button>
             )}
           </div>
