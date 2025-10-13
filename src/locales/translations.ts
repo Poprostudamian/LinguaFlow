@@ -266,6 +266,7 @@ export const translations = {
       messages: 'Messages',
       settings: 'Settings',
       profile: 'Profile',
+      tutor: 'Tutor',
     },
     
     // Settings
