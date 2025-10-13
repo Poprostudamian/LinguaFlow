@@ -295,7 +295,7 @@ export function StudentSchedulePage() {
         {/* Calendar */}
         <div className="lg:col-span-2 bg-[#1a2332] border border-gray-700 rounded-xl overflow-hidden">
           {/* Calendar Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-700">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-bold text-white">
               {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </h2>
