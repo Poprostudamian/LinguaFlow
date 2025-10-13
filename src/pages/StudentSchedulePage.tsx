@@ -1,6 +1,7 @@
 // src/pages/StudentSchedulePage.tsx - SIMPLE CALENDAR VERSION
 
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Calendar, 
   Clock, 
