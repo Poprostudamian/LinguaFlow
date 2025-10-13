@@ -285,6 +285,59 @@ export const translations = {
       saveChanges: 'Save Changes',
       changesSaved: 'Changes saved successfully',
     },
+
+    studentLessonViewer: {
+      // Loading & Errors
+      loading: 'Loading lesson...',
+      error: 'Error',
+      lessonNotFound: 'Lesson not found',
+      backToLessons: 'Back to Lessons',
+      
+      // Header
+      byTutor: 'by',
+      exercises: 'exercises',
+      
+      // Status labels
+      statusNotStarted: 'Not Started',
+      statusInProgress: 'In Progress',
+      statusCompleted: 'Completed',
+      
+      // Start Lesson Card
+      readyToStart: 'Ready to start this lesson?',
+      beginJourney: 'Begin your learning journey now',
+      startLesson: 'Start Lesson',
+      starting: 'Starting...',
+      
+      // Progress Stats
+      yourProgress: 'Your Progress',
+      timeSpent: 'Time Spent',
+      minutes: 'min',
+      startedOn: 'Started on',
+      
+      // Lesson Content
+      lessonContent: 'Lesson Content',
+      
+      // Interactive Exercises
+      exercises: 'Interactive Exercises',
+      exercisesDescription: 'Complete all exercises to finish the lesson',
+      noExercises: 'No exercises available',
+      noExercisesDescription: 'This lesson doesn\'t have any exercises yet',
+      
+      // Completion
+      completing: 'Completing lesson...',
+      
+      // Completed Lesson
+      lessonCompleted: 'Lesson Completed!',
+      completedMessage: 'You\'ve already completed this lesson with a score of',
+      viewDetailsHistory: 'View your detailed results and answers in the lesson history',
+      viewHistory: 'View History & Results',
+      viewLessonHistory: 'View Lesson History',
+      
+      // Errors
+      errorLoadingLesson: 'Failed to load lesson details. Please try again.',
+      errorStartingLesson: 'Failed to start lesson. Please try again.',
+      errorCompletingLesson: 'Failed to complete lesson. Please try again.',
+    },
   },
   
   pl: {
