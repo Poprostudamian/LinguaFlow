@@ -1,6 +1,7 @@
 // src/pages/StudentMessagesPage.tsx - MODERN MESSAGING UI
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Send, 
   Search, 
