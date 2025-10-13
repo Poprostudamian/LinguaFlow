@@ -1,6 +1,7 @@
+// src/pages/SignUp.tsx - PROSTSZA WERSJA z redirect
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Eye, EyeOff, User, Mail, Lock, UserCheck } from 'lucide-react';
+import { BookOpen, Eye, EyeOff, User, Mail, Lock, UserCheck, CheckCircle } from 'lucide-react';
 import { signUp, SignUpData } from '../lib/supabase';
 
 interface FormData extends SignUpData {
@@ -19,6 +20,7 @@ interface FormErrors {
 
 export function SignUp() {
   const navigate = useNavigate();
+  
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
@@ -33,9 +35,11 @@ export function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Form validation
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
+    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email) {
       newErrors.email = 'Email is required';
@@ -43,32 +47,35 @@ export function SignUp() {
       newErrors.email = 'Please enter a valid email address';
     }
 
+    // Password validation
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters long';
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
     }
 
+    // Confirm password validation
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
+    // First name validation
     if (!formData.first_name.trim()) {
       newErrors.firstName = 'First name is required';
     } else if (formData.first_name.trim().length < 2) {
       newErrors.firstName = 'First name must be at least 2 characters long';
     }
 
+    // Last name validation
     if (!formData.last_name.trim()) {
       newErrors.lastName = 'Last name is required';
     } else if (formData.last_name.trim().length < 2) {
       newErrors.lastName = 'Last name must be at least 2 characters long';
     }
 
+    // Role validation
     if (!formData.role || !['student', 'tutor'].includes(formData.role)) {
       newErrors.role = 'Please select a valid role';
     }
@@ -77,6 +84,7 @@ export function SignUp() {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -84,6 +92,7 @@ export function SignUp() {
       [name]: value
     }));
     
+    // Clear specific error when user starts typing
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({
         ...prev,
@@ -92,6 +101,7 @@ export function SignUp() {
     }
   };
 
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -104,6 +114,9 @@ export function SignUp() {
     setIsLoading(true);
 
     try {
+      console.log('🔄 Starting signup for:', formData.email);
+      
+      // Prepare data for Supabase (exclude confirmPassword)
       const signUpData: SignUpData = {
         email: formData.email.trim(),
         password: formData.password,
@@ -114,15 +127,18 @@ export function SignUp() {
 
       await signUp(signUpData);
 
-      setSuccessMessage('Account created successfully! Please check your email to verify your account.');
+      console.log('✅ Signup successful!');
+      setSuccessMessage('Account created successfully! Redirecting to login...');
       
+      // ✅ Przekieruj do login po 2 sekundach
       setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+        navigate('/login', { replace: true });
+      }, 2000);
 
     } catch (error: any) {
-      console.error('Sign up error:', error);
+      console.error('❌ Sign up error:', error);
       
+      // Handle specific Supabase errors
       if (error.message?.includes('User already registered')) {
         setErrors({ email: 'An account with this email already exists' });
       } else if (error.message?.includes('Password should be at least 6 characters')) {
@@ -132,117 +148,121 @@ export function SignUp() {
       } else {
         setErrors({ general: error.message || 'An error occurred during sign up. Please try again.' });
       }
-    } finally {
+      
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-purple-900/20 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo with back link */}
-        <Link to="/" className="flex items-center justify-center space-x-2 mb-8 group">
-          <BookOpen className="h-10 w-10 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform" />
-          <span className="text-3xl font-bold text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-            LinguaFlow
-          </span>
-        </Link>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Create Account
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Start your learning journey today
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 mb-4">
+            <BookOpen className="h-8 w-8 text-white" />
           </div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            LinguaFlow
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Create your account to start learning
+          </p>
+        </div>
 
+        {/* Sign Up Form */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
           {/* Success Message */}
           {successMessage && (
-            <div className="mb-6 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+            <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-start space-x-3">
+              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-green-600 dark:text-green-400">{successMessage}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Role Selection */}
             <div>
               <label htmlFor="role" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 I am a
               </label>
-              <div className="relative">
-                <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <select
-                  id="role"
-                  name="role"
-                  value={formData.role}
-                  onChange={handleInputChange}
-                  className={`w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                    errors.role ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleInputChange({ target: { name: 'role', value: 'student' } } as any)}
+                  className={`flex items-center justify-center space-x-2 py-2.5 px-4 rounded-md border-2 transition-all ${
+                    formData.role === 'student'
+                      ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                      : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-purple-400'
                   }`}
                 >
-                  <option value="student">Student</option>
-                  <option value="tutor">Tutor</option>
-                </select>
+                  <User className="h-4 w-4" />
+                  <span className="font-medium">Student</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInputChange({ target: { name: 'role', value: 'tutor' } } as any)}
+                  className={`flex items-center justify-center space-x-2 py-2.5 px-4 rounded-md border-2 transition-all ${
+                    formData.role === 'tutor'
+                      ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                      : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-purple-400'
+                  }`}
+                >
+                  <UserCheck className="h-4 w-4" />
+                  <span className="font-medium">Tutor</span>
+                </button>
               </div>
               {errors.role && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.role}</p>
               )}
             </div>
 
-            {/* First Name */}
-            <div>
-              <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                First Name
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            {/* Name Fields */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  First Name
+                </label>
                 <input
                   id="first_name"
                   name="first_name"
                   type="text"
                   value={formData.first_name}
                   onChange={handleInputChange}
-                  className={`w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white ${
                     errors.firstName ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
                   }`}
-                  placeholder="Enter your first name"
+                  placeholder="John"
                 />
+                {errors.firstName && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.firstName}</p>
+                )}
               </div>
-              {errors.firstName && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.firstName}</p>
-              )}
-            </div>
 
-            {/* Last Name */}
-            <div>
-              <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Last Name
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <div>
+                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Last Name
+                </label>
                 <input
                   id="last_name"
                   name="last_name"
                   type="text"
                   value={formData.last_name}
                   onChange={handleInputChange}
-                  className={`w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white ${
                     errors.lastName ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
                   }`}
-                  placeholder="Enter your last name"
+                  placeholder="Doe"
                 />
+                {errors.lastName && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.lastName}</p>
+                )}
               </div>
-              {errors.lastName && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.lastName}</p>
-              )}
             </div>
 
-            {/* Email */}
+            {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email
+                Email Address
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -255,7 +275,7 @@ export function SignUp() {
                   className={`w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white ${
                     errors.email ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
                   }`}
-                  placeholder="Enter your email"
+                  placeholder="you@example.com"
                 />
               </div>
               {errors.email && (
@@ -263,7 +283,7 @@ export function SignUp() {
               )}
             </div>
 
-            {/* Password */}
+            {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Password
@@ -285,11 +305,12 @@ export function SignUp() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  tabIndex={-1}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
+                    <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
                   ) : (
-                    <Eye className="h-4 w-4 text-gray-400" />
+                    <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
                   )}
                 </button>
               </div>
@@ -298,7 +319,7 @@ export function SignUp() {
               )}
             </div>
 
-            {/* Confirm Password */}
+            {/* Confirm Password Field */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Confirm Password
@@ -320,11 +341,12 @@ export function SignUp() {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  tabIndex={-1}
                 >
                   {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
+                    <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
                   ) : (
-                    <Eye className="h-4 w-4 text-gray-400" />
+                    <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
                   )}
                 </button>
               </div>
@@ -343,10 +365,20 @@ export function SignUp() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-2 px-4 rounded-md font-medium transition-all duration-200 hover:transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              disabled={isLoading || !!successMessage}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-2.5 px-4 rounded-md font-medium transition-all duration-200 hover:transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center"
             >
-              {isLoading ? 'Creating Account...' : 'Create Account'}
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creating Account...
+                </>
+              ) : (
+                'Create Account'
+              )}
             </button>
           </form>
 
