@@ -34,6 +34,19 @@ import {
   AuthUser
 } from '../lib/supabase';
 
+export function YourPage() {
+  const { t } = useLanguage();
+  
+  return (
+    <div>
+      {/* Zamień hardcoded teksty na t.section.key */}
+      <h1>{t.studentDashboard.title}</h1>
+      <p>{t.studentDashboard.welcome}</p>
+      <button>{t.common.save}</button>
+    </div>
+  );
+}
+
 export function StudentMessagesPage() {
   const { session } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
