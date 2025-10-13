@@ -861,6 +861,66 @@ export const translations = {
       days: 'dni',
       weeks: 'tyg',
     },
+
+    // Student Schedule Page
+    studentSchedulePage: {
+      // Page Title & Header
+      title: 'Harmonogram',
+      description: 'Zobacz nadchodzące lekcje i spotkania',
+      refresh: 'Odśwież',
+      
+      // Loading
+      loading: 'Ładowanie harmonogramu...',
+      
+      // Error
+      errorLoading: 'Błąd wczytywania harmonogramu',
+      
+      // Quick Stats
+      todaysMeetings: 'Dzisiejsze spotkania',
+      upcomingMeetings: 'Nadchodzące spotkania',
+      scheduled: 'zaplanowanych',
+      
+      // Calendar Navigation
+      today: 'Dzisiaj',
+      previousMonth: 'Poprzedni miesiąc',
+      nextMonth: 'Następny miesiąc',
+      
+      // Days of Week
+      sunday: 'Nd',
+      monday: 'Pn',
+      tuesday: 'Wt',
+      wednesday: 'Śr',
+      thursday: 'Czw',
+      friday: 'Pt',
+      saturday: 'Sob',
+      
+      // Selected Day Panel
+      selectedDay: 'Wybrany dzień',
+      meetingsOnDay: 'spotkanie tego dnia',
+      meetingsOnDayPlural: 'spotkań tego dnia',
+      noMeetingsOnDay: 'Brak spotkań tego dnia',
+      
+      // Meeting Status
+      statusScheduled: 'Zaplanowane',
+      statusInProgress: 'W trakcie',
+      statusCompleted: 'Ukończone',
+      statusCancelled: 'Anulowane',
+      statusUnknown: 'Nieznany',
+      
+      // Meeting Details
+      duration: 'min',
+      participant: 'uczestnik',
+      participants: 'uczestników',
+      joinMeeting: 'Dołącz do spotkania',
+      
+      // Upcoming Section
+      upcomingMeetingsTitle: 'Nadchodzące spotkania',
+      noUpcomingMeetings: 'Brak nadchodzących spotkań',
+      noUpcomingDescription: 'Nie masz obecnie zaplanowanych spotkań',
+      
+      // Time Formatting
+      at: 'o',
+    },
   },
 } as const;
 
