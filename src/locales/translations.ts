@@ -338,6 +338,67 @@ export const translations = {
       errorStartingLesson: 'Failed to start lesson. Please try again.',
       errorCompletingLesson: 'Failed to complete lesson. Please try again.',
     },
+
+    // Student Messages Page
+    studentMessagesPage: {
+      // Page Title
+      title: 'Messages',
+      
+      // Loading
+      loading: 'Loading messages...',
+      
+      // Search
+      searchPlaceholder: 'Search conversations...',
+      
+      // Conversations List
+      conversations: 'Conversations',
+      noConversations: 'No conversations yet',
+      noConversationsDescription: 'Start chatting with your tutor',
+      startConversation: 'Start Conversation',
+      newChat: 'New Chat',
+      
+      // Empty Selection
+      selectConversation: 'Select a conversation',
+      selectConversationDescription: 'Choose a conversation from the list to start messaging',
+      
+      // Chat Header
+      online: 'Online',
+      typing: 'typing...',
+      
+      // Messages
+      today: 'Today',
+      yesterday: 'Yesterday',
+      justNow: 'Just now',
+      you: 'You',
+      
+      // Message Input
+      typeMessage: 'Type a message...',
+      sendMessage: 'Send message',
+      sending: 'Sending...',
+      
+      // New Chat Modal
+      startNewConversation: 'Start New Conversation',
+      selectTutor: 'Select a tutor to start chatting',
+      noTutorsAvailable: 'No tutors available',
+      noTutorsDescription: 'You need to be assigned to a tutor first',
+      cancel: 'Cancel',
+      start: 'Start',
+      
+      // Errors
+      errorLoading: 'Failed to load conversations',
+      errorSending: 'Failed to send message',
+      tryAgain: 'Please try again',
+      
+      // Unread
+      unread: 'unread',
+      newMessage: 'New message',
+      
+      // Time formatting
+      minutes: 'min',
+      hours: 'h',
+      days: 'd',
+      weeks: 'w',
+    },
   },
   
   pl: {
