@@ -1,6 +1,9 @@
 // src/locales/translations.ts
 export const translations = {
   en: {
+    yourSection: {
+      missingKey: 'Your English text' // ← DODAJ
+    },
     // Common
     common: {
       welcome: 'Welcome',
