@@ -1,10 +1,9 @@
-// src/pages/TutorStudentsPage.tsx - MODERN REDESIGN
+// src/pages/TutorStudentsPage.tsx - TRANSLATED VERSION
 
 import React, { useState, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Search, 
-  Filter, 
   Users, 
   BookOpen, 
   Clock, 
@@ -51,19 +50,6 @@ interface ToastProps {
   onClose: () => void;
 }
 
-export function YourPage() {
-  const { t } = useLanguage();
-  
-  return (
-    <div>
-      {/* Zamień hardcoded teksty na t.section.key */}
-      <h1>{t.studentDashboard.title}</h1>
-      <p>{t.studentDashboard.welcome}</p>
-      <button>{t.common.save}</button>
-    </div>
-  );
-}
-
 function Toast({ message, type, onClose }: ToastProps) {
   React.useEffect(() => {
     const timer = setTimeout(onClose, 3000);
@@ -107,81 +93,113 @@ interface KPICardProps {
 }
 
 function KPICard({ title, value, icon: Icon, color, subtitle }: KPICardProps) {
-  const colors = {
-    purple: 'from-purple-600 to-purple-700',
-    blue: 'from-blue-600 to-blue-700',
-    green: 'from-green-600 to-green-700',
-    orange: 'from-orange-600 to-orange-700'
+  const colorClasses = {
+    purple: 'from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-800',
+    blue: 'from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800',
+    green: 'from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800',
+    orange: 'from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200 dark:border-orange-800'
+  };
+
+  const iconColorClasses = {
+    purple: 'text-purple-600 dark:text-purple-400 bg-purple-200 dark:bg-purple-900/40',
+    blue: 'text-blue-600 dark:text-blue-400 bg-blue-200 dark:bg-blue-900/40',
+    green: 'text-green-600 dark:text-green-400 bg-green-200 dark:bg-green-900/40',
+    orange: 'text-orange-600 dark:text-orange-400 bg-orange-200 dark:bg-orange-900/40'
+  };
+
+  const textColorClasses = {
+    purple: 'text-purple-600 dark:text-purple-400',
+    blue: 'text-blue-600 dark:text-blue-400',
+    green: 'text-green-600 dark:text-green-400',
+    orange: 'text-orange-600 dark:text-orange-400'
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200">
-      <div className="flex items-center justify-between mb-4">
-        <div className={`bg-gradient-to-r ${colors[color]} p-3 rounded-lg`}>
-          <Icon className="h-6 w-6 text-white" />
+    <div className={`bg-gradient-to-br ${colorClasses[color]} border rounded-xl p-5`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className={`text-sm font-medium ${textColorClasses[color]} mb-1`}>
+            {title}
+          </p>
+          <p className={`text-3xl font-bold ${color === 'purple' ? 'text-purple-900 dark:text-purple-100' : color === 'blue' ? 'text-blue-900 dark:text-blue-100' : color === 'green' ? 'text-green-900 dark:text-green-100' : 'text-orange-900 dark:text-orange-100'}`}>
+            {value}
+          </p>
+          {subtitle && (
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{subtitle}</p>
+          )}
+        </div>
+        <div className={`${iconColorClasses[color]} p-3 rounded-lg`}>
+          <Icon className="h-8 w-8" />
         </div>
       </div>
-      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{title}</h3>
-      <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
-      {subtitle && (
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{subtitle}</p>
-      )}
     </div>
   );
 }
 
 // ============================================================================
-// ENHANCED STUDENT CARD
+// STUDENT CARD COMPONENT
 // ============================================================================
 interface EnhancedStudentCardProps {
   student: StudentCardData;
-  onSendMessage?: (studentId: string) => void;
+  onSendMessage?: (id: string) => void;
 }
 
 function EnhancedStudentCard({ student, onSendMessage }: EnhancedStudentCardProps) {
-  const getStatusColor = (status: string) => {
-    return status === 'active' 
-      ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
-      : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
+  const { t } = useLanguage();
+  
+  const getProgressColor = (progress: number) => {
+    if (progress >= 80) return 'from-green-500 to-emerald-600';
+    if (progress >= 50) return 'from-blue-500 to-cyan-600';
+    if (progress >= 30) return 'from-yellow-500 to-orange-600';
+    return 'from-red-500 to-pink-600';
   };
 
-  const getProgressColor = (progress: number) => {
-    if (progress >= 75) return 'from-green-600 to-green-700';
-    if (progress >= 50) return 'from-blue-600 to-blue-700';
-    if (progress >= 25) return 'from-yellow-600 to-yellow-700';
-    return 'from-red-600 to-red-700';
+  const getStatusColor = (status: string) => {
+    return status === 'active'
+      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+      : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
+  };
+
+  // Translate level
+  const translateLevel = (level: string) => {
+    const levelMap: { [key: string]: string } = {
+      'Beginner': t.tutorStudentsPage.beginner,
+      'Intermediate': t.tutorStudentsPage.intermediate,
+      'Advanced': t.tutorStudentsPage.advanced
+    };
+    return levelMap[level] || level;
   };
 
   return (
-    <div className="group bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-200">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-300 hover:scale-105">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
-            {student.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+            {student.name.charAt(0).toUpperCase()}
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+            <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
               {student.name}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">{student.email}</p>
           </div>
         </div>
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(student.status)}`}>
-          {student.status}
+          {student.status === 'active' ? t.tutorStudentsPage.active : t.tutorStudentsPage.inactive}
         </span>
       </div>
 
       {/* Level Badge */}
       <div className="inline-flex items-center px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300 rounded-full text-sm font-medium mb-4">
         <Award className="h-4 w-4 mr-1" />
-        {student.level}
+        {translateLevel(student.level)}
       </div>
 
       {/* Progress Bar */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Overall Progress</span>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t.tutorStudentsPage.progress}</span>
           <span className="text-sm font-bold text-gray-900 dark:text-white">{student.progress}%</span>
         </div>
         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
@@ -197,14 +215,14 @@ function EnhancedStudentCard({ student, onSendMessage }: EnhancedStudentCardProp
         <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
           <BookOpen className="h-5 w-5 text-blue-500" />
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Lessons</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t.tutorStudentsPage.lessons}</p>
             <p className="text-lg font-bold text-gray-900 dark:text-white">{student.lessonsCompleted}</p>
           </div>
         </div>
         <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
           <Clock className="h-5 w-5 text-green-500" />
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Hours</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t.tutorStudentsPage.hours}</p>
             <p className="text-lg font-bold text-gray-900 dark:text-white">{student.totalHours}h</p>
           </div>
         </div>
@@ -214,88 +232,18 @@ function EnhancedStudentCard({ student, onSendMessage }: EnhancedStudentCardProp
       {student.joinedDate && (
         <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400 mb-4">
           <Calendar className="h-3 w-3" />
-          <span>Joined {new Date(student.joinedDate).toLocaleDateString()}</span>
+          <span>{t.tutorStudentsPage.joined} {new Date(student.joinedDate).toLocaleDateString()}</span>
         </div>
       )}
 
       {/* Actions */}
       <button
         onClick={() => onSendMessage?.(student.id)}
-        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 hover:shadow-md hover:scale-105"
+        className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
       >
         <Mail className="h-4 w-4" />
-        <span>Send Message</span>
+        <span>{t.tutorStudentsPage.sendMessage}</span>
       </button>
-    </div>
-  );
-}
-
-// ============================================================================
-// INVITATION CARD
-// ============================================================================
-interface InvitationCardProps {
-  invitation: {
-    id: string;
-    student_email: string;
-    status: string;
-    invited_at: string;
-    expires_at: string | null;
-  };
-}
-
-function InvitationCard({ invitation }: InvitationCardProps) {
-  const getStatusConfig = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return {
-          color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
-          icon: Clock,
-          label: 'Pending'
-        };
-      case 'accepted':
-        return {
-          color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
-          icon: CheckCircle,
-          label: 'Accepted'
-        };
-      case 'declined':
-        return {
-          color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
-          icon: XCircle,
-          label: 'Declined'
-        };
-      default:
-        return {
-          color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400',
-          icon: AlertCircle,
-          label: 'Expired'
-        };
-    }
-  };
-
-  const config = getStatusConfig(invitation.status);
-  const StatusIcon = config.icon;
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center space-x-2 mb-2">
-            <Mail className="h-4 w-4 text-gray-400" />
-            <p className="font-medium text-gray-900 dark:text-white">{invitation.student_email}</p>
-          </div>
-          <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-            <span>Invited {new Date(invitation.invited_at).toLocaleDateString()}</span>
-            {invitation.expires_at && (
-              <span>Expires {new Date(invitation.expires_at).toLocaleDateString()}</span>
-            )}
-          </div>
-        </div>
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${config.color}`}>
-          <StatusIcon className="h-3 w-3 mr-1" />
-          {config.label}
-        </span>
-      </div>
     </div>
   );
 }
@@ -304,29 +252,16 @@ function InvitationCard({ invitation }: InvitationCardProps) {
 // MAIN COMPONENT
 // ============================================================================
 export function TutorStudentsPage() {
+  const { t } = useLanguage();
   const { session } = useAuth();
-  const {
-    students,
-    invitations,
-    isLoading,
-    error,
-    totalStudents,
-    activeStudents,
-    pendingInvitations,
-    refreshAll,
-  } = useTutorStudents();
-
+  const { students, invitations, refreshAll, isLoading, error } = useTutorStudents();
+  
   // State
-  const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<TabType>('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteForm, setInviteForm] = useState({ studentEmail: '', message: '' });
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
-  // Invite form state
-  const [inviteForm, setInviteForm] = useState<InviteStudentData>({
-    studentEmail: '',
-    message: ''
-  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Convert students
@@ -368,7 +303,7 @@ export function TutorStudentsPage() {
   // Handle invite submission
   const handleInviteSubmit = async () => {
     if (!session?.user?.id || !inviteForm.studentEmail.trim()) {
-      setToast({ type: 'error', message: 'Please enter a valid email address' });
+      setToast({ type: 'error', message: t.tutorStudentsPage.enterValidEmail });
       return;
     }
 
@@ -380,24 +315,44 @@ export function TutorStudentsPage() {
         message: inviteForm.message.trim() || undefined
       });
 
-      setToast({ type: 'success', message: `Invitation sent to ${inviteForm.studentEmail}!` });
+      setToast({ type: 'success', message: `${t.tutorStudentsPage.invitationSent} ${inviteForm.studentEmail}!` });
       setInviteForm({ studentEmail: '', message: '' });
       setShowInviteModal(false);
       refreshAll();
 
     } catch (err: any) {
-      setToast({ type: 'error', message: err.message || 'Failed to send invitation' });
+      console.error('Error sending invitation:', err);
+      setToast({ type: 'error', message: err.message || t.tutorStudentsPage.errorSendingInvitation });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Calculate stats
+  const stats = {
+    total: students.length,
+    active: students.filter(s => s.status === 'active').length,
+    pending: invitations.filter(inv => inv.status === 'pending').length,
+    avgProgress: students.length > 0
+      ? Math.round(students.reduce((sum, s) => sum + (s.progress || 0), 0) / students.length)
+      : 0
+  };
+
+  // Tabs configuration
+  const tabs = [
+    { id: 'all' as TabType, label: t.tutorStudentsPage.allStudents, count: stats.total },
+    { id: 'active' as TabType, label: t.tutorStudentsPage.activeTab, count: stats.active },
+    { id: 'invitations' as TabType, label: t.tutorStudentsPage.invitationsTab, count: stats.pending }
+  ];
+
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <RefreshCw className="h-8 w-8 animate-spin text-purple-600" />
-        <span className="ml-2 text-gray-600 dark:text-gray-400">Loading students...</span>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">{t.tutorStudentsPage.loading}</p>
+        </div>
       </div>
     );
   }
@@ -405,49 +360,31 @@ export function TutorStudentsPage() {
   // Error state
   if (error) {
     return (
-      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-        <div className="flex items-center space-x-2">
-          <AlertCircle className="h-5 w-5 text-red-600" />
+      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+        <div className="flex items-center space-x-3">
+          <AlertCircle className="h-6 w-6 text-red-600" />
           <div>
-            <h3 className="text-red-800 dark:text-red-200 font-medium">Error</h3>
-            <p className="text-red-600 dark:text-red-300 text-sm">{error}</p>
+            <h3 className="text-red-800 dark:text-red-200 font-medium">{t.tutorStudentsPage.errorLoading}</h3>
+            <p className="text-red-600 dark:text-red-300 text-sm mt-1">{error}</p>
           </div>
         </div>
+        <button
+          onClick={refreshAll}
+          className="mt-4 px-4 py-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-md hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
+        >
+          {t.tutorStudentsPage.refresh}
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* CSS Animations */}
-      <style>{`
-        @keyframes slide-in-right {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        .animate-slide-in-right {
-          animation: slide-in-right 0.3s ease-out;
-        }
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out;
-        }
-      `}</style>
-
-      {/* Toast */}
+    <div className="space-y-6">
+      {/* Toast Notifications */}
       {toast && (
         <Toast
-          message={toast.message}
           type={toast.type}
+          message={toast.message}
           onClose={() => setToast(null)}
         />
       )}
@@ -456,74 +393,73 @@ export function TutorStudentsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            My Students
+            {t.tutorStudentsPage.title}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 flex items-center space-x-2">
-            <Activity className="h-4 w-4 text-green-500" />
-            <span>Manage your student relationships</span>
+          <p className="text-gray-600 dark:text-gray-400">
+            {t.tutorStudentsPage.subtitle}
           </p>
         </div>
+
         <div className="flex items-center space-x-3">
           <button
             onClick={refreshAll}
-            className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
+            className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <RefreshCw className="h-4 w-4" />
-            <span>Refresh</span>
+            <span>{t.tutorStudentsPage.refresh}</span>
           </button>
+
           <button
             onClick={() => setShowInviteModal(true)}
-            className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
+            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
           >
-            <UserPlus className="h-4 w-4" />
-            <span>Invite Student</span>
+            <UserPlus className="h-5 w-5" />
+            <span>{t.tutorStudentsPage.inviteStudent}</span>
           </button>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <KPICard
-          title="Total Students"
-          value={totalStudents}
+          title={t.tutorStudentsPage.totalStudents}
+          value={stats.total}
           icon={Users}
           color="purple"
         />
         <KPICard
-          title="Active Students"
-          value={activeStudents}
-          icon={TrendingUp}
+          title={t.tutorStudentsPage.activeStudents}
+          value={stats.active}
+          icon={Activity}
           color="blue"
         />
         <KPICard
-          title="Pending Invitations"
-          value={pendingInvitations}
+          title={t.tutorStudentsPage.pendingInvitations}
+          value={stats.pending}
           icon={Mail}
           color="orange"
         />
         <KPICard
-          title="Avg. Progress"
-          value={`${Math.round(convertedStudents.reduce((acc, s) => acc + s.progress, 0) / (convertedStudents.length || 1))}%`}
-          icon={Award}
+          title={t.tutorStudentsPage.averageProgress}
+          value={`${stats.avgProgress}%`}
+          icon={TrendingUp}
           color="green"
         />
       </div>
 
       {/* Tabs */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-1 inline-flex space-x-1">
-        {[
-          { id: 'all' as TabType, label: 'All Students', count: convertedStudents.length },
-          { id: 'active' as TabType, label: 'Active', count: activeStudents },
-          { id: 'invitations' as TabType, label: 'Invitations', count: invitations.length }
-        ].map(tab => (
+      <div className="flex items-center space-x-2 border-b border-gray-200 dark:border-gray-700">
+        {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
-              activeTab === tab.id
-                ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-            }`}
+            className={`
+              px-6 py-3 font-medium text-sm border-b-2 transition-colors
+              ${activeTab === tab.id
+                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }
+            `}
           >
             {tab.label} ({tab.count})
           </button>
@@ -539,7 +475,7 @@ export function TutorStudentsPage() {
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <input
                 type="text"
-                placeholder="Search by name or email..."
+                placeholder={t.tutorStudentsPage.searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white shadow-sm"
@@ -552,12 +488,12 @@ export function TutorStudentsPage() {
             <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
               <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                {searchTerm ? 'No students found' : 'No students yet'}
+                {searchTerm ? t.tutorStudentsPage.noStudentsFound : t.tutorStudentsPage.noStudentsYet}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 mb-6">
                 {searchTerm 
-                  ? 'Try adjusting your search terms'
-                  : 'Invite your first student to get started'
+                  ? t.tutorStudentsPage.tryAdjustingSearch
+                  : t.tutorStudentsPage.inviteFirstStudent
                 }
               </p>
               {!searchTerm && (
@@ -566,7 +502,7 @@ export function TutorStudentsPage() {
                   className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
                 >
                   <UserPlus className="h-4 w-4" />
-                  <span>Invite Student</span>
+                  <span>{t.tutorStudentsPage.inviteStudent}</span>
                 </button>
               )}
             </div>
@@ -588,100 +524,113 @@ export function TutorStudentsPage() {
             <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
               <Mail className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                No invitations sent
+                {t.tutorStudentsPage.noPendingInvitations}
               </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-6">
-                Start by inviting students to join your classes
+              <p className="text-gray-500 dark:text-gray-400">
+                {t.tutorStudentsPage.noPendingDescription}
               </p>
-              <button
-                onClick={() => setShowInviteModal(true)}
-                className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
-              >
-                <UserPlus className="h-4 w-4" />
-                <span>Send Invitation</span>
-              </button>
             </div>
           ) : (
-            <div className="space-y-3">
-              {invitations.map(invitation => (
-                <InvitationCard key={invitation.id} invitation={invitation} />
-              ))}
-            </div>
+            invitations.map(invitation => (
+              <div
+                key={invitation.id}
+                className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <Mail className="h-5 w-5 text-purple-600" />
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        {t.tutorStudentsPage.invitationTo} {invitation.student_email}
+                      </h3>
+                    </div>
+                    <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                      <p>{t.tutorStudentsPage.sentOn}: {new Date(invitation.created_at).toLocaleDateString()}</p>
+                      <p>{t.tutorStudentsPage.expiresOn}: {new Date(invitation.expires_at).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      invitation.status === 'pending'
+                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                        : invitation.status === 'accepted'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
+                    }`}>
+                      {invitation.status === 'pending' && t.tutorStudentsPage.statusPending}
+                      {invitation.status === 'accepted' && t.tutorStudentsPage.statusAccepted}
+                      {invitation.status === 'expired' && t.tutorStudentsPage.statusExpired}
+                      {invitation.status === 'cancelled' && t.tutorStudentsPage.statusCancelled}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))
           )}
         </div>
       )}
 
       {/* Invite Modal */}
       {showInviteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6 animate-fade-in">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
-                <Mail className="h-5 w-5 text-purple-600" />
-                <span>Invite New Student</span>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {t.tutorStudentsPage.inviteModalTitle}
               </h2>
               <button
                 onClick={() => setShowInviteModal(false)}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
-                <X className="h-5 w-5" />
+                <X className="h-6 w-6" />
               </button>
             </div>
 
             <div className="space-y-4">
+              {/* Email Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Student Email *
+                  {t.tutorStudentsPage.studentEmail}
                 </label>
                 <input
                   type="email"
                   value={inviteForm.studentEmail}
-                  onChange={(e) => setInviteForm({ ...inviteForm, studentEmail: e.target.value })}
-                  placeholder="student@example.com"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  onChange={(e) => setInviteForm(prev => ({ ...prev, studentEmail: e.target.value }))}
+                  placeholder={t.tutorStudentsPage.studentEmailPlaceholder}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>
 
+              {/* Message Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Personal Message (Optional)
+                  {t.tutorStudentsPage.personalMessage}
                 </label>
                 <textarea
                   value={inviteForm.message}
-                  onChange={(e) => setInviteForm({ ...inviteForm, message: e.target.value })}
-                  placeholder="Add a personal message..."
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
-                  maxLength={500}
+                  onChange={(e) => setInviteForm(prev => ({ ...prev, message: e.target.value }))}
+                  placeholder={t.tutorStudentsPage.personalMessagePlaceholder}
+                  rows={4}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
-                  {inviteForm.message.length}/500
-                </p>
               </div>
 
-              <div className="flex space-x-3 pt-4">
-                <button
-                  onClick={() => setShowInviteModal(false)}
-                  className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
-                >
-                  Cancel
-                </button>
+              {/* Actions */}
+              <div className="flex items-center space-x-3 pt-4">
                 <button
                   onClick={handleInviteSubmit}
                   disabled={isSubmitting || !inviteForm.studentEmail.trim()}
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 disabled:cursor-not-allowed"
+                  className="flex-1 flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      <span>Sending...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4" />
-                      <span>Send Invitation</span>
-                    </>
-                  )}
+                  <Send className="h-4 w-4" />
+                  <span>{isSubmitting ? t.tutorStudentsPage.sending : t.tutorStudentsPage.sendInvitation}</span>
+                </button>
+                <button
+                  onClick={() => setShowInviteModal(false)}
+                  disabled={isSubmitting}
+                  className="px-6 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                >
+                  {t.tutorStudentsPage.cancel}
                 </button>
               </div>
             </div>
