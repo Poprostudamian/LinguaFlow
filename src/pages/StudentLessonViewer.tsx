@@ -439,20 +439,6 @@ export function StudentLessonViewer() {
           )}
         </div>
       )}
-
-      {/* View History Button - dla ukończonych lekcji */}
-      {student_lesson.status === 'completed' && (
-        <div className="flex justify-end">
-          <button
-            onClick={() => navigate(`/student/lessons/${lessonId}/history`)}
-            className="flex items-center space-x-2 px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm hover:shadow-md"
-          >
-            <Clock className="h-5 w-5" />
-            <span>{t.studentLessonViewer.viewLessonHistory}</span> {/* ← ZMIENIONE */}
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      )}
     </div>
   );
 }
