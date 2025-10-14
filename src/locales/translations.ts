@@ -1074,7 +1074,7 @@ export const translations = {
 
       // Calendar Section
       today: 'Dziś',
-      hasMeetings: 'Masz spotkania',
+      hasMeetings: 'Spotkanie',
       sunday: 'Nd',
       monday: 'Pon',
       tuesday: 'Wtr',
