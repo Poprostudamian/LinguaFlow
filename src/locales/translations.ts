@@ -979,6 +979,64 @@ export const translations = {
       // Time Formatting
       at: 'o',
     },
+
+    // Tutor Dashboard
+    tutorDashboard: {
+      // Page Title
+      title: 'Panel korepetytora',
+      subtitle: 'Statystyki w czasie rzeczywistym z Twojej bazy danych',
+      
+      // Loading
+      loading: 'Ładowanie danych z bazy...',
+      loadingStats: 'Ładowanie statystyk...',
+      
+      // Error
+      databaseError: 'Błąd bazy danych',
+      tryAgain: 'Spróbuj ponownie',
+      
+      // Actions
+      refresh: 'Odśwież',
+      
+      // Success
+      lessonCreatedSuccess: 'Lekcja utworzona pomyślnie i przypisana do uczniów!',
+      
+      // Database Connection
+      liveDatabaseConnection: 'Połączenie z bazą danych',
+      studentsCount: 'Uczniowie',
+      teachingHoursCount: 'Godziny nauczania',
+      completionRateCount: 'Wskaźnik ukończenia',
+      
+      // KPI Cards
+      totalStudents: 'Liczba uczniów',
+      activeStudents: 'Aktywni uczniowie',
+      teachingHours: 'Godziny nauczania',
+      completionRate: 'Wskaźnik ukończenia',
+      
+      // Student Roster
+      myStudents: 'Moi uczniowie',
+      noStudentsFound: 'Nie znaleziono uczniów',
+      addStudentsHint: 'Dodaj uczniów w zakładce Uczniowie, aby rozpocząć',
+      progress: 'Postęp',
+      lessons: 'lekcji',
+      hours: 'godz',
+      andMoreStudents: 'I jeszcze {count} uczniów...',
+      
+      // Create Lesson Form
+      createNewLesson: 'Utwórz nową lekcję',
+      lessonTitle: 'Tytuł lekcji',
+      lessonTitlePlaceholder: 'np. Konwersacje po hiszpańsku',
+      description: 'Opis',
+      descriptionPlaceholder: 'Krótki opis lekcji...',
+      content: 'Treść',
+      contentPlaceholder: 'Treść lekcji, instrukcje, ćwiczenia...',
+      assignToStudents: 'Przypisz do uczniów (dostępnych: {count})',
+      noStudentsAvailable: 'Brak dostępnych uczniów',
+      addStudentsFirst: 'Najpierw dodaj uczniów w zakładce Uczniowie',
+      selectAll: 'Zaznacz wszystkich',
+      createLesson: 'Utwórz lekcję',
+      creating: 'Tworzenie...',
+      required: '*',
+    },
   },
 } as const;
 
