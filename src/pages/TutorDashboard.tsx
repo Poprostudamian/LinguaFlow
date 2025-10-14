@@ -213,22 +213,7 @@ export function TutorDashboard() {
     });
   };
 
-const formatDate = (date: Date) => {
-  // Tablica dni tygodnia
-  const dayNames = [
-    'Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'
-  ];
-  
-  const dayOfWeek = dayNames[date.getDay()];
-  const monthName = getMonthName(date);
-  const day = date.getDate();
-  const year = date.getFullYear();
-  
-  // Format: "Poniedziałek, Październik 14, 2025"
-  return `${dayOfWeek}, ${monthName} ${day}, ${year}`;
-};
-
-// LUB jeśli chcesz bardziej polski format: "Poniedziałek, 14 października 2025"
+// format: "Poniedziałek, 14 października 2025"
 const formatDate = (date: Date) => {
   const dayNames = [
     'Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'
