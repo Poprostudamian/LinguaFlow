@@ -1756,6 +1756,93 @@ export const translations = {
       meetingCreated: 'Spotkanie utworzone pomyślnie',
       meetingFailed: 'Nie udało się utworzyć spotkania',
     },
+
+     // Tutor Students Page
+    tutorStudentsPage: {
+      // Page Title & Header
+      title: 'Uczniowie',
+      subtitle: 'Zarządzaj swoimi uczniami i śledź ich postępy',
+      inviteStudent: 'Zaproś ucznia',
+      refresh: 'Odśwież',
+      
+      // Loading & Error
+      loading: 'Ładowanie uczniów...',
+      errorLoading: 'Błąd wczytywania uczniów',
+      
+      // Quick Stats (KPI Cards)
+      totalStudents: 'Liczba uczniów',
+      activeStudents: 'Aktywni uczniowie',
+      pendingInvitations: 'Oczekujące zaproszenia',
+      averageProgress: 'Średni postęp',
+      
+      // Tabs
+      allStudents: 'Wszyscy uczniowie',
+      activeTab: 'Aktywni',
+      invitationsTab: 'Zaproszenia',
+      
+      // Search
+      searchPlaceholder: 'Szukaj po nazwisku lub e-mail...',
+      
+      // Empty States - Students
+      noStudentsYet: 'Brak uczniów',
+      noStudentsFound: 'Nie znaleziono uczniów',
+      tryAdjustingSearch: 'Spróbuj zmienić kryteria wyszukiwania',
+      inviteFirstStudent: 'Zaproś pierwszego ucznia aby rozpocząć',
+      
+      // Empty States - Invitations
+      noPendingInvitations: 'Brak oczekujących zaproszeń',
+      noPendingDescription: 'Wszystkie zaproszenia zostały zaakceptowane lub wygasły',
+      
+      // Student Card
+      progress: 'Postęp',
+      lessons: 'Lekcje',
+      hours: 'Godziny',
+      joined: 'Dołączył',
+      sendMessage: 'Wyślij wiadomość',
+      level: 'Poziom',
+      active: 'Aktywny',
+      inactive: 'Nieaktywny',
+      
+      // Levels
+      beginner: 'Początkujący',
+      intermediate: 'Średniozaawansowany',
+      advanced: 'Zaawansowany',
+      
+      // Invite Modal
+      inviteModalTitle: 'Zaproś nowego ucznia',
+      studentEmail: 'E-mail ucznia',
+      studentEmailPlaceholder: 'uczen@example.com',
+      personalMessage: 'Wiadomość osobista (opcjonalnie)',
+      personalMessagePlaceholder: 'Dodaj osobistą wiadomość do zaproszenia...',
+      sendInvitation: 'Wyślij zaproszenie',
+      sending: 'Wysyłanie...',
+      cancel: 'Anuluj',
+      
+      // Invitations List
+      invitationTo: 'Zaproszenie do',
+      sentOn: 'Wysłano',
+      expiresOn: 'Wygasa',
+      resend: 'Wyślij ponownie',
+      cancelInvitation: 'Anuluj',
+      statusPending: 'Oczekujące',
+      statusAccepted: 'Zaakceptowane',
+      statusExpired: 'Wygasłe',
+      statusCancelled: 'Anulowane',
+      
+      // Toast Messages
+      invitationSent: 'Zaproszenie wysłane do',
+      invitationResent: 'Zaproszenie wysłane ponownie do',
+      invitationCancelled: 'Zaproszenie anulowane',
+      enterValidEmail: 'Wprowadź prawidłowy adres e-mail',
+      errorSendingInvitation: 'Błąd wysyłania zaproszenia',
+      errorResendingInvitation: 'Błąd ponownego wysyłania zaproszenia',
+      errorCancellingInvitation: 'Błąd anulowania zaproszenia',
+      
+      // Actions
+      viewProgress: 'Zobacz postęp',
+      assignLesson: 'Przypisz lekcję',
+      removeStudent: 'Usuń ucznia',
+    },
   },
 } as const;
 
