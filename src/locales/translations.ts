@@ -1,6 +1,22 @@
 // src/locales/translations.ts
 export const translations = {
   en: {
+    // Months
+    months: {
+      january: 'January',
+      february: 'February',
+      march: 'March',
+      april: 'April',
+      may: 'May',
+      june: 'June',
+      july: 'July',
+      august: 'August',
+      september: 'September',
+      october: 'October',
+      november: 'November',
+      december: 'December',
+    },
+    
     // Common
     common: {
       welcome: 'Welcome',
@@ -538,6 +554,23 @@ export const translations = {
   },
   
   pl: {
+
+    // Months
+    months: {
+      january: 'Styczeń',
+      february: 'Luty',
+      march: 'Marzec',
+      april: 'Kwiecień',
+      may: 'Maj',
+      june: 'Czerwiec',
+      july: 'Lipiec',
+      august: 'Sierpień',
+      september: 'Wrzesień',
+      october: 'Październik',
+      november: 'Listopad',
+      december: 'Grudzień',
+    },
+    
     // Common
     common: {
       welcome: 'Witaj',
