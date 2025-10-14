@@ -1357,6 +1357,60 @@ export const translations = {
       failedToSave: 'Nie udało się zapisać lekcji',
       failedToDelete: 'Nie udało się usunąć lekcji',
     },
+
+    // Tutor Messages Page
+    tutorMessagesPage: {
+      // Page Title
+      title: 'Wiadomości',
+      
+      // Loading
+      loading: 'Ładowanie wiadomości...',
+      
+      // Search
+      searchPlaceholder: 'Szukaj konwersacji...',
+      
+      // Conversations List
+      conversations: 'Konwersacje',
+      noConversations: 'Brak konwersacji',
+      noConversationsDescription: 'Rozpocznij rozmowę ze swoimi uczniami',
+      startNewChat: 'Rozpocznij nową rozmowę',
+      newChat: 'Nowa rozmowa',
+      
+      // Empty Selection
+      selectConversation: 'Wybierz konwersację',
+      selectConversationDescription: 'Wybierz konwersację z listy aby rozpocząć rozmowę',
+      
+      // Chat Header
+      student: 'Uczeń',
+      online: 'Online',
+      typing: 'pisze...',
+      
+      // Messages
+      today: 'Dzisiaj',
+      yesterday: 'Wczoraj',
+      justNow: 'Przed chwilą',
+      you: 'Ty',
+      noMessagesYet: 'Brak wiadomości',
+      
+      // Message Input
+      typeMessage: 'Napisz wiadomość...',
+      sendMessage: 'Wyślij wiadomość',
+      sending: 'Wysyłanie...',
+      
+      // New Chat Modal
+      startNewConversation: 'Rozpocznij nową konwersację',
+      selectStudent: 'Wybierz ucznia aby rozpocząć rozmowę',
+      noStudentsAvailable: 'Brak dostępnych uczniów do wiadomości',
+      noStudentsDescription: 'Najpierw dodaj uczniów w zakładce Uczniowie',
+      cancel: 'Anuluj',
+      
+      // Errors
+      errorLoading: 'Nie udało się załadować konwersacji',
+      errorLoadingMessages: 'Nie udało się załadować wiadomości',
+      errorSending: 'Nie udało się wysłać wiadomości',
+      errorStarting: 'Nie udało się rozpocząć konwersacji',
+      tableError: 'Upewnij się, że tabele wiadomości zostały utworzone.',
+    },
   },
 } as const;
 
