@@ -731,8 +731,84 @@ export const translations = {
       errorStarting: 'Failed to start conversation',
       tableError: 'Make sure the messaging tables are created.',
     },
+
+    // Tutor Schedule Page
+    tutorSchedulePage: {
+      // Page Title & Header
+      title: 'Schedule',
+      subtitle: 'Manage your meetings and schedule new sessions',
+      refresh: 'Refresh',
+      createMeeting: 'Create Meeting',
+      
+      // Loading
+      loading: 'Loading meetings...',
+      
+      // Error
+      errorLoading: 'Error loading meetings',
+      tryAgain: 'Try again',
+      
+      // Quick Stats
+      todaysMeetings: "Today's Meetings",
+      thisWeek: 'This Week',
+      upcoming: 'Upcoming',
+      
+      // Calendar Navigation
+      today: 'Today',
+      previousMonth: 'Previous month',
+      nextMonth: 'Next month',
+      
+      // Days of Week
+      sunday: 'Sun',
+      monday: 'Mon',
+      tuesday: 'Tue',
+      wednesday: 'Wed',
+      thursday: 'Thu',
+      friday: 'Fri',
+      saturday: 'Sat',
+      
+      // Selected Day Panel
+      selectADate: 'Select a Date',
+      meeting: 'meeting',
+      meetings: 'meetings',
+      noMeetingsOnDay: 'No meetings on this day',
+      
+      // Meeting Status
+      statusScheduled: 'Scheduled',
+      statusInProgress: 'In Progress',
+      statusCompleted: 'Completed',
+      statusCancelled: 'Cancelled',
+      statusUnknown: 'Unknown',
+      
+      // Meeting Details
+      duration: 'min',
+      student: 'student',
+      students: 'students',
+      join: 'Join',
+      edit: 'Edit',
+      delete: 'Delete',
+      
+      // Upcoming Section
+      upcomingMeetingsTitle: 'Upcoming Meetings',
+      noUpcomingMeetings: 'No upcoming meetings',
+      noUpcomingDescription: 'You have no scheduled meetings at the moment',
+      
+      // Time Formatting
+      at: 'at',
+      more: 'more',
+      
+      // Delete Confirmation
+      deleteConfirm: 'Are you sure you want to delete this meeting?',
+      deleteSuccess: 'Meeting deleted successfully',
+      deleteFailed: 'Failed to delete meeting',
+      
+      // Create Meeting
+      createMeetingTitle: 'Create New Meeting',
+      meetingCreated: 'Meeting created successfully',
+      meetingFailed: 'Failed to create meeting',
+    },
+
   },
-  //--------------------------------------------------PL----------------------------------------------------------------------
+  //--------------------------------------------------PL-------------------------------------------------------------------------------------------------------------------------
   pl: {
 
     // Months
