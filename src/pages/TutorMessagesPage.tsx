@@ -1,4 +1,4 @@
-// src/pages/TutorMessagesPage.tsx
+// src/pages/TutorMessagesPage.tsx - PRZETŁUMACZONA WERSJA
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -27,20 +27,8 @@ import {
   AuthUser
 } from '../lib/supabase';
 
-export function YourPage() {
-  const { t } = useLanguage();
-  
-  return (
-    <div>
-      {/* Zamień hardcoded teksty na t.section.key */}
-      <h1>{t.studentDashboard.title}</h1>
-      <p>{t.studentDashboard.welcome}</p>
-      <button>{t.common.save}</button>
-    </div>
-  );
-}
-
 export function TutorMessagesPage() {
+  const { t } = useLanguage();
   const { session } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
@@ -53,6 +41,8 @@ export function TutorMessagesPage() {
   const [availableStudents, setAvailableStudents] = useState<AuthUser[]>([]);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const tPage = t.tutorMessagesPage;
 
   // Load data on component mount
   useEffect(() => {
@@ -125,7 +115,7 @@ export function TutorMessagesPage() {
       setConversations(data);
     } catch (error: any) {
       console.error('Error loading conversations:', error);
-      setError('Failed to load conversations. Make sure the messaging tables are created.');
+      setError(`${tPage.errorLoading}. ${tPage.tableError}`);
     } finally {
       setIsLoading(false);
     }
@@ -153,7 +143,7 @@ export function TutorMessagesPage() {
       loadConversations();
     } catch (error) {
       console.error('Error selecting conversation:', error);
-      setError('Failed to load messages');
+      setError(tPage.errorLoadingMessages);
     }
   };
 
@@ -178,7 +168,7 @@ export function TutorMessagesPage() {
       scrollToBottom();
     } catch (error) {
       console.error('Error sending message:', error);
-      setError('Failed to send message');
+      setError(tPage.errorSending);
       setNewMessage(messageContent); // Restore message on error
     } finally {
       setIsSending(false);
@@ -196,7 +186,7 @@ export function TutorMessagesPage() {
       loadConversations(); // Refresh list
     } catch (error: any) {
       console.error('Error starting conversation:', error);
-      setError(`Failed to start conversation: ${error.message}`);
+      setError(`${tPage.errorStarting}: ${error.message}`);
     }
   };
 
@@ -233,7 +223,7 @@ export function TutorMessagesPage() {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600 dark:text-gray-400">Loading messages...</p>
+          <p className="text-gray-600 dark:text-gray-400">{tPage.loading}</p>
         </div>
       </div>
     );
@@ -246,7 +236,7 @@ export function TutorMessagesPage() {
         {/* Header */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Messages</h1>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{tPage.title}</h1>
             <button
               onClick={() => setShowNewChat(true)}
               className="p-2 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
@@ -260,7 +250,7 @@ export function TutorMessagesPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search conversations..."
+              placeholder={tPage.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
@@ -284,16 +274,16 @@ export function TutorMessagesPage() {
             <div className="p-8 text-center">
               <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                No conversations yet
+                {tPage.noConversations}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 mb-4">
-                Start a conversation with your students
+                {tPage.noConversationsDescription}
               </p>
               <button
                 onClick={() => setShowNewChat(true)}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               >
-                Start New Chat
+                {tPage.startNewChat}
               </button>
             </div>
           ) : (
@@ -338,7 +328,7 @@ export function TutorMessagesPage() {
                         </div>
                       </div>
                       <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                        {conversation.last_message || 'No messages yet'}
+                        {conversation.last_message || tPage.noMessagesYet}
                       </p>
                     </div>
                   </div>
@@ -383,7 +373,7 @@ export function TutorMessagesPage() {
                           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                             {otherUser?.first_name} {otherUser?.last_name}
                           </h2>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Student</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{tPage.student}</p>
                         </div>
                       </div>
                     );
@@ -426,7 +416,7 @@ export function TutorMessagesPage() {
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type your message..."
+                  placeholder={tPage.typeMessage}
                   disabled={isSending}
                   className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white disabled:opacity-50"
                 />
@@ -449,10 +439,10 @@ export function TutorMessagesPage() {
             <div className="text-center">
               <MessageCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                Select a conversation
+                {tPage.selectConversation}
               </h3>
               <p className="text-gray-500 dark:text-gray-400">
-                Choose a conversation from the list to start messaging
+                {tPage.selectConversationDescription}
               </p>
             </div>
           </div>
@@ -473,17 +463,17 @@ export function TutorMessagesPage() {
                 <div className="sm:flex sm:items-start">
                   <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
                     <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">
-                      Start New Conversation
+                      {tPage.startNewConversation}
                     </h3>
                     
                     {availableStudents.length === 0 ? (
                       <div className="text-center py-8">
                         <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <p className="text-gray-500 dark:text-gray-400">
-                          No students available for messaging
+                          {tPage.noStudentsAvailable}
                         </p>
                         <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-                          Add students first in the Students tab
+                          {tPage.noStudentsDescription}
                         </p>
                       </div>
                     ) : (
@@ -499,11 +489,11 @@ export function TutorMessagesPage() {
                                 <img
                                   src={student.avatar_url}
                                   alt={`${student.first_name} ${student.last_name}`}
-                                  className="h-8 w-8 rounded-full"
+                                  className="h-10 w-10 rounded-full"
                                 />
                               ) : (
-                                <div className="h-8 w-8 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
-                                  <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                <div className="h-10 w-10 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
+                                  <User className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                                 </div>
                               )}
                               <div>
@@ -526,9 +516,9 @@ export function TutorMessagesPage() {
                 <button
                   type="button"
                   onClick={() => setShowNewChat(false)}
-                  className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm dark:bg-gray-600 dark:text-white dark:border-gray-500 dark:hover:bg-gray-500"
+                  className="w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                 >
-                  Cancel
+                  {tPage.cancel}
                 </button>
               </div>
             </div>
