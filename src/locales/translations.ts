@@ -1465,6 +1465,81 @@ export const translations = {
       errorStarting: 'Nie udało się rozpocząć konwersacji',
       tableError: 'Upewnij się, że tabele wiadomości zostały utworzone.',
     },
+
+    // Tutor Schedule Page
+    tutorSchedulePage: {
+      // Page Title & Header
+      title: 'Harmonogram',
+      subtitle: 'Zarządzaj swoimi spotkaniami i planuj nowe sesje',
+      refresh: 'Odśwież',
+      createMeeting: 'Utwórz spotkanie',
+      
+      // Loading
+      loading: 'Ładowanie spotkań...',
+      
+      // Error
+      errorLoading: 'Błąd ładowania spotkań',
+      tryAgain: 'Spróbuj ponownie',
+      
+      // Quick Stats
+      todaysMeetings: 'Dzisiejsze spotkania',
+      thisWeek: 'Ten tydzień',
+      upcoming: 'Nadchodzące',
+      
+      // Calendar Navigation
+      today: 'Dzisiaj',
+      previousMonth: 'Poprzedni miesiąc',
+      nextMonth: 'Następny miesiąc',
+      
+      // Days of Week
+      sunday: 'Nie',
+      monday: 'Pon',
+      tuesday: 'Wt',
+      wednesday: 'Śr',
+      thursday: 'Czw',
+      friday: 'Pt',
+      saturday: 'Sob',
+      
+      // Selected Day Panel
+      selectADate: 'Wybierz datę',
+      meeting: 'spotkanie',
+      meetings: 'spotkań',
+      noMeetingsOnDay: 'Brak spotkań tego dnia',
+      
+      // Meeting Status
+      statusScheduled: 'Zaplanowane',
+      statusInProgress: 'W trakcie',
+      statusCompleted: 'Zakończone',
+      statusCancelled: 'Anulowane',
+      statusUnknown: 'Nieznany',
+      
+      // Meeting Details
+      duration: 'min',
+      student: 'uczeń',
+      students: 'uczniów',
+      join: 'Dołącz',
+      edit: 'Edytuj',
+      delete: 'Usuń',
+      
+      // Upcoming Section
+      upcomingMeetingsTitle: 'Nadchodzące spotkania',
+      noUpcomingMeetings: 'Brak nadchodzących spotkań',
+      noUpcomingDescription: 'Nie masz obecnie zaplanowanych spotkań',
+      
+      // Time Formatting
+      at: 'o',
+      more: 'więcej',
+      
+      // Delete Confirmation
+      deleteConfirm: 'Czy na pewno chcesz usunąć to spotkanie?',
+      deleteSuccess: 'Spotkanie usunięte pomyślnie',
+      deleteFailed: 'Nie udało się usunąć spotkania',
+      
+      // Create Meeting
+      createMeetingTitle: 'Utwórz nowe spotkanie',
+      meetingCreated: 'Spotkanie utworzone pomyślnie',
+      meetingFailed: 'Nie udało się utworzyć spotkania',
+    },
   },
 } as const;
 
