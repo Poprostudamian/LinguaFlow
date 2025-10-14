@@ -644,7 +644,6 @@ export function TutorDashboard() {
           </div>
         </div>
       </div>
-
     </div>
   );
 }
