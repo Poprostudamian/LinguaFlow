@@ -1546,61 +1546,87 @@ export const translations = {
     tutorSchedulePage: {
       // Page Title & Header
       title: 'Harmonogram',
-      subtitle: 'Zarządzaj swoimi spotkaniami i planuj nowe sesje',
+      description: 'Zarządzaj spotkaniami i planuj nowe sesje',
       refresh: 'Odśwież',
       createMeeting: 'Utwórz spotkanie',
       
-      // Loading
+      // Loading & Error
       loading: 'Ładowanie spotkań...',
-      
-      // Error
-      errorLoading: 'Błąd ładowania spotkań',
-      tryAgain: 'Spróbuj ponownie',
+      errorLoading: 'Błąd wczytywania spotkań',
+      errorDeleting: 'Nie udało się usunąć spotkania',
       
       // Quick Stats
       todaysMeetings: 'Dzisiejsze spotkania',
-      thisWeek: 'Ten tydzień',
-      upcoming: 'Nadchodzące',
+      thisWeekMeetings: 'Ten tydzień',
+      next7Days: 'Następne 7 dni',
       
       // Calendar Navigation
       today: 'Dzisiaj',
       previousMonth: 'Poprzedni miesiąc',
       nextMonth: 'Następny miesiąc',
       
-      // Days of Week
-      sunday: 'Nie',
-      monday: 'Pon',
+      // Days of Week (skrócone)
+      sunday: 'Nd',
+      monday: 'Pn',
       tuesday: 'Wt',
       wednesday: 'Śr',
       thursday: 'Czw',
       friday: 'Pt',
       saturday: 'Sob',
       
+      // Days of Week (pełne nazwy dla formatDate)
+      sundayFull: 'Niedziela',
+      mondayFull: 'Poniedziałek',
+      tuesdayFull: 'Wtorek',
+      wednesdayFull: 'Środa',
+      thursdayFull: 'Czwartek',
+      fridayFull: 'Piątek',
+      saturdayFull: 'Sobota',
+      
+      // Months (pełne nazwy dla formatDate - dopełniacz)
+      january: 'stycznia',
+      february: 'lutego',
+      march: 'marca',
+      april: 'kwietnia',
+      may: 'maja',
+      june: 'czerwca',
+      july: 'lipca',
+      august: 'sierpnia',
+      september: 'września',
+      october: 'października',
+      november: 'listopada',
+      december: 'grudnia',
+      
       // Selected Day Panel
-      selectADate: 'Wybierz datę',
-      meeting: 'spotkanie',
-      meetings: 'spotkań',
+      selectedDay: 'Wybrany dzień',
+      meetingsOnDay: 'spotkanie tego dnia',
+      meetingsOnDayPlural: 'spotkań tego dnia',
       noMeetingsOnDay: 'Brak spotkań tego dnia',
       
       // Meeting Status
       statusScheduled: 'Zaplanowane',
       statusInProgress: 'W trakcie',
-      statusCompleted: 'Zakończone',
+      statusCompleted: 'Ukończone',
       statusCancelled: 'Anulowane',
       statusUnknown: 'Nieznany',
       
       // Meeting Details
       duration: 'min',
-      student: 'uczeń',
-      students: 'uczniów',
-      join: 'Dołącz',
+      participant: 'uczestnik',
+      participants: 'uczestników',
+      joinMeeting: 'Dołącz do spotkania',
       edit: 'Edytuj',
       delete: 'Usuń',
+      meetingLink: 'Link do spotkania',
       
       // Upcoming Section
       upcomingMeetingsTitle: 'Nadchodzące spotkania',
-      noUpcomingMeetings: 'Brak nadchodzących spotkań',
-      noUpcomingDescription: 'Nie masz obecnie zaplanowanych spotkań',
+      noUpcomingMeetings: 'Brak zaplanowanych spotkań',
+      noUpcomingDescription: 'Utwórz pierwsze spotkanie aby rozpocząć',
+      scheduledFor: 'Zaplanowane na',
+      
+      // Dialogs
+      confirmDelete: 'Czy na pewno chcesz usunąć to spotkanie?',
       
       // Time Formatting
       at: 'o',
