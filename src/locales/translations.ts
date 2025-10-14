@@ -551,8 +551,137 @@ export const translations = {
       joinMeeting: 'Join Meeting',
       minutes: 'min',
     },
+    // Tutor Lesson Management Page
+    tutorLessonManagementPage: {
+      // Page Title & Header
+      title: 'Lesson Management',
+      subtitle: 'Create and manage your lessons with interactive exercises',
+      createLesson: 'Create Lesson',
+      
+      // Loading & Errors
+      loading: 'Loading lessons...',
+      errorLoading: 'Failed to load lessons',
+      retry: 'Retry',
+      
+      // Stats Overview
+      totalLessons: 'Total Lessons',
+      publishedLessons: 'Published',
+      draftLessons: 'Drafts',
+      totalAssigned: 'Total Assigned',
+      
+      // Search & Filter
+      searchPlaceholder: 'Search lessons by title...',
+      allStatus: 'All Status',
+      published: 'Published',
+      draft: 'Draft',
+      refresh: 'Refresh',
+      
+      // Empty State
+      noLessons: 'No lessons found',
+      noLessonsDescription: 'Create your first lesson to get started',
+      
+      // Lesson Card
+      assigned: 'assigned',
+      sampleExercises: 'Sample exercises',
+      preview: 'Preview',
+      edit: 'Edit',
+      delete: 'Delete',
+      confirmDelete: 'Are you sure you want to delete',
+      
+      // Create Lesson Form
+      createNewLesson: 'Create New Lesson',
+      lessonTitle: 'Lesson Title',
+      lessonTitlePlaceholder: 'Enter lesson title...',
+      lessonDescription: 'Description (Optional)',
+      lessonDescriptionPlaceholder: 'Describe what students will learn...',
+      
+      // Students Assignment
+      assignStudents: 'Assign to Students',
+      selectStudents: 'Select students to assign this lesson',
+      noStudentsAvailable: 'No students available',
+      noStudentsDescription: 'You need to have students enrolled first',
+      selectedStudents: 'selected',
+      
+      // Exercises Section
+      exercises: 'Exercises',
+      addExercise: 'Add Exercise',
+      multipleChoice: 'Multiple Choice',
+      flashcards: 'Flashcards',
+      textAnswer: 'Text Answer',
+      noExercises: 'No exercises yet',
+      addExerciseDescription: 'Click "Add Exercise" to create interactive exercises',
+      
+      // Exercise Form Fields
+      exerciseTitle: 'Exercise Title',
+      exerciseTitlePlaceholder: 'e.g., Vocabulary Quiz',
+      question: 'Question',
+      questionPlaceholder: 'Enter your question here...',
+      points: 'Points',
+      
+      // Multiple Choice
+      option: 'Option',
+      correctAnswer: 'Correct Answer',
+      selectCorrect: 'Select correct answer',
+      
+      // Flashcards
+      flashcard: 'Flashcard',
+      front: 'Front (Question)',
+      frontPlaceholder: 'e.g., What is "hello" in Spanish?',
+      back: 'Back (Answer)',
+      backPlaceholder: 'e.g., Hola',
+      addFlashcard: 'Add Flashcard',
+      removeFlashcard: 'Remove Flashcard',
+      
+      // Text Answer
+      maxLength: 'Max Length',
+      characters: 'characters',
+      
+      // Exercise Actions
+      removeExercise: 'Remove Exercise',
+      
+      // Status Selection
+      lessonStatus: 'Lesson Status',
+      publishedStatus: 'Published (Students can access immediately)',
+      draftStatus: 'Draft (Save for later)',
+      
+      // Form Actions
+      cancel: 'Cancel',
+      creating: 'Creating...',
+      createLessonButton: 'Create Lesson',
+      withExercises: 'exercises',
+      
+      // Success Messages
+      lessonCreated: 'Lesson created successfully with',
+      exercisesAdded: 'exercises!',
+      lessonUpdated: 'Lesson updated successfully',
+      lessonDeleted: 'Lesson deleted successfully',
+      
+      // Modal
+      previewLesson: 'Preview Lesson',
+      editLesson: 'Edit Lesson',
+      close: 'Close',
+      switchToEdit: 'Switch to Edit',
+      switchToPreview: 'Switch to Preview',
+      
+      // Warnings
+      exerciseWarning: 'Warning: Exercises cannot be saved. The lesson_exercises table needs to be created in the database.',
+      tableNotExist: 'lesson_exercises table does not exist. Exercises will not be saved.',
+      
+      // Preview Content
+      previewContent: 'Lesson Content Preview',
+      assignedTo: 'Assigned to',
+      students: 'students',
+      createdOn: 'Created on',
+      lastUpdated: 'Last updated',
+      
+      // Exercise Types Labels
+      exerciseType: 'Exercise Type',
+      typeMultipleChoice: 'Multiple Choice',
+      typeFlashcard: 'Flashcard',
+      typeTextAnswer: 'Text Answer',
+    },
   },
-  
+  //--------------------------------------------------PL----------------------------------------------------------------------
   pl: {
 
     // Months
