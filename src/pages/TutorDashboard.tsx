@@ -45,6 +45,25 @@ export function TutorDashboard() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [meetings, setMeetings] = useState<MeetingWithParticipants[]>([]);
 
+  const getMonthName = (date: Date): string => {
+    const monthIndex = date.getMonth(); // 0-11
+    const monthNames = [
+      t.months.january,
+      t.months.february,
+      t.months.march,
+      t.months.april,
+      t.months.may,
+      t.months.june,
+      t.months.july,
+      t.months.august,
+      t.months.september,
+      t.months.october,
+      t.months.november,
+      t.months.december,
+    ];
+    return monthNames[monthIndex];
+  };
+
   // Load meetings
   useEffect(() => {
     if (session?.user?.id) {
@@ -439,7 +458,7 @@ export function TutorDashboard() {
             </div>
           )}
         </div>
-
+        
         {/* Calendar Section */}
         <div>
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
