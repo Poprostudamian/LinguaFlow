@@ -1357,7 +1357,6 @@ export const translations = {
       failedToSave: 'Nie udało się zapisać lekcji',
       failedToDelete: 'Nie udało się usunąć lekcji',
     },
-
   },
 } as const;
 
