@@ -459,6 +459,64 @@ export const translations = {
       // Time Formatting
       at: 'at',
     },
+
+    // Tutor Dashboard
+    tutorDashboard: {
+      // Page Title
+      title: 'Tutor Dashboard',
+      subtitle: 'Real-time statistics from your database',
+      
+      // Loading
+      loading: 'Loading real data from database...',
+      loadingStats: 'Loading statistics...',
+      
+      // Error
+      databaseError: 'Database Error',
+      tryAgain: 'Try Again',
+      
+      // Actions
+      refresh: 'Refresh',
+      
+      // Success
+      lessonCreatedSuccess: 'Lesson created successfully and assigned to students!',
+      
+      // Database Connection
+      liveDatabaseConnection: 'Live Database Connection',
+      studentsCount: 'Students',
+      teachingHoursCount: 'Teaching Hours',
+      completionRateCount: 'Completion Rate',
+      
+      // KPI Cards
+      totalStudents: 'Total Students',
+      activeStudents: 'Active Students',
+      teachingHours: 'Teaching Hours',
+      completionRate: 'Completion Rate',
+      
+      // Student Roster
+      myStudents: 'My Students',
+      noStudentsFound: 'No students found',
+      addStudentsHint: 'Add students in the Students tab to get started',
+      progress: 'Progress',
+      lessons: 'lessons',
+      hours: 'h',
+      andMoreStudents: 'And {count} more students...',
+      
+      // Create Lesson Form
+      createNewLesson: 'Create New Lesson',
+      lessonTitle: 'Lesson Title',
+      lessonTitlePlaceholder: 'e.g., Spanish Conversation Practice',
+      description: 'Description',
+      descriptionPlaceholder: 'Brief description of the lesson...',
+      content: 'Content',
+      contentPlaceholder: 'Lesson content, instructions, exercises...',
+      assignToStudents: 'Assign to Students ({count} available)',
+      noStudentsAvailable: 'No students available',
+      addStudentsFirst: 'Add students in the Students tab first',
+      selectAll: 'Select all',
+      createLesson: 'Create Lesson',
+      creating: 'Creating...',
+      required: '*',
+    },
   },
   
   pl: {
