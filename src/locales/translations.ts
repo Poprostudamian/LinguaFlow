@@ -460,6 +460,8 @@ export const translations = {
       at: 'at',
     },
 
+// TUTOR ----------------------------------------------------
+    
     // Tutor Dashboard
     tutorDashboard: {
       // Page Title
@@ -995,8 +997,8 @@ export const translations = {
       // Time Formatting
       at: 'o',
     },
-
-    // Tutor Dashboard
+// TUTOR ---------------------------------------------------------------------------
+     // Tutor Dashboard
     tutorDashboard: {
       // Page Title
       title: 'Panel korepetytora',
