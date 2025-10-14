@@ -516,6 +516,22 @@ export const translations = {
       createLesson: 'Create Lesson',
       creating: 'Creating...',
       required: '*',
+      
+      // Calendar Section
+      today: 'Today',
+      hasMeetings: 'Has meetings',
+      sunday: 'Sun',
+      monday: 'Mon',
+      tuesday: 'Tue',
+      wednesday: 'Wed',
+      thursday: 'Thu',
+      friday: 'Fri',
+      saturday: 'Sat',
+      noMeetingsScheduled: 'No meetings scheduled',
+      student: 'student',
+      students: 'students',
+      joinMeeting: 'Join Meeting',
+      minutes: 'min',
     },
   },
   
