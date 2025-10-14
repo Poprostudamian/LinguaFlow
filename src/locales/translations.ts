@@ -1235,131 +1235,129 @@ export const translations = {
     tutorLessonManagementPage: {
       // Page Title & Header
       title: 'Zarządzanie lekcjami',
-      subtitle: 'Twórz i zarządzaj swoimi lekcjami z interaktywnymi ćwiczeniami',
+      subtitle: 'Twórz i zarządzaj swoimi lekcjami',
       createLesson: 'Utwórz lekcję',
+      refresh: 'Odśwież',
       
       // Loading & Errors
       loading: 'Ładowanie lekcji...',
       errorLoading: 'Nie udało się załadować lekcji',
-      retry: 'Spróbuj ponownie',
       
-      // Stats Overview
+      // KPI Cards
       totalLessons: 'Wszystkie lekcje',
       publishedLessons: 'Opublikowane',
       draftLessons: 'Szkice',
-      totalAssigned: 'Przypisane łącznie',
+      avgAssignments: 'Śr. przypisań',
       
-      // Search & Filter
-      searchPlaceholder: 'Wyszukaj lekcje po tytule...',
-      allStatus: 'Wszystkie statusy',
-      published: 'Opublikowane',
-      draft: 'Szkic',
-      refresh: 'Odśwież',
+      // Tabs
+      allLessons: 'Wszystkie lekcje',
       
-      // Empty State
-      noLessons: 'Nie znaleziono lekcji',
-      noLessonsDescription: 'Utwórz swoją pierwszą lekcję aby rozpocząć',
+      // Search
+      searchPlaceholder: 'Szukaj lekcji po tytule lub opisie...',
+      
+      // Empty States
+      noLessonsFound: 'Nie znaleziono lekcji',
+      noLessonsYet: 'Brak lekcji',
+      tryAdjusting: 'Spróbuj zmienić wyszukiwane frazy',
+      createFirstLesson: 'Utwórz swoją pierwszą lekcję aby rozpocząć',
       
       // Lesson Card
-      assigned: 'przypisano',
-      sampleExercises: 'Przykładowe ćwiczenia',
-      preview: 'Podgląd',
+      assigned: 'Przypisano',
+      completed: 'Ukończono',
+      rate: 'Wskaźnik',
+      created: 'Utworzono',
+      view: 'Podgląd',
       edit: 'Edytuj',
       delete: 'Usuń',
-      confirmDelete: 'Czy na pewno chcesz usunąć',
+      deleteConfirm: 'Usunąć',
+      published: 'Opublikowana',
+      draft: 'Szkic',
       
-      // Create Lesson Form
+      // Modal Titles
       createNewLesson: 'Utwórz nową lekcję',
-      lessonTitle: 'Tytuł lekcji',
-      lessonTitlePlaceholder: 'Wprowadź tytuł lekcji...',
-      lessonDescription: 'Opis (opcjonalnie)',
-      lessonDescriptionPlaceholder: 'Opisz czego nauczą się uczniowie...',
+      viewLesson: 'Podgląd lekcji',
+      editLesson: 'Edytuj lekcję',
       
-      // Students Assignment
-      assignStudents: 'Przypisz uczniom',
-      selectStudents: 'Wybierz uczniów do przypisania tej lekcji',
-      noStudentsAvailable: 'Brak dostępnych uczniów',
-      noStudentsDescription: 'Musisz najpierw mieć zapisanych uczniów',
-      selectedStudents: 'wybranych',
-      
-      // Exercises Section
+      // Modal Tabs
+      lessonInfo: 'Informacje',
       exercises: 'Ćwiczenia',
-      addExercise: 'Dodaj ćwiczenie',
-      multipleChoice: 'Wielokrotny wybór',
+      exercisesCount: 'Ćwiczenia ({count})',
+      
+      // Form Fields
+      lessonTitle: 'Tytuł lekcji',
+      lessonTitleRequired: 'Tytuł lekcji *',
+      lessonTitlePlaceholder: 'np. Podstawy gramatyki hiszpańskiej',
+      description: 'Opis',
+      descriptionPlaceholder: 'Krótki opis lekcji...',
+      lessonContent: 'Treść lekcji',
+      contentPlaceholder: 'Wprowadź treść lekcji, instrukcje...',
+      status: 'Status',
+      
+      // Student Assignment
+      assignToStudents: 'Przypisz uczniom (wybrano: {count})',
+      noStudentsAvailable: 'Brak dostępnych uczniów',
+      
+      // Exercise Types
+      abcdQuestion: 'Pytanie ABCD',
       flashcards: 'Fiszki',
       textAnswer: 'Odpowiedź tekstowa',
-      noExercises: 'Brak ćwiczeń',
-      addExerciseDescription: 'Kliknij "Dodaj ćwiczenie" aby stworzyć interaktywne ćwiczenia',
       
-      // Exercise Form Fields
-      exerciseTitle: 'Tytuł ćwiczenia',
-      exerciseTitlePlaceholder: 'np. Quiz słownictwa',
+      // Exercise Builder - Multiple Choice
       question: 'Pytanie',
-      questionPlaceholder: 'Wprowadź tutaj swoje pytanie...',
-      points: 'Punkty',
-      
-      // Multiple Choice
+      questionRequired: 'Pytanie *',
+      questionPlaceholder: 'np. Jaka jest stolica Francji?',
+      options: 'Opcje (A, B, C, D)',
       option: 'Opcja',
       correctAnswer: 'Poprawna odpowiedź',
-      selectCorrect: 'Wybierz poprawną odpowiedź',
+      correctAnswerRequired: 'Poprawna odpowiedź *',
+      explanation: 'Wyjaśnienie (opcjonalnie)',
+      explanationPlaceholder: 'Wyjaśnij dlaczego to jest poprawna odpowiedź...',
+      points: 'Punkty',
       
-      // Flashcards
-      flashcard: 'Fiszka',
-      front: 'Przód (Pytanie)',
-      frontPlaceholder: 'np. Jak powiedzieć "hello" po hiszpańsku?',
-      back: 'Tył (Odpowiedź)',
-      backPlaceholder: 'np. Hola',
-      addFlashcard: 'Dodaj fiszkę',
-      removeFlashcard: 'Usuń fiszkę',
+      // Exercise Builder - Flashcards
+      title: 'Tytuł',
+      titleRequired: 'Tytuł *',
+      titlePlaceholder: 'np. Słownictwo hiszpańskie - Jedzenie',
+      addCard: 'Dodaj fiszkę',
+      card: 'Fiszka',
+      front: 'Przód',
+      frontPlaceholder: 'Pytanie',
+      back: 'Tył',
+      backPlaceholder: 'Odpowiedź',
+      noFlashcardsYet: 'Brak fiszek. Kliknij "Dodaj fiszkę" aby rozpocząć.',
       
-      // Text Answer
-      maxLength: 'Maksymalna długość',
-      characters: 'znaków',
+      // Exercise Builder - Text Answer
+      sampleAnswer: 'Przykładowa odpowiedź (opcjonalnie)',
+      sampleAnswerPlaceholder: 'Podaj przykładową poprawną odpowiedź jako odniesienie...',
+      maxLength: 'Maks. długość (znaki)',
       
       // Exercise Actions
-      removeExercise: 'Usuń ćwiczenie',
-      
-      // Status Selection
-      lessonStatus: 'Status lekcji',
-      publishedStatus: 'Opublikowana (Uczniowie mogą uzyskać dostęp natychmiast)',
-      draftStatus: 'Szkic (Zapisz na później)',
-      
-      // Form Actions
+      saveExercise: 'Zapisz ćwiczenie',
       cancel: 'Anuluj',
-      creating: 'Tworzenie...',
-      createLessonButton: 'Utwórz lekcję',
-      withExercises: 'ćwiczeń',
+      addAnotherExercise: 'Dodaj kolejne ćwiczenie:',
+      chooseExerciseType: 'Wybierz typ ćwiczenia do dodania do lekcji:',
       
-      // Success Messages
-      lessonCreated: 'Lekcja utworzona pomyślnie z',
-      exercisesAdded: 'ćwiczeniami!',
-      lessonUpdated: 'Lekcja zaktualizowana pomyślnie',
-      lessonDeleted: 'Lekcja usunięta pomyślnie',
+      // Exercise List
+      noExercisesInLesson: 'Brak ćwiczeń w tej lekcji',
+      exercisesAdded: 'ćwiczeń dodanych',
+      atLeastOneRequired: 'Wymagane przynajmniej 1 ćwiczenie',
       
-      // Modal
-      previewLesson: 'Podgląd lekcji',
-      editLesson: 'Edytuj lekcję',
+      // Modal Actions
       close: 'Zamknij',
-      switchToEdit: 'Przełącz na edycję',
-      switchToPreview: 'Przełącz na podgląd',
+      creating: 'Tworzenie...',
+      saving: 'Zapisywanie...',
+      saveChanges: 'Zapisz zmiany',
       
-      // Warnings
-      exerciseWarning: 'Ostrzeżenie: Ćwiczenia nie mogą być zapisane. Tabela lesson_exercises musi zostać utworzona w bazie danych.',
-      tableNotExist: 'Tabela lesson_exercises nie istnieje. Ćwiczenia nie zostaną zapisane.',
-      
-      // Preview Content
-      previewContent: 'Podgląd treści lekcji',
-      assignedTo: 'Przypisano do',
-      students: 'uczniów',
-      createdOn: 'Utworzono',
-      lastUpdated: 'Ostatnia aktualizacja',
-      
-      // Exercise Types Labels
-      exerciseType: 'Typ ćwiczenia',
-      typeMultipleChoice: 'Wielokrotny wybór',
-      typeFlashcard: 'Fiszka',
-      typeTextAnswer: 'Odpowiedź tekstowa',
+      // Toast Messages
+      enterTitle: 'Proszę wprowadzić tytuł lekcji',
+      addOneExercise: 'Proszę dodać przynajmniej jedno ćwiczenie przed utworzeniem lekcji',
+      lessonCreated: 'Lekcja "{title}" utworzona z {count} ćwiczeniami!',
+      lessonUpdated: 'Lekcja "{title}" zaktualizowana pomyślnie!',
+      lessonDeleted: 'Lekcja usunięta pomyślnie',
+      failedToSave: 'Nie udało się zapisać lekcji',
+      failedToDelete: 'Nie udało się usunąć lekcji',
     },
+
   },
 } as const;
 
