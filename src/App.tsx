@@ -7,7 +7,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { StudentsProvider } from './contexts/StudentsContext';
 import { Layout } from './components/Layout';
 import { RouteGuard } from './components/RouteGuard';
-import  LandingPage  from './pages/LandingPage';
+import { LandingPage } from './pages/LandingPage';
 import { Login } from './pages/Login';
 import { SignUp } from './pages/SignUp';
 import { StudentDashboard } from './pages/StudentDashboard';
@@ -32,7 +32,7 @@ function App() {
               <div className="App">
                 <Routes>
                   {/* Public Routes */}
-                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/" element={<LandingPage />} /> {/* ← ZMIENIONE: Landing jako strona główna */}
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<SignUp />} />
                   
