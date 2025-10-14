@@ -88,17 +88,17 @@ export function TutorDashboard() {
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {t.tutorDashboard.title} {/* ← ZMIENIONE */}
+            {t.tutorDashboard.title}  
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            {t.tutorDashboard.loading} {/* ← ZMIENIONE */}
+            {t.tutorDashboard.loading}  
           </p>
         </div>
         
         <div className="flex items-center justify-center py-12">
           <RefreshCw className="h-8 w-8 animate-spin text-purple-600" />
           <span className="ml-2 text-gray-600 dark:text-gray-400">
-            {t.tutorDashboard.loadingStats} {/* ← ZMIENIONE */}
+            {t.tutorDashboard.loadingStats}  
           </span>
         </div>
       </div>
@@ -111,7 +111,7 @@ export function TutorDashboard() {
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {t.tutorDashboard.title} {/* ← ZMIENIONE */}
+            {t.tutorDashboard.title}  
           </h1>
         </div>
 
@@ -120,7 +120,7 @@ export function TutorDashboard() {
             <AlertCircle className="h-5 w-5 text-red-600" />
             <div>
               <h3 className="text-red-800 dark:text-red-200 font-medium">
-                {t.tutorDashboard.databaseError} {/* ← ZMIENIONE */}
+                {t.tutorDashboard.databaseError}  
               </h3>
               <p className="text-red-600 dark:text-red-300 text-sm">{error}</p>
             </div>
@@ -129,7 +129,7 @@ export function TutorDashboard() {
             onClick={refreshData}
             className="mt-3 px-3 py-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-md hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
           >
-            {t.tutorDashboard.tryAgain} {/* ← ZMIENIONE */}
+            {t.tutorDashboard.tryAgain}  
           </button>
         </div>
       </div>
@@ -142,10 +142,10 @@ export function TutorDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {t.tutorDashboard.title} {/* ← ZMIENIONE */}
+            {t.tutorDashboard.title}  
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            {t.tutorDashboard.subtitle} {/* ← ZMIENIONE */}
+            {t.tutorDashboard.subtitle}  
           </p>
         </div>
         <button
@@ -153,7 +153,7 @@ export function TutorDashboard() {
           className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
         >
           <RefreshCw className="h-4 w-4" />
-          <span>{t.tutorDashboard.refresh}</span> {/* ← ZMIENIONE */}
+          <span>{t.tutorDashboard.refresh}</span>  
         </button>
       </div>
 
@@ -163,7 +163,7 @@ export function TutorDashboard() {
           <div className="flex items-center space-x-2">
             <CheckCircle className="h-5 w-5 text-green-600" />
             <span className="text-green-800 dark:text-green-200 font-medium">
-              {t.tutorDashboard.lessonCreatedSuccess} {/* ← ZMIENIONE */}
+              {t.tutorDashboard.lessonCreatedSuccess}  
             </span>
           </div>
         </div>
@@ -174,38 +174,38 @@ export function TutorDashboard() {
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
           <span className="text-blue-800 dark:text-blue-200 font-medium">
-            {t.tutorDashboard.liveDatabaseConnection} {/* ← ZMIENIONE */}
+            {t.tutorDashboard.liveDatabaseConnection}  
           </span>
         </div>
         <div className="text-blue-600 dark:text-blue-300 text-sm mt-1">
-          {t.tutorDashboard.studentsCount}: {students.length} • {/* ← ZMIENIONE */}
-          {t.tutorDashboard.teachingHoursCount}: {kpis.teachingHours}h • {/* ← ZMIENIONE */}
-          {t.tutorDashboard.completionRateCount}: {kpis.completionRate}% {/* ← ZMIENIONE */}
+          {t.tutorDashboard.studentsCount}: {students.length} •  
+          {t.tutorDashboard.teachingHoursCount}: {kpis.teachingHours}h •  
+          {t.tutorDashboard.completionRateCount}: {kpis.completionRate}%  
         </div>
       </div>
 
       {/* KPI Cards - REAL DATA */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <KPICard
-          title={t.tutorDashboard.totalStudents} {/* ← ZMIENIONE */}
+          title={t.tutorDashboard.totalStudents}
           value={kpis.totalStudents}
           icon={Users}
           color="purple"
         />
         <KPICard
-          title={t.tutorDashboard.activeStudents} {/* ← ZMIENIONE */}
+          title={t.tutorDashboard.activeStudents}
           value={kpis.activeStudents}
           icon={TrendingUp}
           color="blue"
         />
         <KPICard
-          title={t.tutorDashboard.teachingHours} {/* ← ZMIENIONE */}
+          title={t.tutorDashboard.teachingHours}  
           value={`${kpis.teachingHours}h`}
           icon={Clock}
           color="green"
         />
         <KPICard
-          title={t.tutorDashboard.completionRate} {/* ← ZMIENIONE */}
+          title={t.tutorDashboard.completionRate}  
           value={`${kpis.completionRate}%`}
           icon={CheckCircle}
           color="orange"
@@ -216,17 +216,17 @@ export function TutorDashboard() {
         {/* Student Roster - REAL DATA */}
         <div>
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            {t.tutorDashboard.myStudents} ({students.length}) {/* ← ZMIENIONE */}
+            {t.tutorDashboard.myStudents} ({students.length})  
           </h2>
           
           {students.length === 0 ? (
             <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <Users className="h-8 w-8 text-gray-400 mx-auto mb-2" />
               <p className="text-gray-500 dark:text-gray-400">
-                {t.tutorDashboard.noStudentsFound} {/* ← ZMIENIONE */}
+                {t.tutorDashboard.noStudentsFound}  
               </p>
               <p className="text-sm text-gray-400 dark:text-gray-500">
-                {t.tutorDashboard.addStudentsHint} {/* ← ZMIENIONE */}
+                {t.tutorDashboard.addStudentsHint}  
               </p>
             </div>
           ) : (
@@ -252,7 +252,7 @@ export function TutorDashboard() {
                   
                   <div className="mb-3">
                     <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                      <span>{t.tutorDashboard.progress}</span> {/* ← ZMIENIONE */}
+                      <span>{t.tutorDashboard.progress}</span>  
                       <span>{student.progress}%</span>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -266,11 +266,11 @@ export function TutorDashboard() {
                   <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                     <div className="flex items-center space-x-1">
                       <BookOpen className="h-4 w-4" />
-                      <span>{student.lessonsCompleted}/{student.totalLessons} {t.tutorDashboard.lessons}</span> {/* ← ZMIENIONE */}
+                      <span>{student.lessonsCompleted}/{student.totalLessons} {t.tutorDashboard.lessons}</span>  
                     </div>
                     <div className="flex items-center space-x-1">
                       <Clock className="h-4 w-4" />
-                      <span>{student.totalHours}{t.tutorDashboard.hours}</span> {/* ← ZMIENIONE */}
+                      <span>{student.totalHours}{t.tutorDashboard.hours}</span>  
                     </div>
                   </div>
                 </div>
@@ -279,7 +279,7 @@ export function TutorDashboard() {
               {students.length > 6 && (
                 <div className="text-center pt-2">
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {t.tutorDashboard.andMoreStudents.replace('{count}', String(students.length - 6))} {/* ← ZMIENIONE */}
+                    {t.tutorDashboard.andMoreStudents.replace('{count}', String(students.length - 6))}  
                   </span>
                 </div>
               )}
@@ -290,7 +290,7 @@ export function TutorDashboard() {
         {/* Create Lesson Form - REAL FUNCTIONALITY */}
         <div>
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            {t.tutorDashboard.createNewLesson} {/* ← ZMIENIONE */}
+            {t.tutorDashboard.createNewLesson}  
           </h2>
           
           {lessonError && (
@@ -303,48 +303,48 @@ export function TutorDashboard() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t.tutorDashboard.lessonTitle} {t.tutorDashboard.required} {/* ← ZMIENIONE */}
+                  {t.tutorDashboard.lessonTitle} {t.tutorDashboard.required}  
                 </label>
                 <input
                   type="text"
                   value={newLesson.title}
                   onChange={(e) => setNewLesson({...newLesson, title: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder={t.tutorDashboard.lessonTitlePlaceholder} {/* ← ZMIENIONE */}
+                  placeholder={t.tutorDashboard.lessonTitlePlaceholder}  
                   required
                 />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t.tutorDashboard.description} {/* ← ZMIENIONE */}
+                  {t.tutorDashboard.description}  
                 </label>
                 <textarea
                   value={newLesson.description}
                   onChange={(e) => setNewLesson({...newLesson, description: e.target.value})}
                   rows={2}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder={t.tutorDashboard.descriptionPlaceholder} {/* ← ZMIENIONE */}
+                  placeholder={t.tutorDashboard.descriptionPlaceholder}  
                 />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t.tutorDashboard.content} {t.tutorDashboard.required} {/* ← ZMIENIONE */}
+                  {t.tutorDashboard.content} {t.tutorDashboard.required}  
                 </label>
                 <textarea
                   value={newLesson.content}
                   onChange={(e) => setNewLesson({...newLesson, content: e.target.value})}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder={t.tutorDashboard.contentPlaceholder} {/* ← ZMIENIONE */}
+                  placeholder={t.tutorDashboard.contentPlaceholder}  
                   required
                 />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t.tutorDashboard.assignToStudents.replace('{count}', String(students.length))} {/* ← ZMIENIONE */}
+                  {t.tutorDashboard.assignToStudents.replace('{count}', String(students.length))}  
                 </label>
                 {students.length > 0 ? (
                   <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-3">
@@ -362,7 +362,7 @@ export function TutorDashboard() {
                         className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                       />
                       <span className="font-medium">
-                        {t.tutorDashboard.selectAll} {/* ← ZMIENIONE */}
+                        {t.tutorDashboard.selectAll}  
                       </span>
                     </label>
                     {students.map((student) => (
@@ -379,12 +379,12 @@ export function TutorDashboard() {
                   </div>
                 ) : (
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {t.tutorDashboard.noStudentsAvailable} {/* ← ZMIENIONE */}
+                    {t.tutorDashboard.noStudentsAvailable}  
                   </p>
                 )}
                 {students.length === 0 && (
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                    {t.tutorDashboard.addStudentsFirst} {/* ← ZMIENIONE */}
+                    {t.tutorDashboard.addStudentsFirst}  
                   </p>
                 )}
               </div>
@@ -397,12 +397,12 @@ export function TutorDashboard() {
                 {isCreatingLesson ? (
                   <>
                     <RefreshCw className="h-4 w-4 animate-spin" />
-                    <span>{t.tutorDashboard.creating}</span> {/* ← ZMIENIONE */}
+                    <span>{t.tutorDashboard.creating}</span>  
                   </>
                 ) : (
                   <>
                     <PlusCircle className="h-4 w-4" />
-                    <span>{t.tutorDashboard.createLesson}</span> {/* ← ZMIENIONE */}
+                    <span>{t.tutorDashboard.createLesson}</span>  
                   </>
                 )}
               </button>
