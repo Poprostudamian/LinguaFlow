@@ -57,7 +57,7 @@ export function Login() {
         {/* Logo - NOW CLICKABLE */}
         <div className="text-center mb-8">
           <Link 
-            to="/" 
+            to="/LandingPage.tsx" 
             className="inline-flex flex-col items-center group"
           >
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 mb-4 group-hover:scale-110 transition-transform duration-200">
