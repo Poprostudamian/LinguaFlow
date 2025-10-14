@@ -834,6 +834,93 @@ export const translations = {
       meetingFailed: 'Failed to create meeting',
     },
 
+
+  // Tutor Students Page
+    tutorStudentsPage: {
+      // Page Title & Header
+      title: 'Students',
+      subtitle: 'Manage your students and track their progress',
+      inviteStudent: 'Invite Student',
+      refresh: 'Refresh',
+      
+      // Loading & Error
+      loading: 'Loading students...',
+      errorLoading: 'Error loading students',
+      
+      // Quick Stats (KPI Cards)
+      totalStudents: 'Total Students',
+      activeStudents: 'Active Students',
+      pendingInvitations: 'Pending Invitations',
+      averageProgress: 'Average Progress',
+      
+      // Tabs
+      allStudents: 'All Students',
+      activeTab: 'Active',
+      invitationsTab: 'Invitations',
+      
+      // Search
+      searchPlaceholder: 'Search by name or email...',
+      
+      // Empty States - Students
+      noStudentsYet: 'No students yet',
+      noStudentsFound: 'No students found',
+      tryAdjustingSearch: 'Try adjusting your search terms',
+      inviteFirstStudent: 'Invite your first student to get started',
+      
+      // Empty States - Invitations
+      noPendingInvitations: 'No pending invitations',
+      noPendingDescription: 'All your invitations have been accepted or expired',
+      
+      // Student Card
+      progress: 'Progress',
+      lessons: 'Lessons',
+      hours: 'Hours',
+      joined: 'Joined',
+      sendMessage: 'Send Message',
+      level: 'Level',
+      active: 'Active',
+      inactive: 'Inactive',
+      
+      // Levels
+      beginner: 'Beginner',
+      intermediate: 'Intermediate',
+      advanced: 'Advanced',
+      
+      // Invite Modal
+      inviteModalTitle: 'Invite New Student',
+      studentEmail: 'Student Email',
+      studentEmailPlaceholder: 'student@example.com',
+      personalMessage: 'Personal Message (Optional)',
+      personalMessagePlaceholder: 'Add a personal message to your invitation...',
+      sendInvitation: 'Send Invitation',
+      sending: 'Sending...',
+      cancel: 'Cancel',
+      
+      // Invitations List
+      invitationTo: 'Invitation to',
+      sentOn: 'Sent on',
+      expiresOn: 'Expires on',
+      resend: 'Resend',
+      cancelInvitation: 'Cancel',
+      statusPending: 'Pending',
+      statusAccepted: 'Accepted',
+      statusExpired: 'Expired',
+      statusCancelled: 'Cancelled',
+      
+      // Toast Messages
+      invitationSent: 'Invitation sent to',
+      invitationResent: 'Invitation resent to',
+      invitationCancelled: 'Invitation cancelled',
+      enterValidEmail: 'Please enter a valid email address',
+      errorSendingInvitation: 'Error sending invitation',
+      errorResendingInvitation: 'Error resending invitation',
+      errorCancellingInvitation: 'Error cancelling invitation',
+      
+      // Actions
+      viewProgress: 'View Progress',
+      assignLesson: 'Assign Lesson',
+      removeStudent: 'Remove Student',
+    },
   },
   //--------------------------------------------------PL-------------------------------------------------------------------------------------------------------------------------
   pl: {
