@@ -1946,6 +1946,109 @@ export const translations = {
       assignLesson: 'Przypisz lekcję',
       removeStudent: 'Usuń ucznia',
     },
+
+    // Landing Page
+    landingPage: {
+      // Navigation
+      features: 'Funkcje',
+      howItWorks: 'Jak to działa',
+      login: 'Zaloguj się',
+      getStarted: 'Rozpocznij',
+      
+      // Mobile Menu
+      lightMode: 'Tryb jasny',
+      darkMode: 'Tryb ciemny',
+      
+      // Hero Section
+      heroTitle: 'Zrewolucjonizuj naukę języków',
+      heroSubtitle: 'Kompleksowa platforma łącząca korepetytorów i uczniów dla spersonalizowanej, interaktywnej nauki języków.',
+      startTeaching: 'Rozpocznij nauczanie',
+      startLearning: 'Zacznij się uczyć',
+      freeToStart: '✨ Bezpłatny start • Nie potrzeba karty kredytowej',
+      
+      // Stats Section
+      activeTutors: 'Aktywnych korepetytorów',
+      studentsLearning: 'Uczących się studentów',
+      lessonsCompleted: 'Ukończonych lekcji',
+      satisfactionRate: 'Wskaźnik zadowolenia',
+      
+      // Features Section
+      featuresTitle: 'Wszystko czego potrzebujesz',
+      featuresSubtitle: 'Zaawansowane narzędzia zaprojektowane dla nowoczesnej edukacji językowej',
+      
+      // Feature Items
+      interactiveLessonsTitle: 'Interaktywne lekcje',
+      interactiveLessonsDesc: 'Twórz i przypisuj spersonalizowane lekcje z ćwiczeniami, fiszkami i testami dostosowanymi do potrzeb każdego ucznia.',
+      
+      smartSchedulingTitle: 'Inteligentne planowanie',
+      smartSchedulingDesc: 'Zarządzaj spotkaniami i sesjami za pomocą zintegrowanego kalendarza. Nigdy nie przegap lekcji dzięki automatycznym przypomnieniom.',
+      
+      realtimeCommunicationTitle: 'Komunikacja w czasie rzeczywistym',
+      realtimeCommunicationDesc: 'Pozostań w kontakcie dzięki wbudowanemu systemowi wiadomości. Omawiaj postępy, zadawaj pytania i udzielaj informacji natychmiast.',
+      
+      studentManagementTitle: 'Zarządzanie uczniami',
+      studentManagementDesc: 'Śledź postępy, monitoruj wskaźniki ukończenia i zarządzaj wieloma uczniami z jednego intuicyjnego panelu.',
+      
+      progressTrackingTitle: 'Śledzenie postępów',
+      progressTrackingDesc: 'Szczegółowe analizy i raporty pokazują postępy w nauce, ukończone ćwiczenia i czas spędzony na każdej lekcji.',
+      
+      personalizedLearningTitle: 'Spersonalizowana nauka',
+      personalizedLearningDesc: 'Dostosuj treści do indywidualnych stylów uczenia się. Twórz niestandardowe ćwiczenia dopasowane do poziomu każdego ucznia.',
+      
+      // How It Works Section
+      howItWorksTitle: 'Jak to działa',
+      howItWorksSubtitle: 'Proste kroki aby rozpocząć swoją podróż',
+      
+      forTutors: 'Dla korepetytorów',
+      tutorStep1: 'Zarejestruj się i utwórz swój profil',
+      tutorStep2: 'Zaproś uczniów przez email',
+      tutorStep3: 'Twórz spersonalizowane lekcje i ćwiczenia',
+      tutorStep4: 'Planuj spotkania i śledź postępy',
+      
+      forStudents: 'Dla uczniów',
+      studentStep1: 'Zaakceptuj zaproszenie od korepetytora',
+      studentStep2: 'Uzyskaj dostęp do przypisanych lekcji',
+      studentStep3: 'Wykonuj interaktywne ćwiczenia',
+      studentStep4: 'Śledź swoją drogę nauki',
+      
+      // Testimonials Section
+      testimonialsTitle: 'Co mówią użytkownicy',
+      
+      testimonial1Name: 'Maria Garcia',
+      testimonial1Role: 'Korepetytor języka hiszpańskiego',
+      testimonial1Text: 'LinguaFlow całkowicie zmienił sposób w jaki uczę. Interaktywne lekcje angażują moich uczniów!',
+      
+      testimonial2Name: 'John Smith',
+      testimonial2Role: 'Uczeń języka angielskiego',
+      testimonial2Text: 'W końcu platforma, która sprawia że nauka jest przyjemna i zorganizowana. Zrobiłem ogromne postępy!',
+      
+      testimonial3Name: 'Sophie Chen',
+      testimonial3Role: 'Korepetytor języka mandaryńskiego',
+      testimonial3Text: 'Zarządzanie wieloma uczniami jest bezproblemowe. Śledzenie postępów jest bezcenne.',
+      
+      // CTA Section
+      ctaTitle: 'Gotowy aby rozpocząć?',
+      ctaSubtitle: 'Dołącz do tysięcy korepetytorów i uczniów już korzystających z LinguaFlow',
+      createFreeAccount: 'Utwórz darmowe konto',
+      
+      // Footer
+      footerTagline: 'Wspieramy edukację językową poprzez technologię.',
+      
+      footerProduct: 'Produkt',
+      footerPricing: 'Cennik',
+      
+      footerCompany: 'Firma',
+      footerAbout: 'O nas',
+      footerBlog: 'Blog',
+      footerContact: 'Kontakt',
+      
+      footerLegal: 'Prawne',
+      footerPrivacy: 'Prywatność',
+      footerTerms: 'Warunki',
+      footerSecurity: 'Bezpieczeństwo',
+      
+      footerCopyright: '© 2025 LinguaFlow. Wszelkie prawa zastrzeżone.',
+    },
   },
 } as const;
 
