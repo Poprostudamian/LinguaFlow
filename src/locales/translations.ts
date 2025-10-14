@@ -732,32 +732,30 @@ export const translations = {
       tableError: 'Make sure the messaging tables are created.',
     },
 
-    // Tutor Schedule Page
+// Tutor Schedule Page
     tutorSchedulePage: {
       // Page Title & Header
       title: 'Schedule',
-      subtitle: 'Manage your meetings and schedule new sessions',
+      description: 'Manage your meetings and schedule new sessions',
       refresh: 'Refresh',
       createMeeting: 'Create Meeting',
       
-      // Loading
+      // Loading & Error
       loading: 'Loading meetings...',
-      
-      // Error
       errorLoading: 'Error loading meetings',
-      tryAgain: 'Try again',
+      errorDeleting: 'Failed to delete meeting',
       
       // Quick Stats
       todaysMeetings: "Today's Meetings",
-      thisWeek: 'This Week',
-      upcoming: 'Upcoming',
+      thisWeekMeetings: 'This Week',
+      next7Days: 'Next 7 Days',
       
       // Calendar Navigation
       today: 'Today',
       previousMonth: 'Previous month',
       nextMonth: 'Next month',
       
-      // Days of Week
+      // Days of Week (skrócone)
       sunday: 'Sun',
       monday: 'Mon',
       tuesday: 'Tue',
@@ -766,10 +764,33 @@ export const translations = {
       friday: 'Fri',
       saturday: 'Sat',
       
+      // Days of Week (pełne nazwy dla formatDate)
+      sundayFull: 'Sunday',
+      mondayFull: 'Monday',
+      tuesdayFull: 'Tuesday',
+      wednesdayFull: 'Wednesday',
+      thursdayFull: 'Thursday',
+      fridayFull: 'Friday',
+      saturdayFull: 'Saturday',
+      
+      // Months (pełne nazwy dla formatDate)
+      january: 'January',
+      february: 'February',
+      march: 'March',
+      april: 'April',
+      may: 'May',
+      june: 'June',
+      july: 'July',
+      august: 'August',
+      september: 'September',
+      october: 'October',
+      november: 'November',
+      december: 'December',
+      
       // Selected Day Panel
-      selectADate: 'Select a Date',
-      meeting: 'meeting',
-      meetings: 'meetings',
+      selectedDay: 'Selected Day',
+      meetingsOnDay: 'meeting on this day',
+      meetingsOnDayPlural: 'meetings on this day',
       noMeetingsOnDay: 'No meetings on this day',
       
       // Meeting Status
@@ -781,16 +802,22 @@ export const translations = {
       
       // Meeting Details
       duration: 'min',
-      student: 'student',
-      students: 'students',
-      join: 'Join',
+      participant: 'participant',
+      participants: 'participants',
+      joinMeeting: 'Join Meeting',
       edit: 'Edit',
       delete: 'Delete',
+      meetingLink: 'Meeting Link',
       
       // Upcoming Section
       upcomingMeetingsTitle: 'Upcoming Meetings',
-      noUpcomingMeetings: 'No upcoming meetings',
-      noUpcomingDescription: 'You have no scheduled meetings at the moment',
+      noUpcomingMeetings: 'No meetings scheduled',
+      noUpcomingDescription: 'Create your first meeting to get started',
+      scheduledFor: 'Scheduled for',
+      
+      // Dialogs
+      confirmDelete: 'Are you sure you want to delete this meeting?',
+
       
       // Time Formatting
       at: 'at',
