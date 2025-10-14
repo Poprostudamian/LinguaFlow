@@ -187,13 +187,13 @@ export function TutorDashboard() {
       {/* KPI Cards - REAL DATA */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <KPICard
-          title={t.tutorDashboard.totalStudents}
+          title={t.tutorDashboard.totalStudents}  
           value={kpis.totalStudents}
           icon={Users}
           color="purple"
         />
         <KPICard
-          title={t.tutorDashboard.activeStudents}
+          title={t.tutorDashboard.activeStudents}  
           value={kpis.activeStudents}
           icon={TrendingUp}
           color="blue"
