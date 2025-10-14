@@ -336,21 +336,6 @@ export function TutorDashboard() {
         </div>
       )}
 
-      {/* Real Data Indicator */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-          <span className="text-blue-800 dark:text-blue-200 font-medium">
-            {t.tutorDashboard.liveDatabaseConnection}
-          </span>
-        </div>
-        <div className="text-blue-600 dark:text-blue-300 text-sm mt-1">
-          {t.tutorDashboard.studentsCount}: {students.length} • 
-          {t.tutorDashboard.teachingHoursCount}: {kpis.teachingHours}h • 
-          {t.tutorDashboard.completionRateCount}: {kpis.completionRate}%
-        </div>
-      </div>
-
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <KPICard
