@@ -7,6 +7,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { StudentsProvider } from './contexts/StudentsContext';
 import { Layout } from './components/Layout';
 import { RouteGuard } from './components/RouteGuard';
+import { LandingPage } from './pages/LandingPage'; // ← DODANE
 import { Login } from './pages/Login';
 import { SignUp } from './pages/SignUp';
 import { StudentDashboard } from './pages/StudentDashboard';
@@ -30,10 +31,12 @@ function App() {
             <Router>
               <div className="App">
                 <Routes>
+                  {/* Public Routes */}
+                  <Route path="/" element={<LandingPage />} /> {/* ← ZMIENIONE: Landing jako strona główna */}
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<SignUp />} />
-                  <Route path="/" element={<Navigate to="/login" replace />} />
                   
+                  {/* Protected Routes with Layout */}
                   <Route path="/" element={<Layout />}>
                     <Route 
                       path="student/*" 
@@ -67,7 +70,8 @@ function App() {
                     />
                   </Route>
                   
-                  <Route path="*" element={<Navigate to="/login" replace />} />
+                  {/* Fallback - redirect to home */}
+                  <Route path="*" element={<Navigate to="/" replace />} /> {/* ← ZMIENIONE: przekieruj do Landing, nie login */}
                 </Routes>
               </div>
             </Router>
