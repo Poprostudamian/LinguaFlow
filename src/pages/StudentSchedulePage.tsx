@@ -69,13 +69,23 @@ export function StudentSchedulePage() {
 
   const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentDate);
 
-  // Generate calendar days
+  // Generate calendar days (always 42 cells = 6 rows x 7 days)
   const calendarDays: (number | null)[] = [];
+  
+  // Add empty cells before first day of month
   for (let i = 0; i < startingDayOfWeek; i++) {
     calendarDays.push(null);
   }
+  
+  // Add all days of the month
   for (let day = 1; day <= daysInMonth; day++) {
     calendarDays.push(day);
+  }
+  
+  // Fill remaining cells to complete the grid (6 rows x 7 days = 42 cells)
+  const remainingCells = 42 - calendarDays.length;
+  for (let i = 0; i < remainingCells; i++) {
+    calendarDays.push(null);
   }
 
   // Get meetings for a specific day
@@ -354,7 +364,8 @@ export function StudentSchedulePage() {
             {calendarDays.map((day, index) => {
               const dayMeetings = getMeetingsForDay(day);
               const isLastColumn = (index + 1) % 7 === 0;
-              const isLastRow = index >= calendarDays.length - 7;
+              const rowIndex = Math.floor(index / 7);
+              const isLastRow = rowIndex === 5; // Last row (6th row, index 5)
               
               return (
                 <button
@@ -365,7 +376,7 @@ export function StudentSchedulePage() {
                     relative min-h-[100px] p-3 transition-all duration-200
                     ${!isLastColumn ? 'border-r border-gray-700' : ''}
                     ${!isLastRow ? 'border-b border-gray-700' : ''}
-                    ${!day ? 'cursor-default' : ''}
+                    ${!day ? 'cursor-default bg-[#151d2b]' : ''}
                     ${isSelected(day) && day ? 'bg-gray-700/50' : ''}
                     ${!isSelected(day) && day ? 'hover:bg-gray-700/30' : ''}
                   `}
