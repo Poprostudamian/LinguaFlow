@@ -1,63 +1,83 @@
-import React from 'react';
-import { BookOpen, Users, Calendar, MessageSquare, CheckCircle, ArrowRight, Menu, X, Star, Sun, Moon } from 'lucide-react';
+// src/pages/LandingPage.tsx - WITH TRANSLATIONS
+import React, { useState } from 'react';
+import { BookOpen, Users, Calendar, MessageSquare, CheckCircle, ArrowRight, Menu, X, Star, Sun, Moon, Globe } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
-import { useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
-export default function LandingPage() {
+export function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isDark, toggleTheme } = useTheme();
+  const { t, language, toggleLanguage } = useLanguage(); // ← DODANE
 
   const features = [
     {
       icon: <BookOpen className="w-8 h-8" />,
-      title: "Interactive Lessons",
-      description: "Create and assign custom lessons with exercises, flashcards, and assessments tailored to each student's needs."
+      title: t.landingPage.interactiveLessonsTitle,
+      description: t.landingPage.interactiveLessonsDesc
     },
     {
       icon: <Calendar className="w-8 h-8" />,
-      title: "Smart Scheduling",
-      description: "Manage meetings and sessions with an integrated calendar. Never miss a lesson with automated reminders."
+      title: t.landingPage.smartSchedulingTitle,
+      description: t.landingPage.smartSchedulingDesc
     },
     {
       icon: <MessageSquare className="w-8 h-8" />,
-      title: "Real-time Communication",
-      description: "Stay connected with built-in messaging. Discuss progress, ask questions, and provide feedback instantly."
+      title: t.landingPage.realtimeCommunicationTitle,
+      description: t.landingPage.realtimeCommunicationDesc
     },
     {
       icon: <Users className="w-8 h-8" />,
-      title: "Student Management",
-      description: "Track progress, monitor completion rates, and manage multiple students from one intuitive dashboard."
+      title: t.landingPage.studentManagementTitle,
+      description: t.landingPage.studentManagementDesc
     },
     {
       icon: <CheckCircle className="w-8 h-8" />,
-      title: "Progress Tracking",
-      description: "Detailed analytics and reports show learning progress, completed exercises, and time spent on each lesson."
+      title: t.landingPage.progressTrackingTitle,
+      description: t.landingPage.progressTrackingDesc
     },
     {
       icon: <Star className="w-8 h-8" />,
-      title: "Personalized Learning",
-      description: "Adapt content to individual learning styles. Create custom exercises that match each student's level."
+      title: t.landingPage.personalizedLearningTitle,
+      description: t.landingPage.personalizedLearningDesc
     }
   ];
 
   const steps = [
     {
-      role: "Tutor",
+      role: t.landingPage.forTutors,
       steps: [
-        "Sign up and create your profile",
-        "Invite students via email",
-        "Create custom lessons and exercises",
-        "Schedule meetings and track progress"
+        t.landingPage.tutorStep1,
+        t.landingPage.tutorStep2,
+        t.landingPage.tutorStep3,
+        t.landingPage.tutorStep4
       ]
     },
     {
-      role: "Student",
+      role: t.landingPage.forStudents,
       steps: [
-        "Accept your tutor's invitation",
-        "Access assigned lessons",
-        "Complete interactive exercises",
-        "Track your learning journey"
+        t.landingPage.studentStep1,
+        t.landingPage.studentStep2,
+        t.landingPage.studentStep3,
+        t.landingPage.studentStep4
       ]
+    }
+  ];
+
+  const testimonials = [
+    { 
+      name: t.landingPage.testimonial1Name, 
+      role: t.landingPage.testimonial1Role, 
+      text: t.landingPage.testimonial1Text 
+    },
+    { 
+      name: t.landingPage.testimonial2Name, 
+      role: t.landingPage.testimonial2Role, 
+      text: t.landingPage.testimonial2Text 
+    },
+    { 
+      name: t.landingPage.testimonial3Name, 
+      role: t.landingPage.testimonial3Role, 
+      text: t.landingPage.testimonial3Text 
     }
   ];
 
@@ -73,9 +93,27 @@ export default function LandingPage() {
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">Features</a>
-              <a href="#how-it-works" className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">How It Works</a>
+            <div className="hidden md:flex items-center space-x-6">
+              <a href="#features" className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                {t.landingPage.features}
+              </a>
+              <a href="#how-it-works" className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                {t.landingPage.howItWorks}
+              </a>
+              
+              {/* Language Toggle Button */}
+              <button
+                onClick={toggleLanguage}
+                className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                aria-label="Toggle language"
+              >
+                <Globe className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {language === 'en' ? '🇬🇧 EN' : '🇵🇱 PL'}
+                </span>
+              </button>
+              
+              {/* Theme Toggle Button */}
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -87,8 +125,13 @@ export default function LandingPage() {
                   <Moon className="h-5 w-5 text-gray-600" />
                 )}
               </button>
-              <a href="/login" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium">Login</a>
-              <a href="/signup" className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">Get Started</a>
+              
+              <a href="/login" className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium">
+                {t.landingPage.login}
+              </a>
+              <a href="/signup" className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                {t.landingPage.getStarted}
+              </a>
             </div>
 
             {/* Mobile menu button */}
@@ -96,7 +139,11 @@ export default function LandingPage() {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
             >
-              {mobileMenuOpen ? <X className="h-6 w-6 text-gray-900 dark:text-white" /> : <Menu className="h-6 w-6 text-gray-900 dark:text-white" />}
+              {mobileMenuOpen ? (
+                <X className="h-6 w-6 text-gray-900 dark:text-white" />
+              ) : (
+                <Menu className="h-6 w-6 text-gray-900 dark:text-white" />
+              )}
             </button>
           </div>
         </div>
@@ -105,26 +152,54 @@ export default function LandingPage() {
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
             <div className="px-4 py-4 space-y-3">
-              <a href="#features" className="block text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400">Features</a>
-              <a href="#how-it-works" className="block text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400">How It Works</a>
+              <a 
+                href="#features" 
+                className="block text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {t.landingPage.features}
+              </a>
+              <a 
+                href="#how-it-works" 
+                className="block text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {t.landingPage.howItWorks}
+              </a>
+              
+              {/* Mobile Language Toggle */}
+              <button
+                onClick={toggleLanguage}
+                className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 w-full"
+              >
+                <Globe className="h-5 w-5" />
+                <span>{language === 'en' ? '🇬🇧 English' : '🇵🇱 Polski'}</span>
+              </button>
+              
+              {/* Mobile Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
+                className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 w-full"
               >
                 {isDark ? (
                   <>
                     <Sun className="h-5 w-5" />
-                    <span>Light Mode</span>
+                    <span>{t.landingPage.lightMode}</span>
                   </>
                 ) : (
                   <>
                     <Moon className="h-5 w-5" />
-                    <span>Dark Mode</span>
+                    <span>{t.landingPage.darkMode}</span>
                   </>
                 )}
               </button>
-              <a href="/login" className="block text-purple-600 dark:text-purple-400 font-medium">Login</a>
-              <a href="/signup" className="block bg-purple-600 text-white px-4 py-2 rounded-lg text-center hover:bg-purple-700">Get Started</a>
+              
+              <a href="/login" className="block text-purple-600 dark:text-purple-400 font-medium">
+                {t.landingPage.login}
+              </a>
+              <a href="/signup" className="block bg-purple-600 text-white px-4 py-2 rounded-lg text-center hover:bg-purple-700">
+                {t.landingPage.getStarted}
+              </a>
             </div>
           </div>
         )}
@@ -135,28 +210,28 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto">
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-              Transform Language Learning
+              {t.landingPage.heroTitle}
             </h1>
             <p className="text-xl sm:text-2xl text-gray-600 dark:text-gray-300 mb-10">
-              The all-in-one platform connecting tutors and students for personalized, interactive language education.
+              {t.landingPage.heroSubtitle}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              
-                <a href="/signup"
+              <a
+                href="/signup"
                 className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors shadow-lg hover:shadow-xl"
               >
-                Start Teaching
+                {t.landingPage.startTeaching}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </a>
-              
-                <a href="/signup"
+              <a
+                href="/signup"
                 className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-purple-600 dark:text-purple-400 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-2 border-purple-600 dark:border-purple-400"
               >
-                Start Learning
+                {t.landingPage.startLearning}
               </a>
             </div>
             <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">
-              ✨ Free to get started • No credit card required
+              {t.landingPage.freeToStart}
             </p>
           </div>
         </div>
@@ -168,19 +243,19 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
               <div className="text-4xl font-bold text-white mb-2">500+</div>
-              <div className="text-purple-100">Active Tutors</div>
+              <div className="text-purple-100">{t.landingPage.activeTutors}</div>
             </div>
             <div>
               <div className="text-4xl font-bold text-white mb-2">2,000+</div>
-              <div className="text-purple-100">Students Learning</div>
+              <div className="text-purple-100">{t.landingPage.studentsLearning}</div>
             </div>
             <div>
               <div className="text-4xl font-bold text-white mb-2">10,000+</div>
-              <div className="text-purple-100">Lessons Completed</div>
+              <div className="text-purple-100">{t.landingPage.lessonsCompleted}</div>
             </div>
             <div>
               <div className="text-4xl font-bold text-white mb-2">98%</div>
-              <div className="text-purple-100">Satisfaction Rate</div>
+              <div className="text-purple-100">{t.landingPage.satisfactionRate}</div>
             </div>
           </div>
         </div>
@@ -191,10 +266,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              Everything You Need
+              {t.landingPage.featuresTitle}
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Powerful tools designed for modern language education
+              {t.landingPage.featuresSubtitle}
             </p>
           </div>
 
@@ -224,10 +299,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              How It Works
+              {t.landingPage.howItWorksTitle}
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Simple steps to start your journey
+              {t.landingPage.howItWorksSubtitle}
             </p>
           </div>
 
@@ -235,7 +310,7 @@ export default function LandingPage() {
             {steps.map((section, idx) => (
               <div key={idx} className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg">
                 <h3 className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-6">
-                  For {section.role}s
+                  {section.role}
                 </h3>
                 <div className="space-y-4">
                   {section.steps.map((step, stepIdx) => (
@@ -260,16 +335,12 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              What People Say
+              {t.landingPage.testimonialsTitle}
             </h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { name: "Maria Garcia", role: "Spanish Tutor", text: "LinguaFlow has transformed how I teach. The interactive lessons keep my students engaged!" },
-              { name: "John Smith", role: "English Student", text: "Finally, a platform that makes learning fun and organized. I've improved so much!" },
-              { name: "Sophie Chen", role: "Mandarin Tutor", text: "Managing multiple students is effortless. The progress tracking is invaluable." }
-            ].map((testimonial, idx) => (
+            {testimonials.map((testimonial, idx) => (
               <div key={idx} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
                 <div className="flex mb-4">
                   {[...Array(5)].map((_, i) => (
@@ -293,17 +364,17 @@ export default function LandingPage() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-900 dark:to-indigo-900">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">
-            Ready to Get Started?
+            {t.landingPage.ctaTitle}
           </h2>
           <p className="text-xl text-purple-100 mb-10">
-            Join thousands of tutors and students already using LinguaFlow
+            {t.landingPage.ctaSubtitle}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            
-              <a href="/signup"
+            <a
+              href="/signup"
               className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-purple-600 bg-white rounded-lg hover:bg-gray-100 transition-colors shadow-lg"
             >
-              Create Free Account
+              {t.landingPage.createFreeAccount}
               <ArrowRight className="ml-2 h-5 w-5" />
             </a>
           </div>
@@ -320,36 +391,36 @@ export default function LandingPage() {
                 <span className="text-xl font-bold text-white">LinguaFlow</span>
               </div>
               <p className="text-sm text-gray-400">
-                Empowering language education through technology.
+                {t.landingPage.footerTagline}
               </p>
             </div>
             <div>
-              <h4 className="font-semibold text-white mb-4">Product</h4>
+              <h4 className="font-semibold text-white mb-4">{t.landingPage.footerProduct}</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#features" className="hover:text-purple-400 transition-colors">Features</a></li>
-                <li><a href="#how-it-works" className="hover:text-purple-400 transition-colors">How It Works</a></li>
-                <li><a href="/signup" className="hover:text-purple-400 transition-colors">Pricing</a></li>
+                <li><a href="#features" className="hover:text-purple-400 transition-colors">{t.landingPage.features}</a></li>
+                <li><a href="#how-it-works" className="hover:text-purple-400 transition-colors">{t.landingPage.howItWorks}</a></li>
+                <li><a href="/signup" className="hover:text-purple-400 transition-colors">{t.landingPage.footerPricing}</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-white mb-4">Company</h4>
+              <h4 className="font-semibold text-white mb-4">{t.landingPage.footerCompany}</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-purple-400 transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-purple-400 transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-purple-400 transition-colors">Contact</a></li>
+                <li><a href="#" className="hover:text-purple-400 transition-colors">{t.landingPage.footerAbout}</a></li>
+                <li><a href="#" className="hover:text-purple-400 transition-colors">{t.landingPage.footerBlog}</a></li>
+                <li><a href="#" className="hover:text-purple-400 transition-colors">{t.landingPage.footerContact}</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-white mb-4">Legal</h4>
+              <h4 className="font-semibold text-white mb-4">{t.landingPage.footerLegal}</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-purple-400 transition-colors">Privacy</a></li>
-                <li><a href="#" className="hover:text-purple-400 transition-colors">Terms</a></li>
-                <li><a href="#" className="hover:text-purple-400 transition-colors">Security</a></li>
+                <li><a href="#" className="hover:text-purple-400 transition-colors">{t.landingPage.footerPrivacy}</a></li>
+                <li><a href="#" className="hover:text-purple-400 transition-colors">{t.landingPage.footerTerms}</a></li>
+                <li><a href="#" className="hover:text-purple-400 transition-colors">{t.landingPage.footerSecurity}</a></li>
               </ul>
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 text-center text-sm">
-            <p>&copy; 2025 LinguaFlow. All rights reserved.</p>
+            <p>{t.landingPage.footerCopyright}</p>
           </div>
         </div>
       </footer>
