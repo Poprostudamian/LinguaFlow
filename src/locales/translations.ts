@@ -1038,6 +1038,22 @@ export const translations = {
       lessons: 'lekcji',
       hours: 'godz',
       andMoreStudents: 'I jeszcze {count} uczniów...',
+
+      // Calendar Section
+      today: 'Dziś',
+      hasMeetings: 'Masz spotkania',
+      sunday: 'Nd',
+      monday: 'Pon',
+      tuesday: 'Wtr',
+      wednesday: 'Śrd',
+      thursday: 'Czw',
+      friday: 'Pt',
+      saturday: 'Sob',
+      noMeetingsScheduled: 'Brak zaplanowanych spotkań',
+      student: 'student',
+      students: 'studenci',
+      joinMeeting: 'Dołącz do spotkania',
+      minutes: 'min',
       
       // Create Lesson Form
       createNewLesson: 'Utwórz nową lekcję',
