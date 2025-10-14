@@ -555,130 +555,127 @@ export const translations = {
     tutorLessonManagementPage: {
       // Page Title & Header
       title: 'Lesson Management',
-      subtitle: 'Create and manage your lessons with interactive exercises',
+      subtitle: 'Create and manage your lessons',
       createLesson: 'Create Lesson',
+      refresh: 'Refresh',
       
       // Loading & Errors
       loading: 'Loading lessons...',
       errorLoading: 'Failed to load lessons',
-      retry: 'Retry',
       
-      // Stats Overview
+      // KPI Cards
       totalLessons: 'Total Lessons',
       publishedLessons: 'Published',
       draftLessons: 'Drafts',
-      totalAssigned: 'Total Assigned',
+      avgAssignments: 'Avg. Assignments',
       
-      // Search & Filter
-      searchPlaceholder: 'Search lessons by title...',
-      allStatus: 'All Status',
-      published: 'Published',
-      draft: 'Draft',
-      refresh: 'Refresh',
+      // Tabs
+      allLessons: 'All Lessons',
       
-      // Empty State
-      noLessons: 'No lessons found',
-      noLessonsDescription: 'Create your first lesson to get started',
+      // Search
+      searchPlaceholder: 'Search lessons by title or description...',
+      
+      // Empty States
+      noLessonsFound: 'No lessons found',
+      noLessonsYet: 'No lessons yet',
+      tryAdjusting: 'Try adjusting your search terms',
+      createFirstLesson: 'Create your first lesson to get started',
       
       // Lesson Card
-      assigned: 'assigned',
-      sampleExercises: 'Sample exercises',
-      preview: 'Preview',
+      assigned: 'Assigned',
+      completed: 'Completed',
+      rate: 'Rate',
+      created: 'Created',
+      view: 'View',
       edit: 'Edit',
       delete: 'Delete',
-      confirmDelete: 'Are you sure you want to delete',
+      deleteConfirm: 'Delete',
+      published: 'Published',
+      draft: 'Draft',
       
-      // Create Lesson Form
+      // Modal Titles
       createNewLesson: 'Create New Lesson',
-      lessonTitle: 'Lesson Title',
-      lessonTitlePlaceholder: 'Enter lesson title...',
-      lessonDescription: 'Description (Optional)',
-      lessonDescriptionPlaceholder: 'Describe what students will learn...',
+      viewLesson: 'View Lesson',
+      editLesson: 'Edit Lesson',
       
-      // Students Assignment
-      assignStudents: 'Assign to Students',
-      selectStudents: 'Select students to assign this lesson',
-      noStudentsAvailable: 'No students available',
-      noStudentsDescription: 'You need to have students enrolled first',
-      selectedStudents: 'selected',
-      
-      // Exercises Section
+      // Modal Tabs
+      lessonInfo: 'Lesson Info',
       exercises: 'Exercises',
-      addExercise: 'Add Exercise',
-      multipleChoice: 'Multiple Choice',
+      exercisesCount: 'Exercises ({count})',
+      
+      // Form Fields
+      lessonTitle: 'Lesson Title',
+      lessonTitleRequired: 'Lesson Title *',
+      lessonTitlePlaceholder: 'e.g., Spanish Grammar Basics',
+      description: 'Description',
+      descriptionPlaceholder: 'Brief description of the lesson...',
+      lessonContent: 'Lesson Content',
+      contentPlaceholder: 'Enter lesson content, instructions...',
+      status: 'Status',
+      
+      // Student Assignment
+      assignToStudents: 'Assign to Students ({count} selected)',
+      noStudentsAvailable: 'No students available',
+      
+      // Exercise Types
+      abcdQuestion: 'ABCD Question',
       flashcards: 'Flashcards',
       textAnswer: 'Text Answer',
-      noExercises: 'No exercises yet',
-      addExerciseDescription: 'Click "Add Exercise" to create interactive exercises',
       
-      // Exercise Form Fields
-      exerciseTitle: 'Exercise Title',
-      exerciseTitlePlaceholder: 'e.g., Vocabulary Quiz',
+      // Exercise Builder - Multiple Choice
       question: 'Question',
-      questionPlaceholder: 'Enter your question here...',
-      points: 'Points',
-      
-      // Multiple Choice
+      questionRequired: 'Question *',
+      questionPlaceholder: 'e.g., What is the capital of France?',
+      options: 'Options (A, B, C, D)',
       option: 'Option',
       correctAnswer: 'Correct Answer',
-      selectCorrect: 'Select correct answer',
+      correctAnswerRequired: 'Correct Answer *',
+      explanation: 'Explanation (optional)',
+      explanationPlaceholder: 'Explain why this is the correct answer...',
+      points: 'Points',
       
-      // Flashcards
-      flashcard: 'Flashcard',
-      front: 'Front (Question)',
-      frontPlaceholder: 'e.g., What is "hello" in Spanish?',
-      back: 'Back (Answer)',
-      backPlaceholder: 'e.g., Hola',
-      addFlashcard: 'Add Flashcard',
-      removeFlashcard: 'Remove Flashcard',
+      // Exercise Builder - Flashcards
+      title: 'Title',
+      titleRequired: 'Title *',
+      titlePlaceholder: 'e.g., Spanish Vocabulary - Food',
+      addCard: 'Add Card',
+      card: 'Card',
+      front: 'Front',
+      frontPlaceholder: 'Question',
+      back: 'Back',
+      backPlaceholder: 'Answer',
+      noFlashcardsYet: 'No flashcards yet. Click "Add Card" to start.',
       
-      // Text Answer
-      maxLength: 'Max Length',
-      characters: 'characters',
+      // Exercise Builder - Text Answer
+      sampleAnswer: 'Sample Answer (optional)',
+      sampleAnswerPlaceholder: 'Provide a sample correct answer for reference...',
+      maxLength: 'Max Length (characters)',
       
       // Exercise Actions
-      removeExercise: 'Remove Exercise',
-      
-      // Status Selection
-      lessonStatus: 'Lesson Status',
-      publishedStatus: 'Published (Students can access immediately)',
-      draftStatus: 'Draft (Save for later)',
-      
-      // Form Actions
+      saveExercise: 'Save Exercise',
       cancel: 'Cancel',
-      creating: 'Creating...',
-      createLessonButton: 'Create Lesson',
-      withExercises: 'exercises',
+      addAnotherExercise: 'Add another exercise:',
+      chooseExerciseType: 'Choose an exercise type to add to your lesson:',
       
-      // Success Messages
-      lessonCreated: 'Lesson created successfully with',
-      exercisesAdded: 'exercises!',
-      lessonUpdated: 'Lesson updated successfully',
-      lessonDeleted: 'Lesson deleted successfully',
+      // Exercise List
+      noExercisesInLesson: 'No exercises in this lesson',
+      exercisesAdded: 'exercise(s) added',
+      atLeastOneRequired: 'At least 1 exercise required',
       
-      // Modal
-      previewLesson: 'Preview Lesson',
-      editLesson: 'Edit Lesson',
+      // Modal Actions
       close: 'Close',
-      switchToEdit: 'Switch to Edit',
-      switchToPreview: 'Switch to Preview',
+      creating: 'Creating...',
+      saving: 'Saving...',
+      saveChanges: 'Save Changes',
       
-      // Warnings
-      exerciseWarning: 'Warning: Exercises cannot be saved. The lesson_exercises table needs to be created in the database.',
-      tableNotExist: 'lesson_exercises table does not exist. Exercises will not be saved.',
-      
-      // Preview Content
-      previewContent: 'Lesson Content Preview',
-      assignedTo: 'Assigned to',
-      students: 'students',
-      createdOn: 'Created on',
-      lastUpdated: 'Last updated',
-      
-      // Exercise Types Labels
-      exerciseType: 'Exercise Type',
-      typeMultipleChoice: 'Multiple Choice',
-      typeFlashcard: 'Flashcard',
-      typeTextAnswer: 'Text Answer',
+      // Toast Messages
+      enterTitle: 'Please enter a lesson title',
+      addOneExercise: 'Please add at least one exercise before creating the lesson',
+      lessonCreated: 'Lesson "{title}" created with {count} exercise(s)!',
+      lessonUpdated: 'Lesson "{title}" updated successfully!',
+      lessonDeleted: 'Lesson deleted successfully',
+      failedToSave: 'Failed to save lesson',
+      failedToDelete: 'Failed to delete lesson',
     },
   },
   //--------------------------------------------------PL----------------------------------------------------------------------
