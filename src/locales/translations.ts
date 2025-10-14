@@ -677,6 +677,60 @@ export const translations = {
       failedToSave: 'Failed to save lesson',
       failedToDelete: 'Failed to delete lesson',
     },
+    
+     // Tutor Messages Page
+    tutorMessagesPage: {
+      // Page Title
+      title: 'Messages',
+      
+      // Loading
+      loading: 'Loading messages...',
+      
+      // Search
+      searchPlaceholder: 'Search conversations...',
+      
+      // Conversations List
+      conversations: 'Conversations',
+      noConversations: 'No conversations yet',
+      noConversationsDescription: 'Start a conversation with your students',
+      startNewChat: 'Start New Chat',
+      newChat: 'New Chat',
+      
+      // Empty Selection
+      selectConversation: 'Select a conversation',
+      selectConversationDescription: 'Choose a conversation from the list to start messaging',
+      
+      // Chat Header
+      student: 'Student',
+      online: 'Online',
+      typing: 'typing...',
+      
+      // Messages
+      today: 'Today',
+      yesterday: 'Yesterday',
+      justNow: 'Just now',
+      you: 'You',
+      noMessagesYet: 'No messages yet',
+      
+      // Message Input
+      typeMessage: 'Type your message...',
+      sendMessage: 'Send message',
+      sending: 'Sending...',
+      
+      // New Chat Modal
+      startNewConversation: 'Start New Conversation',
+      selectStudent: 'Select a student to start chatting',
+      noStudentsAvailable: 'No students available for messaging',
+      noStudentsDescription: 'Add students first in the Students tab',
+      cancel: 'Cancel',
+      
+      // Errors
+      errorLoading: 'Failed to load conversations',
+      errorLoadingMessages: 'Failed to load messages',
+      errorSending: 'Failed to send message',
+      errorStarting: 'Failed to start conversation',
+      tableError: 'Make sure the messaging tables are created.',
+    },
   },
   //--------------------------------------------------PL----------------------------------------------------------------------
   pl: {
