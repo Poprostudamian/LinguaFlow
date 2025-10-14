@@ -1,6 +1,6 @@
-// src/pages/TutorDashboard.tsx - Z PEŁNYMI TŁUMACZENIAMI
+// src/pages/TutorDashboard.tsx - PEŁNY Z KALENDARZEM I TŁUMACZENIAMI
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   BookOpen, 
@@ -9,18 +9,24 @@ import {
   TrendingUp,
   RefreshCw,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  User,
+  Video
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useLanguage } from '../contexts/LanguageContext'; // ← DODANE
+import { useLanguage } from '../contexts/LanguageContext';
 import { KPICard } from '../components/KPICard';
 import { StudentCard } from '../components/StudentCard';
 import { useRealTutorData } from '../lib/studentStats';
 import { createLessonWithAssignments, CreateLessonInput } from '../lib/lessonManagement';
+import { getTutorMeetings, MeetingWithParticipants } from '../lib/meetingsAPI';
 
 export function TutorDashboard() {
   const { session } = useAuth();
-  const { t } = useLanguage(); // ← DODANE
+  const { t } = useLanguage();
   const { students, kpis, isLoading, error, refreshData } = useRealTutorData(session.user?.id);
 
   const [newLesson, setNewLesson] = useState({
@@ -33,6 +39,28 @@ export function TutorDashboard() {
   const [isCreatingLesson, setIsCreatingLesson] = useState(false);
   const [lessonError, setLessonError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Calendar state
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [meetings, setMeetings] = useState<MeetingWithParticipants[]>([]);
+
+  // Load meetings
+  useEffect(() => {
+    if (session?.user?.id) {
+      loadMeetings();
+    }
+  }, [session?.user?.id]);
+
+  const loadMeetings = async () => {
+    if (!session?.user?.id) return;
+    try {
+      const data = await getTutorMeetings(session.user.id);
+      setMeetings(data);
+    } catch (err) {
+      console.error('Error loading meetings:', err);
+    }
+  };
 
   const handleStudentToggle = (studentId: string) => {
     setNewLesson(prev => ({
@@ -61,7 +89,6 @@ export function TutorDashboard() {
 
       await createLessonWithAssignments(session.user.id, lessonData);
 
-      // Reset form
       setNewLesson({
         title: '',
         description: '',
@@ -69,7 +96,6 @@ export function TutorDashboard() {
         assignedStudentIds: []
       });
 
-      // Show success and refresh data
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       await refreshData();
@@ -82,23 +108,164 @@ export function TutorDashboard() {
     }
   };
 
+  // Calendar helpers
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    return { daysInMonth, startingDayOfWeek, year, month };
+  };
+
+  const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentDate);
+
+  const calendarDays: (number | null)[] = [];
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    calendarDays.push(null);
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    calendarDays.push(day);
+  }
+  // Fill to complete 6 rows
+  const remainingCells = 42 - calendarDays.length;
+  for (let i = 0; i < remainingCells; i++) {
+    calendarDays.push(null);
+  }
+
+  const getMeetingsForDay = (day: number | null) => {
+    if (!day) return [];
+    const dateStr = new Date(year, month, day).toDateString();
+    return meetings.filter(meeting => {
+      const meetingDate = new Date(meeting.scheduled_at).toDateString();
+      return meetingDate === dateStr;
+    });
+  };
+
+  const isToday = (day: number | null) => {
+    if (!day) return false;
+    const today = new Date();
+    return (
+      today.getDate() === day &&
+      today.getMonth() === month &&
+      today.getFullYear() === year
+    );
+  };
+
+  const isSelected = (day: number | null) => {
+    if (!day || !selectedDate) return false;
+    return (
+      selectedDate.getDate() === day &&
+      selectedDate.getMonth() === month &&
+      selectedDate.getFullYear() === year
+    );
+  };
+
+  const hasMeetings = (day: number | null) => {
+    return getMeetingsForDay(day).length > 0;
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newDate = new Date(currentDate);
+    newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
+    setCurrentDate(newDate);
+  };
+
+  const goToToday = () => {
+    const today = new Date();
+    setCurrentDate(today);
+    setSelectedDate(today);
+  };
+
+  const handleDayClick = (day: number | null) => {
+    if (!day) return;
+    const date = new Date(year, month, day);
+    setSelectedDate(date);
+  };
+
+  const selectedDayMeetings = selectedDate ? getMeetingsForDay(selectedDate.getDate()) : [];
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case 'scheduled':
+        return {
+          label: t.studentSchedulePage?.statusScheduled || 'Scheduled',
+          color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+          dotColor: 'bg-blue-500'
+        };
+      case 'in_progress':
+        return {
+          label: t.studentSchedulePage?.statusInProgress || 'In Progress',
+          color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+          dotColor: 'bg-green-500'
+        };
+      case 'completed':
+        return {
+          label: t.studentSchedulePage?.statusCompleted || 'Completed',
+          color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
+          dotColor: 'bg-gray-500'
+        };
+      case 'cancelled':
+        return {
+          label: t.studentSchedulePage?.statusCancelled || 'Cancelled',
+          color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+          dotColor: 'bg-red-500'
+        };
+      default:
+        return {
+          label: 'Unknown',
+          color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
+          dotColor: 'bg-gray-500'
+        };
+    }
+  };
+
+  // Days of week labels
+  const daysOfWeek = [
+    t.tutorDashboard.sunday,
+    t.tutorDashboard.monday,
+    t.tutorDashboard.tuesday,
+    t.tutorDashboard.wednesday,
+    t.tutorDashboard.thursday,
+    t.tutorDashboard.friday,
+    t.tutorDashboard.saturday
+  ];
+
   // Loading state
   if (isLoading) {
     return (
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {t.tutorDashboard.title}  
+            {t.tutorDashboard.title}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            {t.tutorDashboard.loading}  
+            {t.tutorDashboard.loading}
           </p>
         </div>
         
         <div className="flex items-center justify-center py-12">
           <RefreshCw className="h-8 w-8 animate-spin text-purple-600" />
           <span className="ml-2 text-gray-600 dark:text-gray-400">
-            {t.tutorDashboard.loadingStats}  
+            {t.tutorDashboard.loadingStats}
           </span>
         </div>
       </div>
@@ -111,7 +278,7 @@ export function TutorDashboard() {
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {t.tutorDashboard.title}  
+            {t.tutorDashboard.title}
           </h1>
         </div>
 
@@ -120,7 +287,7 @@ export function TutorDashboard() {
             <AlertCircle className="h-5 w-5 text-red-600" />
             <div>
               <h3 className="text-red-800 dark:text-red-200 font-medium">
-                {t.tutorDashboard.databaseError}  
+                {t.tutorDashboard.databaseError}
               </h3>
               <p className="text-red-600 dark:text-red-300 text-sm">{error}</p>
             </div>
@@ -129,7 +296,7 @@ export function TutorDashboard() {
             onClick={refreshData}
             className="mt-3 px-3 py-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-md hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
           >
-            {t.tutorDashboard.tryAgain}  
+            {t.tutorDashboard.tryAgain}
           </button>
         </div>
       </div>
@@ -142,10 +309,10 @@ export function TutorDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {t.tutorDashboard.title}  
+            {t.tutorDashboard.title}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            {t.tutorDashboard.subtitle}  
+            {t.tutorDashboard.subtitle}
           </p>
         </div>
         <button
@@ -153,7 +320,7 @@ export function TutorDashboard() {
           className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
         >
           <RefreshCw className="h-4 w-4" />
-          <span>{t.tutorDashboard.refresh}</span>  
+          <span>{t.tutorDashboard.refresh}</span>
         </button>
       </div>
 
@@ -163,7 +330,7 @@ export function TutorDashboard() {
           <div className="flex items-center space-x-2">
             <CheckCircle className="h-5 w-5 text-green-600" />
             <span className="text-green-800 dark:text-green-200 font-medium">
-              {t.tutorDashboard.lessonCreatedSuccess}  
+              {t.tutorDashboard.lessonCreatedSuccess}
             </span>
           </div>
         </div>
@@ -174,59 +341,60 @@ export function TutorDashboard() {
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
           <span className="text-blue-800 dark:text-blue-200 font-medium">
-            {t.tutorDashboard.liveDatabaseConnection}  
+            {t.tutorDashboard.liveDatabaseConnection}
           </span>
         </div>
         <div className="text-blue-600 dark:text-blue-300 text-sm mt-1">
-          {t.tutorDashboard.studentsCount}: {students.length} •  
-          {t.tutorDashboard.teachingHoursCount}: {kpis.teachingHours}h •  
-          {t.tutorDashboard.completionRateCount}: {kpis.completionRate}%  
+          {t.tutorDashboard.studentsCount}: {students.length} • 
+          {t.tutorDashboard.teachingHoursCount}: {kpis.teachingHours}h • 
+          {t.tutorDashboard.completionRateCount}: {kpis.completionRate}%
         </div>
       </div>
 
-      {/* KPI Cards - REAL DATA */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <KPICard
-          title={t.tutorDashboard.totalStudents}  
+          title={t.tutorDashboard.totalStudents}
           value={kpis.totalStudents}
           icon={Users}
           color="purple"
         />
         <KPICard
-          title={t.tutorDashboard.activeStudents}  
+          title={t.tutorDashboard.activeStudents}
           value={kpis.activeStudents}
           icon={TrendingUp}
           color="blue"
         />
         <KPICard
-          title={t.tutorDashboard.teachingHours}  
+          title={t.tutorDashboard.teachingHours}
           value={`${kpis.teachingHours}h`}
           icon={Clock}
           color="green"
         />
         <KPICard
-          title={t.tutorDashboard.completionRate}  
+          title={t.tutorDashboard.completionRate}
           value={`${kpis.completionRate}%`}
           icon={CheckCircle}
           color="orange"
         />
       </div>
 
+      {/* Main Content Grid - Students & Calendar */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Student Roster - REAL DATA */}
+        {/* Student Roster */}
         <div>
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            {t.tutorDashboard.myStudents} ({students.length})  
+            {t.tutorDashboard.myStudents} ({students.length})
           </h2>
           
           {students.length === 0 ? (
             <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <Users className="h-8 w-8 text-gray-400 mx-auto mb-2" />
               <p className="text-gray-500 dark:text-gray-400">
-                {t.tutorDashboard.noStudentsFound}  
+                {t.tutorDashboard.noStudentsFound}
               </p>
               <p className="text-sm text-gray-400 dark:text-gray-500">
-                {t.tutorDashboard.addStudentsHint}  
+                {t.tutorDashboard.addStudentsHint}
               </p>
             </div>
           ) : (
@@ -252,7 +420,7 @@ export function TutorDashboard() {
                   
                   <div className="mb-3">
                     <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                      <span>{t.tutorDashboard.progress}</span>  
+                      <span>{t.tutorDashboard.progress}</span>
                       <span>{student.progress}%</span>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -266,11 +434,11 @@ export function TutorDashboard() {
                   <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                     <div className="flex items-center space-x-1">
                       <BookOpen className="h-4 w-4" />
-                      <span>{student.lessonsCompleted}/{student.totalLessons} {t.tutorDashboard.lessons}</span>  
+                      <span>{student.lessonsCompleted}/{student.totalLessons} {t.tutorDashboard.lessons}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Clock className="h-4 w-4" />
-                      <span>{student.totalHours}{t.tutorDashboard.hours}</span>  
+                      <span>{student.totalHours}{t.tutorDashboard.hours}</span>
                     </div>
                   </div>
                 </div>
@@ -279,7 +447,7 @@ export function TutorDashboard() {
               {students.length > 6 && (
                 <div className="text-center pt-2">
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {t.tutorDashboard.andMoreStudents.replace('{count}', String(students.length - 6))}  
+                    {t.tutorDashboard.andMoreStudents.replace('{count}', String(students.length - 6))}
                   </span>
                 </div>
               )}
@@ -287,128 +455,317 @@ export function TutorDashboard() {
           )}
         </div>
 
-        {/* Create Lesson Form - REAL FUNCTIONALITY */}
+        {/* Calendar Section */}
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            {t.tutorDashboard.createNewLesson}  
-          </h2>
-          
-          {lessonError && (
-            <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-              <p className="text-red-600 dark:text-red-300 text-sm">{lessonError}</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            {/* Calendar Header */}
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
+                  <CalendarIcon className="h-5 w-5 text-purple-600" />
+                  <span>{currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+                </h2>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={goToToday}
+                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    {t.tutorDashboard.today}
+                  </button>
+                  <button
+                    onClick={() => navigateMonth('prev')}
+                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                  </button>
+                  <button
+                    onClick={() => navigateMonth('next')}
+                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 rounded-full bg-purple-600"></div>
+                  <span>{t.tutorDashboard.today}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                  <span>{t.tutorDashboard.hasMeetings}</span>
+                </div>
+              </div>
             </div>
-          )}
-          
-          <form onSubmit={handleCreateLesson} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t.tutorDashboard.lessonTitle} {t.tutorDashboard.required}  
-                </label>
-                <input
-                  type="text"
-                  value={newLesson.title}
-                  onChange={(e) => setNewLesson({...newLesson, title: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder={t.tutorDashboard.lessonTitlePlaceholder}  
-                  required
-                />
+
+            {/* Days of week header */}
+            <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+              {daysOfWeek.map(day => (
+                <div
+                  key={day}
+                  className="p-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-400"
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7">
+              {calendarDays.map((day, index) => {
+                const dayMeetings = getMeetingsForDay(day);
+                const today = isToday(day);
+                const selected = isSelected(day);
+                const meetings = hasMeetings(day);
+
+                return (
+                  <div
+                    key={index}
+                    onClick={() => handleDayClick(day)}
+                    className={`
+                      relative min-h-[70px] p-2 border-b border-r border-gray-200 dark:border-gray-700
+                      transition-all duration-200
+                      ${day ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : 'bg-gray-50 dark:bg-gray-900'}
+                      ${selected ? 'bg-purple-50 dark:bg-purple-900/30 ring-2 ring-purple-500 ring-inset' : ''}
+                    `}
+                  >
+                    {day && (
+                      <div className="space-y-1">
+                        {/* Day number */}
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={`
+                              text-xs font-medium flex items-center justify-center
+                              ${today 
+                                ? 'bg-purple-600 text-white w-6 h-6 rounded-full' 
+                                : selected
+                                ? 'text-purple-600 dark:text-purple-400'
+                                : 'text-gray-900 dark:text-gray-100'
+                              }
+                            `}
+                          >
+                            {day}
+                          </span>
+                          {meetings && (
+                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                          )}
+                        </div>
+
+                        {/* Meeting dots */}
+                        {dayMeetings.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {dayMeetings.slice(0, 2).map((meeting, i) => {
+                              const config = getStatusConfig(meeting.status);
+                              return (
+                                <div
+                                  key={i}
+                                  className={`w-1.5 h-1.5 rounded-full ${config.dotColor}`}
+                                  title={meeting.title}
+                                />
+                              );
+                            })}
+                            {dayMeetings.length > 2 && (
+                              <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                                +{dayMeetings.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Selected Date Meetings */}
+            {selectedDate && (
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 max-h-[300px] overflow-y-auto">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                  {formatDate(selectedDate)}
+                </h3>
+
+                {selectedDayMeetings.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                    {t.tutorDashboard.noMeetingsScheduled}
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {selectedDayMeetings.map(meeting => {
+                      const config = getStatusConfig(meeting.status);
+                      return (
+                        <div
+                          key={meeting.id}
+                          className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
+                                {meeting.title}
+                              </h4>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                {formatTime(meeting.scheduled_at)} • {meeting.duration_minutes} {t.tutorDashboard.minutes}
+                              </p>
+                            </div>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${config.color}`}>
+                              {config.label}
+                            </span>
+                          </div>
+
+                          {meeting.participants && meeting.participants.length > 0 && (
+                            <div className="flex items-center space-x-1 mt-2">
+                              <User className="h-3 w-3 text-gray-400" />
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {meeting.participants.length} {meeting.participants.length !== 1 ? t.tutorDashboard.students : t.tutorDashboard.student}
+                              </span>
+                            </div>
+                          )}
+
+                          {meeting.meeting_url && (
+                            <a
+                              href={meeting.meeting_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 inline-flex items-center space-x-1 text-xs text-purple-600 dark:text-purple-400 hover:underline"
+                            >
+                              <Video className="h-3 w-3" />
+                              <span>{t.tutorDashboard.joinMeeting}</span>
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t.tutorDashboard.description}  
-                </label>
-                <textarea
-                  value={newLesson.description}
-                  onChange={(e) => setNewLesson({...newLesson, description: e.target.value})}
-                  rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder={t.tutorDashboard.descriptionPlaceholder}  
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t.tutorDashboard.content} {t.tutorDashboard.required}  
-                </label>
-                <textarea
-                  value={newLesson.content}
-                  onChange={(e) => setNewLesson({...newLesson, content: e.target.value})}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder={t.tutorDashboard.contentPlaceholder}  
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t.tutorDashboard.assignToStudents.replace('{count}', String(students.length))}  
-                </label>
-                {students.length > 0 ? (
-                  <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-3">
-                    <label className="flex items-center space-x-2 text-sm cursor-pointer">
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Create Lesson Form */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          {t.tutorDashboard.createNewLesson}
+        </h2>
+        
+        {lessonError && (
+          <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+            <p className="text-red-600 dark:text-red-300 text-sm">{lessonError}</p>
+          </div>
+        )}
+        
+        <form onSubmit={handleCreateLesson} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t.tutorDashboard.lessonTitle} {t.tutorDashboard.required}
+              </label>
+              <input
+                type="text"
+                value={newLesson.title}
+                onChange={(e) => setNewLesson({...newLesson, title: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                placeholder={t.tutorDashboard.lessonTitlePlaceholder}
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t.tutorDashboard.description}
+              </label>
+              <textarea
+                value={newLesson.description}
+                onChange={(e) => setNewLesson({...newLesson, description: e.target.value})}
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                placeholder={t.tutorDashboard.descriptionPlaceholder}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t.tutorDashboard.content} {t.tutorDashboard.required}
+              </label>
+              <textarea
+                value={newLesson.content}
+                onChange={(e) => setNewLesson({...newLesson, content: e.target.value})}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                placeholder={t.tutorDashboard.contentPlaceholder}
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t.tutorDashboard.assignToStudents.replace('{count}', String(students.length))}
+              </label>
+              {students.length > 0 ? (
+                <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-3">
+                  <label className="flex items-center space-x-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={newLesson.assignedStudentIds.length === students.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setNewLesson({...newLesson, assignedStudentIds: students.map(s => s.student_id)});
+                        } else {
+                          setNewLesson({...newLesson, assignedStudentIds: []});
+                        }
+                      }}
+                      className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                    />
+                    <span className="font-medium">
+                      {t.tutorDashboard.selectAll}
+                    </span>
+                  </label>
+                  {students.map((student) => (
+                    <label key={student.student_id} className="flex items-center space-x-2 text-sm cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={newLesson.assignedStudentIds.length === students.length}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setNewLesson({...newLesson, assignedStudentIds: students.map(s => s.student_id)});
-                          } else {
-                            setNewLesson({...newLesson, assignedStudentIds: []});
-                          }
-                        }}
+                        checked={newLesson.assignedStudentIds.includes(student.student_id)}
+                        onChange={() => handleStudentToggle(student.student_id)}
                         className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                       />
-                      <span className="font-medium">
-                        {t.tutorDashboard.selectAll}  
-                      </span>
+                      <span>{student.name}</span>
                     </label>
-                    {students.map((student) => (
-                      <label key={student.student_id} className="flex items-center space-x-2 text-sm cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={newLesson.assignedStudentIds.includes(student.student_id)}
-                          onChange={() => handleStudentToggle(student.student_id)}
-                          className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                        />
-                        <span>{student.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {t.tutorDashboard.noStudentsAvailable}  
-                  </p>
-                )}
-                {students.length === 0 && (
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                    {t.tutorDashboard.addStudentsFirst}  
-                  </p>
-                )}
-              </div>
-              
-              <button
-                type="submit"
-                disabled={isCreatingLesson || !newLesson.title || !newLesson.content}
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-              >
-                {isCreatingLesson ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    <span>{t.tutorDashboard.creating}</span>  
-                  </>
-                ) : (
-                  <>
-                    <PlusCircle className="h-4 w-4" />
-                    <span>{t.tutorDashboard.createLesson}</span>  
-                  </>
-                )}
-              </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {t.tutorDashboard.noStudentsAvailable}
+                </p>
+              )}
+              {students.length === 0 && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  {t.tutorDashboard.addStudentsFirst}
+                </p>
+              )}
             </div>
-          </form>
-        </div>
+            
+            <button
+              type="submit"
+              disabled={isCreatingLesson || !newLesson.title || !newLesson.content}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            >
+              {isCreatingLesson ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <span>{t.tutorDashboard.creating}</span>
+                </>
+              ) : (
+                <>
+                  <PlusCircle className="h-4 w-4" />
+                  <span>{t.tutorDashboard.createLesson}</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
