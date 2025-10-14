@@ -1104,6 +1104,136 @@ export const translations = {
       creating: 'Tworzenie...',
       required: '*',
     },
+
+    // Tutor Lesson Management Page
+    tutorLessonManagementPage: {
+      // Page Title & Header
+      title: 'Zarządzanie lekcjami',
+      subtitle: 'Twórz i zarządzaj swoimi lekcjami z interaktywnymi ćwiczeniami',
+      createLesson: 'Utwórz lekcję',
+      
+      // Loading & Errors
+      loading: 'Ładowanie lekcji...',
+      errorLoading: 'Nie udało się załadować lekcji',
+      retry: 'Spróbuj ponownie',
+      
+      // Stats Overview
+      totalLessons: 'Wszystkie lekcje',
+      publishedLessons: 'Opublikowane',
+      draftLessons: 'Szkice',
+      totalAssigned: 'Przypisane łącznie',
+      
+      // Search & Filter
+      searchPlaceholder: 'Wyszukaj lekcje po tytule...',
+      allStatus: 'Wszystkie statusy',
+      published: 'Opublikowane',
+      draft: 'Szkic',
+      refresh: 'Odśwież',
+      
+      // Empty State
+      noLessons: 'Nie znaleziono lekcji',
+      noLessonsDescription: 'Utwórz swoją pierwszą lekcję aby rozpocząć',
+      
+      // Lesson Card
+      assigned: 'przypisano',
+      sampleExercises: 'Przykładowe ćwiczenia',
+      preview: 'Podgląd',
+      edit: 'Edytuj',
+      delete: 'Usuń',
+      confirmDelete: 'Czy na pewno chcesz usunąć',
+      
+      // Create Lesson Form
+      createNewLesson: 'Utwórz nową lekcję',
+      lessonTitle: 'Tytuł lekcji',
+      lessonTitlePlaceholder: 'Wprowadź tytuł lekcji...',
+      lessonDescription: 'Opis (opcjonalnie)',
+      lessonDescriptionPlaceholder: 'Opisz czego nauczą się uczniowie...',
+      
+      // Students Assignment
+      assignStudents: 'Przypisz uczniom',
+      selectStudents: 'Wybierz uczniów do przypisania tej lekcji',
+      noStudentsAvailable: 'Brak dostępnych uczniów',
+      noStudentsDescription: 'Musisz najpierw mieć zapisanych uczniów',
+      selectedStudents: 'wybranych',
+      
+      // Exercises Section
+      exercises: 'Ćwiczenia',
+      addExercise: 'Dodaj ćwiczenie',
+      multipleChoice: 'Wielokrotny wybór',
+      flashcards: 'Fiszki',
+      textAnswer: 'Odpowiedź tekstowa',
+      noExercises: 'Brak ćwiczeń',
+      addExerciseDescription: 'Kliknij "Dodaj ćwiczenie" aby stworzyć interaktywne ćwiczenia',
+      
+      // Exercise Form Fields
+      exerciseTitle: 'Tytuł ćwiczenia',
+      exerciseTitlePlaceholder: 'np. Quiz słownictwa',
+      question: 'Pytanie',
+      questionPlaceholder: 'Wprowadź tutaj swoje pytanie...',
+      points: 'Punkty',
+      
+      // Multiple Choice
+      option: 'Opcja',
+      correctAnswer: 'Poprawna odpowiedź',
+      selectCorrect: 'Wybierz poprawną odpowiedź',
+      
+      // Flashcards
+      flashcard: 'Fiszka',
+      front: 'Przód (Pytanie)',
+      frontPlaceholder: 'np. Jak powiedzieć "hello" po hiszpańsku?',
+      back: 'Tył (Odpowiedź)',
+      backPlaceholder: 'np. Hola',
+      addFlashcard: 'Dodaj fiszkę',
+      removeFlashcard: 'Usuń fiszkę',
+      
+      // Text Answer
+      maxLength: 'Maksymalna długość',
+      characters: 'znaków',
+      
+      // Exercise Actions
+      removeExercise: 'Usuń ćwiczenie',
+      
+      // Status Selection
+      lessonStatus: 'Status lekcji',
+      publishedStatus: 'Opublikowana (Uczniowie mogą uzyskać dostęp natychmiast)',
+      draftStatus: 'Szkic (Zapisz na później)',
+      
+      // Form Actions
+      cancel: 'Anuluj',
+      creating: 'Tworzenie...',
+      createLessonButton: 'Utwórz lekcję',
+      withExercises: 'ćwiczeń',
+      
+      // Success Messages
+      lessonCreated: 'Lekcja utworzona pomyślnie z',
+      exercisesAdded: 'ćwiczeniami!',
+      lessonUpdated: 'Lekcja zaktualizowana pomyślnie',
+      lessonDeleted: 'Lekcja usunięta pomyślnie',
+      
+      // Modal
+      previewLesson: 'Podgląd lekcji',
+      editLesson: 'Edytuj lekcję',
+      close: 'Zamknij',
+      switchToEdit: 'Przełącz na edycję',
+      switchToPreview: 'Przełącz na podgląd',
+      
+      // Warnings
+      exerciseWarning: 'Ostrzeżenie: Ćwiczenia nie mogą być zapisane. Tabela lesson_exercises musi zostać utworzona w bazie danych.',
+      tableNotExist: 'Tabela lesson_exercises nie istnieje. Ćwiczenia nie zostaną zapisane.',
+      
+      // Preview Content
+      previewContent: 'Podgląd treści lekcji',
+      assignedTo: 'Przypisano do',
+      students: 'uczniów',
+      createdOn: 'Utworzono',
+      lastUpdated: 'Ostatnia aktualizacja',
+      
+      // Exercise Types Labels
+      exerciseType: 'Typ ćwiczenia',
+      typeMultipleChoice: 'Wielokrotny wybór',
+      typeFlashcard: 'Fiszka',
+      typeTextAnswer: 'Odpowiedź tekstowa',
+    },
   },
 } as const;
 
