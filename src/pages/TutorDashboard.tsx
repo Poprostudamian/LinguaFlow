@@ -467,7 +467,7 @@ export function TutorDashboard() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
                   <CalendarIcon className="h-5 w-5 text-purple-600" />
-                  <span>{currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+                  <span>{getMonthName(currentDate)} {currentDate.getFullYear()}</span>
                 </h2>
                 <div className="flex items-center space-x-2">
                   <button
