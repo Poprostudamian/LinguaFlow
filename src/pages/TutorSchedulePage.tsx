@@ -1,4 +1,4 @@
-// src/pages/TutorSchedulePage.tsx - FULL VERSION WITH CALENDAR
+// src/pages/TutorSchedulePage.tsx - TRANSLATED VERSION
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
@@ -25,21 +25,10 @@ import {
   MeetingWithParticipants 
 } from '../lib/meetingsAPI';
 
-export function YourPage() {
-  const { t } = useLanguage();
-  
-  return (
-    <div>
-      {/* Zamień hardcoded teksty na t.section.key */}
-      <h1>{t.studentDashboard.title}</h1>
-      <p>{t.studentDashboard.welcome}</p>
-      <button>{t.common.save}</button>
-    </div>
-  );
-}
-
 export function TutorSchedulePage() {
   const { session } = useAuth();
+  const { t } = useLanguage(); // ✅ Hook do tłumaczeń
+  
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [meetings, setMeetings] = useState<MeetingWithParticipants[]>([]);
@@ -61,7 +50,7 @@ export function TutorSchedulePage() {
       console.log('✅ Loaded', data.length, 'meetings');
     } catch (err: any) {
       console.error('❌ Error loading meetings:', err);
-      setError(err.message || 'Failed to load meetings');
+      setError(err.message || t.tutorSchedulePage.errorLoading);
     } finally {
       setIsLoading(false);
     }
@@ -147,17 +136,15 @@ export function TutorSchedulePage() {
     setSelectedDate(today);
   };
 
-  // Handle day click
   const handleDayClick = (day: number | null) => {
     if (!day) return;
     const date = new Date(year, month, day);
     setSelectedDate(date);
   };
 
-  // Get selected day meetings
   const selectedDayMeetings = selectedDate ? getMeetingsForDay(selectedDate.getDate()) : [];
 
-  // ===== FORMAT FUNCTIONS =====
+  // ===== FORMAT FUNCTIONS WITH TRANSLATIONS =====
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -166,48 +153,76 @@ export function TutorSchedulePage() {
     });
   };
 
+  // ✅ Format date using translations
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      month: 'long', 
-      day: 'numeric',
-      year: 'numeric'
-    });
+    const dayNames = [
+      t.tutorSchedulePage.sundayFull,
+      t.tutorSchedulePage.mondayFull,
+      t.tutorSchedulePage.tuesdayFull,
+      t.tutorSchedulePage.wednesdayFull,
+      t.tutorSchedulePage.thursdayFull,
+      t.tutorSchedulePage.fridayFull,
+      t.tutorSchedulePage.saturdayFull,
+    ];
+    
+    const monthNames = [
+      t.tutorSchedulePage.january,
+      t.tutorSchedulePage.february,
+      t.tutorSchedulePage.march,
+      t.tutorSchedulePage.april,
+      t.tutorSchedulePage.may,
+      t.tutorSchedulePage.june,
+      t.tutorSchedulePage.july,
+      t.tutorSchedulePage.august,
+      t.tutorSchedulePage.september,
+      t.tutorSchedulePage.october,
+      t.tutorSchedulePage.november,
+      t.tutorSchedulePage.december,
+    ];
+    
+    const dayOfWeek = dayNames[date.getDay()];
+    const monthName = monthNames[date.getMonth()];
+    const day = date.getDate();
+    const year = date.getFullYear();
+    
+    // Format: "Monday, 14 October 2025" (EN) lub "Poniedziałek, 14 października 2025" (PL)
+    return `${dayOfWeek}, ${day} ${monthName} ${year}`;
   };
 
+  // ✅ Get status config with translations
   const getStatusConfig = (status: string) => {
     switch (status) {
       case 'scheduled':
         return {
-          label: 'Scheduled',
+          label: t.tutorSchedulePage.statusScheduled,
           color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
           icon: Calendar,
           dotColor: 'bg-blue-500'
         };
       case 'in_progress':
         return {
-          label: 'In Progress',
+          label: t.tutorSchedulePage.statusInProgress,
           color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
           icon: Video,
           dotColor: 'bg-green-500'
         };
       case 'completed':
         return {
-          label: 'Completed',
+          label: t.tutorSchedulePage.statusCompleted,
           color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
           icon: CheckCircle,
           dotColor: 'bg-gray-500'
         };
       case 'cancelled':
         return {
-          label: 'Cancelled',
+          label: t.tutorSchedulePage.statusCancelled,
           color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
           icon: XCircle,
           dotColor: 'bg-red-500'
         };
       default:
         return {
-          label: 'Unknown',
+          label: t.tutorSchedulePage.statusUnknown,
           color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
           icon: AlertCircle,
           dotColor: 'bg-gray-500'
@@ -239,7 +254,8 @@ export function TutorSchedulePage() {
   };
 
   const handleDeleteMeeting = async (meetingId: string) => {
-    if (!window.confirm('Are you sure you want to delete this meeting?')) {
+    // ✅ Use translation for confirm dialog
+    if (!window.confirm(t.tutorSchedulePage.confirmDelete)) {
       return;
     }
 
@@ -250,7 +266,7 @@ export function TutorSchedulePage() {
       console.log('✅ Meeting deleted successfully');
     } catch (err: any) {
       console.error('❌ Error deleting meeting:', err);
-      alert(err.message || 'Failed to delete meeting');
+      alert(err.message || t.tutorSchedulePage.errorDeleting);
     }
   };
 
@@ -260,7 +276,7 @@ export function TutorSchedulePage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading meetings...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t.tutorSchedulePage.loading}</p>
         </div>
       </div>
     );
@@ -273,10 +289,10 @@ export function TutorSchedulePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Schedule
+            {t.tutorSchedulePage.title}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Manage your meetings and schedule new sessions
+            {t.tutorSchedulePage.description}
           </p>
         </div>
 
@@ -286,7 +302,7 @@ export function TutorSchedulePage() {
             className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
           >
             <RefreshCw className="h-4 w-4" />
-            <span>Refresh</span>
+            <span>{t.tutorSchedulePage.refresh}</span>
           </button>
 
           <button
@@ -294,22 +310,24 @@ export function TutorSchedulePage() {
             className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors shadow-sm"
           >
             <Plus className="h-5 w-5" />
-            <span>Create Meeting</span>
+            <span>{t.tutorSchedulePage.createMeeting}</span>
           </button>
         </div>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="flex items-start space-x-2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+        <div className="flex items-start space-x-3 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
           <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          <div>
+            <p className="text-sm font-medium text-red-800 dark:text-red-200">
+              {error}
+            </p>
             <button
               onClick={loadMeetings}
-              className="text-sm text-red-700 dark:text-red-300 underline mt-1"
+              className="mt-2 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 underline"
             >
-              Try again
+              {t.tutorSchedulePage.refresh}
             </button>
           </div>
         </div>
@@ -317,311 +335,326 @@ export function TutorSchedulePage() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">
-                Today's Meetings
-              </p>
-              <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">
-                {todaysMeetings.length}
-              </p>
-            </div>
-            <div className="bg-blue-200 dark:bg-blue-900/40 p-3 rounded-lg">
-              <Calendar className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-            </div>
+        {/* Today's Meetings */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              {t.tutorSchedulePage.todaysMeetings}
+            </h3>
+            <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
           </div>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">
+            {todaysMeetings.length}
+          </p>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border border-purple-200 dark:border-purple-800 rounded-xl p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-1">
-                This Week
-              </p>
-              <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">
-                {thisWeekMeetings.length}
-              </p>
-            </div>
-            <div className="bg-purple-200 dark:bg-purple-900/40 p-3 rounded-lg">
-              <Clock className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-            </div>
+        {/* This Week */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              {t.tutorSchedulePage.thisWeekMeetings}
+            </h3>
+            <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">
+            {thisWeekMeetings.length}
+          </p>
         </div>
 
-        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-800 rounded-xl p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-green-600 dark:text-green-400 mb-1">
-                Upcoming
-              </p>
-              <p className="text-3xl font-bold text-green-900 dark:text-green-100">
-                {upcomingMeetings.length}
-              </p>
-            </div>
-            <div className="bg-green-200 dark:bg-green-900/40 p-3 rounded-lg">
-              <Users className="h-8 w-8 text-green-600 dark:text-green-400" />
-            </div>
+        {/* Next 7 Days */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              {t.tutorSchedulePage.next7Days}
+            </h3>
+            <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
           </div>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">
+            {upcomingMeetings.length}
+          </p>
         </div>
       </div>
 
+      {/* Calendar Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar */}
-        <div className="lg:col-span-2">
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            {/* Calendar Header */}
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                </h2>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={goToToday}
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
-                  >
-                    Today
-                  </button>
-                  <button
-                    onClick={() => navigateMonth('prev')}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                  >
-                    <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                  </button>
-                  <button
-                    onClick={() => navigateMonth('next')}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                  >
-                    <ChevronRight className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Legend */}
-              <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 rounded-full bg-purple-600"></div>
-                  <span>Today</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                  <span>Has meetings</span>
-                </div>
-              </div>
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          {/* Calendar Header */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </h2>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => navigateMonth('prev')}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                aria-label={t.tutorSchedulePage.previousMonth}
+              >
+                <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+              </button>
+              <button
+                onClick={goToToday}
+                className="px-3 py-1.5 text-sm font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
+              >
+                {t.tutorSchedulePage.today}
+              </button>
+              <button
+                onClick={() => navigateMonth('next')}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                aria-label={t.tutorSchedulePage.nextMonth}
+              >
+                <ChevronRight className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+              </button>
             </div>
+          </div>
 
-            {/* Days of week header */}
-            <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div
-                  key={day}
-                  className="p-3 text-center text-sm font-semibold text-gray-600 dark:text-gray-400"
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7 gap-2">
+            {/* Day Headers */}
+            {[
+              t.tutorSchedulePage.sunday,
+              t.tutorSchedulePage.monday,
+              t.tutorSchedulePage.tuesday,
+              t.tutorSchedulePage.wednesday,
+              t.tutorSchedulePage.thursday,
+              t.tutorSchedulePage.friday,
+              t.tutorSchedulePage.saturday,
+            ].map((day) => (
+              <div
+                key={day}
+                className="text-center text-xs font-medium text-gray-600 dark:text-gray-400 pb-2"
+              >
+                {day}
+              </div>
+            ))}
+
+            {/* Calendar Days */}
+            {calendarDays.map((day, index) => {
+              const dayMeetings = getMeetingsForDay(day);
+              const hasScheduled = hasMeetings(day);
+              const isTodayCell = isToday(day);
+              const isSelectedCell = isSelected(day);
+
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleDayClick(day)}
+                  disabled={!day}
+                  className={`
+                    aspect-square p-2 rounded-lg text-sm font-medium transition-all relative
+                    ${!day ? 'invisible' : ''}
+                    ${isTodayCell
+                      ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 ring-2 ring-purple-500'
+                      : isSelectedCell
+                      ? 'bg-purple-600 text-white'
+                      : hasScheduled
+                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }
+                  `}
                 >
                   {day}
-                </div>
-              ))}
-            </div>
+                  {hasScheduled && (
+                    <span className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex space-x-0.5">
+                      {dayMeetings.slice(0, 3).map((_, i) => (
+                        <span
+                          key={i}
+                          className={`w-1 h-1 rounded-full ${
+                            isSelectedCell ? 'bg-white' : 'bg-purple-500'
+                          }`}
+                        />
+                      ))}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-            {/* Calendar Grid */}
-            <div className="grid grid-cols-7">
-              {calendarDays.map((day, index) => {
-                const dayMeetings = getMeetingsForDay(day);
-                const today = isToday(day);
-                const selected = isSelected(day);
-                const meetings = hasMeetings(day);
+        {/* Selected Day Panel */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            {selectedDate ? formatDate(selectedDate) : t.tutorSchedulePage.selectedDay}
+          </h3>
+
+          {selectedDayMeetings.length > 0 ? (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {selectedDayMeetings.length}{' '}
+                {selectedDayMeetings.length === 1
+                  ? t.tutorSchedulePage.meetingsOnDay
+                  : t.tutorSchedulePage.meetingsOnDayPlural}
+              </p>
+
+              {selectedDayMeetings.map((meeting) => {
+                const statusConfig = getStatusConfig(meeting.status);
+                const StatusIcon = statusConfig.icon;
 
                 return (
                   <div
-                    key={index}
-                    onClick={() => handleDayClick(day)}
-                    className={`
-                      relative min-h-[100px] p-3 border-b border-r border-gray-200 dark:border-gray-700
-                      transition-all duration-200
-                      ${day ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : 'bg-gray-50 dark:bg-gray-900'}
-                      ${selected ? 'bg-purple-50 dark:bg-purple-900/30 ring-2 ring-purple-500 ring-inset' : ''}
-                    `}
+                    key={meeting.id}
+                    className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600"
                   >
-                    {day && (
-                      <div className="space-y-2">
-                        {/* Day number with indicators */}
-                        <div className="flex items-center justify-between">
-                          <span
-                            className={`
-                              text-sm font-medium flex items-center justify-center
-                              ${today 
-                                ? 'bg-purple-600 text-white w-8 h-8 rounded-full' 
-                                : selected
-                                ? 'text-purple-600 dark:text-purple-400 font-bold'
-                                : 'text-gray-700 dark:text-gray-300'
-                              }
-                            `}
-                          >
-                            {day}
-                          </span>
-                          {meetings && !today && (
-                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                          )}
-                        </div>
-
-                        {/* Meeting count indicator */}
-                        {dayMeetings.length > 0 && (
-                          <div className="space-y-1">
-                            {dayMeetings.slice(0, 2).map((meeting, i) => (
-                              <div
-                                key={i}
-                                className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded truncate"
-                              >
-                                {formatTime(meeting.scheduled_at)}
-                              </div>
-                            ))}
-                            {dayMeetings.length > 2 && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400 pl-2">
-                                +{dayMeetings.length - 2} more
-                              </div>
-                            )}
-                          </div>
-                        )}
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <StatusIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {formatTime(meeting.scheduled_at)}
+                        </span>
                       </div>
-                    )}
+                      <span className={`text-xs px-2 py-1 rounded-full ${statusConfig.color}`}>
+                        {statusConfig.label}
+                      </span>
+                    </div>
+
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                      {meeting.title}
+                    </p>
+
+                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <span>
+                        {meeting.duration_minutes} {t.tutorSchedulePage.duration}
+                      </span>
+                      <span>
+                        {meeting.participants.length}{' '}
+                        {meeting.participants.length === 1
+                          ? t.tutorSchedulePage.participant
+                          : t.tutorSchedulePage.participants}
+                      </span>
+                    </div>
                   </div>
                 );
               })}
             </div>
-          </div>
-        </div>
-
-        {/* Selected Day Details / Upcoming Meetings */}
-        <div className="lg:col-span-1">
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden sticky top-6">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                {selectedDate ? formatDate(selectedDate) : 'Select a Date'}
-              </h3>
-              {selectedDate && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {selectedDayMeetings.length} meeting{selectedDayMeetings.length !== 1 ? 's' : ''}
-                </p>
-              )}
+          ) : (
+            <div className="text-center py-8">
+              <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {t.tutorSchedulePage.noMeetingsOnDay}
+              </p>
             </div>
-
-            <div className="max-h-[600px] overflow-y-auto">
-              {selectedDate ? (
-                selectedDayMeetings.length > 0 ? (
-                  <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {selectedDayMeetings.map((meeting) => {
-                      const statusConfig = getStatusConfig(meeting.status);
-                      const StatusIcon = statusConfig.icon;
-
-                      return (
-                        <div key={meeting.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
-                                {meeting.title}
-                              </h4>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                {formatTime(meeting.scheduled_at)} • {meeting.duration_minutes}min
-                              </p>
-                            </div>
-                            <span className={`text-xs px-2 py-1 rounded-full flex items-center space-x-1 ${statusConfig.color}`}>
-                              <StatusIcon className="h-3 w-3" />
-                              <span>{statusConfig.label}</span>
-                            </span>
-                          </div>
-
-                          {meeting.description && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                              {meeting.description}
-                            </p>
-                          )}
-
-                          <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400 mb-3">
-                            <Users className="h-3 w-3" />
-                            <span>
-                              {meeting.participants?.length || 0} student{(meeting.participants?.length || 0) !== 1 ? 's' : ''}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center space-x-2">
-                            <a
-                              href={meeting.meeting_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex-1 flex items-center justify-center space-x-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors"
-                            >
-                              <Video className="h-3 w-3" />
-                              <span>Join</span>
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                            <button 
-                              onClick={() => console.log('Edit meeting:', meeting.id)}
-                              className="p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteMeeting(meeting.id)}
-                              className="p-1.5 text-red-500 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="p-8 text-center">
-                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-500 dark:text-gray-400">No meetings on this day</p>
-                  </div>
-                )
-              ) : (
-                <div className="p-6">
-                  <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Upcoming Meetings</h4>
-                  {upcomingMeetings.length > 0 ? (
-                    <div className="space-y-3">
-                      {upcomingMeetings.slice(0, 5).map((meeting) => (
-                        <div 
-                          key={meeting.id} 
-                          className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                          onClick={() => {
-                            const meetingDate = new Date(meeting.scheduled_at);
-                            setCurrentDate(meetingDate);
-                            setSelectedDate(meetingDate);
-                          }}
-                        >
-                          <p className="font-medium text-gray-900 dark:text-white text-sm mb-1">
-                            {meeting.title}
-                          </p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
-                            {new Date(meeting.scheduled_at).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">No upcoming meetings</p>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
+      {/* Upcoming Meetings List */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+          {t.tutorSchedulePage.upcomingMeetingsTitle}
+        </h2>
+
+        {upcomingMeetings.length > 0 ? (
+          <div className="space-y-4">
+            {upcomingMeetings.map((meeting) => {
+              const statusConfig = getStatusConfig(meeting.status);
+              const StatusIcon = statusConfig.icon;
+              const meetingDate = new Date(meeting.scheduled_at);
+
+              return (
+                <div
+                  key={meeting.id}
+                  className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow"
+                >
+                  {/* Status Icon */}
+                  <div className={`p-2 rounded-lg ${statusConfig.color}`}>
+                    <StatusIcon className="h-5 w-5" />
+                  </div>
+
+                  {/* Meeting Details */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {meeting.title}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {formatDate(meetingDate)} {t.tutorSchedulePage.at} {formatTime(meeting.scheduled_at)}
+                        </p>
+                      </div>
+                      <span className={`text-xs px-2 py-1 rounded-full ${statusConfig.color}`}>
+                        {statusConfig.label}
+                      </span>
+                    </div>
+
+                    {meeting.description && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        {meeting.description}
+                      </p>
+                    )}
+
+                    <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                      <span className="flex items-center space-x-1">
+                        <Clock className="h-4 w-4" />
+                        <span>{meeting.duration_minutes} {t.tutorSchedulePage.duration}</span>
+                      </span>
+                      <span className="flex items-center space-x-1">
+                        <Users className="h-4 w-4" />
+                        <span>
+                          {meeting.participants.length}{' '}
+                          {meeting.participants.length === 1
+                            ? t.tutorSchedulePage.participant
+                            : t.tutorSchedulePage.participants}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center space-x-2">
+                    {meeting.meeting_link && (
+                      <a
+                        href={meeting.meeting_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+                        title={t.tutorSchedulePage.joinMeeting}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        <span>{t.tutorSchedulePage.joinMeeting}</span>
+                      </a>
+                    )}
+                    
+                    <button
+                      onClick={() => handleDeleteMeeting(meeting.id)}
+                      className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      title={t.tutorSchedulePage.delete}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-lg font-medium text-gray-600 dark:text-gray-400 mb-2">
+              {t.tutorSchedulePage.noUpcomingMeetings}
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              {t.tutorSchedulePage.noUpcomingDescription}
+            </p>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            >
+              <Plus className="h-5 w-5" />
+              <span>{t.tutorSchedulePage.createMeeting}</span>
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Create Meeting Modal */}
-      <CreateMeetingModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onMeetingCreated={handleMeetingCreated}
-      />
+      {showCreateModal && (
+        <CreateMeetingModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onMeetingCreated={handleMeetingCreated}
+        />
+      )}
     </div>
   );
 }
