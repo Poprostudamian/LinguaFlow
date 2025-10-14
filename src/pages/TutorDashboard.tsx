@@ -232,7 +232,7 @@ const formatDate = (date: Date) => {
 const formatDate = (date: Date) => {
   const dayNames = [
     'Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'
-  ];
+  ]; 
   
   // Nazwy miesięcy w dopełniaczu (dla "14 października")
   const monthNamesGenitive = [
