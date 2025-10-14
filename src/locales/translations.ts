@@ -921,6 +921,109 @@ export const translations = {
       assignLesson: 'Assign Lesson',
       removeStudent: 'Remove Student',
     },
+
+    // Landing Page
+    landingPage: {
+      // Navigation
+      features: 'Features',
+      howItWorks: 'How It Works',
+      login: 'Login',
+      getStarted: 'Get Started',
+      
+      // Mobile Menu
+      lightMode: 'Light Mode',
+      darkMode: 'Dark Mode',
+      
+      // Hero Section
+      heroTitle: 'Transform Language Learning',
+      heroSubtitle: 'The all-in-one platform connecting tutors and students for personalized, interactive language education.',
+      startTeaching: 'Start Teaching',
+      startLearning: 'Start Learning',
+      freeToStart: '✨ Free to get started • No credit card required',
+      
+      // Stats Section
+      activeTutors: 'Active Tutors',
+      studentsLearning: 'Students Learning',
+      lessonsCompleted: 'Lessons Completed',
+      satisfactionRate: 'Satisfaction Rate',
+      
+      // Features Section
+      featuresTitle: 'Everything You Need',
+      featuresSubtitle: 'Powerful tools designed for modern language education',
+      
+      // Feature Items
+      interactiveLessonsTitle: 'Interactive Lessons',
+      interactiveLessonsDesc: 'Create and assign custom lessons with exercises, flashcards, and assessments tailored to each student\'s needs.',
+      
+      smartSchedulingTitle: 'Smart Scheduling',
+      smartSchedulingDesc: 'Manage meetings and sessions with an integrated calendar. Never miss a lesson with automated reminders.',
+      
+      realtimeCommunicationTitle: 'Real-time Communication',
+      realtimeCommunicationDesc: 'Stay connected with built-in messaging. Discuss progress, ask questions, and provide feedback instantly.',
+      
+      studentManagementTitle: 'Student Management',
+      studentManagementDesc: 'Track progress, monitor completion rates, and manage multiple students from one intuitive dashboard.',
+      
+      progressTrackingTitle: 'Progress Tracking',
+      progressTrackingDesc: 'Detailed analytics and reports show learning progress, completed exercises, and time spent on each lesson.',
+      
+      personalizedLearningTitle: 'Personalized Learning',
+      personalizedLearningDesc: 'Adapt content to individual learning styles. Create custom exercises that match each student\'s level.',
+      
+      // How It Works Section
+      howItWorksTitle: 'How It Works',
+      howItWorksSubtitle: 'Simple steps to start your journey',
+      
+      forTutors: 'For Tutors',
+      tutorStep1: 'Sign up and create your profile',
+      tutorStep2: 'Invite students via email',
+      tutorStep3: 'Create custom lessons and exercises',
+      tutorStep4: 'Schedule meetings and track progress',
+      
+      forStudents: 'For Students',
+      studentStep1: 'Accept your tutor\'s invitation',
+      studentStep2: 'Access assigned lessons',
+      studentStep3: 'Complete interactive exercises',
+      studentStep4: 'Track your learning journey',
+      
+      // Testimonials Section
+      testimonialsTitle: 'What People Say',
+      
+      testimonial1Name: 'Maria Garcia',
+      testimonial1Role: 'Spanish Tutor',
+      testimonial1Text: 'LinguaFlow has transformed how I teach. The interactive lessons keep my students engaged!',
+      
+      testimonial2Name: 'John Smith',
+      testimonial2Role: 'English Student',
+      testimonial2Text: 'Finally, a platform that makes learning fun and organized. I\'ve improved so much!',
+      
+      testimonial3Name: 'Sophie Chen',
+      testimonial3Role: 'Mandarin Tutor',
+      testimonial3Text: 'Managing multiple students is effortless. The progress tracking is invaluable.',
+      
+      // CTA Section
+      ctaTitle: 'Ready to Get Started?',
+      ctaSubtitle: 'Join thousands of tutors and students already using LinguaFlow',
+      createFreeAccount: 'Create Free Account',
+      
+      // Footer
+      footerTagline: 'Empowering language education through technology.',
+      
+      footerProduct: 'Product',
+      footerPricing: 'Pricing',
+      
+      footerCompany: 'Company',
+      footerAbout: 'About',
+      footerBlog: 'Blog',
+      footerContact: 'Contact',
+      
+      footerLegal: 'Legal',
+      footerPrivacy: 'Privacy',
+      footerTerms: 'Terms',
+      footerSecurity: 'Security',
+      
+      footerCopyright: '© 2025 LinguaFlow. All rights reserved.',
+    },
   },
   //--------------------------------------------------PL-------------------------------------------------------------------------------------------------------------------------
   pl: {
