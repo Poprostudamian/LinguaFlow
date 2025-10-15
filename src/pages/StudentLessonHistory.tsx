@@ -538,6 +538,63 @@ export function StudentLessonHistory() {
           </div>
         </div>
 
+        {/* Tutor Feedback */}
+        {exercise.tutor_feedback && (
+          <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-700">
+            <div className="flex items-start space-x-2">
+              <MessageSquare className="h-4 w-4 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Feedback from your tutor:
+                </p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                  {exercise.tutor_feedback}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Graded info */}
+        {exercise.graded_at && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+            Graded on {formatDate(exercise.graded_at)}
+          </p>
+        )}
+      </div>
+    ) : (
+      // Not graded yet
+      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+        <div className="flex items-start space-x-2">
+          <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+              Waiting for tutor review
+            </p>
+            <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
+              Your tutor will grade this answer soon. You'll be notified once it's reviewed.
+            </p>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Sample Answer (if available) */}
+    {exercise.correct_answer && (
+      <div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+          Sample Answer (Reference):
+        </p>
+        <div className="p-3 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
+          <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap text-sm">
+            {exercise.correct_answer}
+          </p>
+        </div>
+      </div>
+    )}
+  </div>
+)}
+
                   {/* Flashcard */}
                   {exercise.exercise_type === 'flashcard' && (
                     <div className="space-y-2">
