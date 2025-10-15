@@ -65,7 +65,7 @@ interface Exercise {
   options?: string[];
   correctAnswer?: string;
   flashcards?: Array<{ front: string; back: string }>;
-  // maxLength?: number;
+  maxLength?: number;
   wordLimit?: number;
   explanation?: string;
 }
@@ -780,6 +780,7 @@ export function TutorLessonManagementPage() {
           return {
             ...baseExercise,
             correctAnswer: ex.correct_answer,
+            wordLimit: ex.word_limit || opts.maxLength || 500,
             maxLength: opts.maxLength || 500
           };
         }
