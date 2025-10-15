@@ -119,40 +119,56 @@ export function TutorGradingPage() {
 };
 
   const handleGradeAnswer = async (answerId: string) => {
-    if (!session?.user) return;
-    if (gradingData.score < 0 || gradingData.score > 100) {
-      alert('Score must be between 0 and 100');
-      return;
+  if (!session?.user) return;
+  
+  // ✅ UPDATED: Validate score (percentage) instead of raw points
+  if (gradingData.score < 0 || gradingData.score > 100) {
+    alert('Score must be between 0 and 100%');
+    return;
+  }
+
+  try {
+    console.log('📝 Grading answer:', {
+      answerId,
+      points: gradingData.points,
+      percentage: gradingData.score,
+      feedback: gradingData.feedback
+    });
+
+    // ✅ IMPORTANT: Store percentage in database (not points)
+    const { error: gradeError } = await supabase
+      .from('student_exercise_answers')
+      .update({
+        tutor_score: gradingData.score,  // Store as percentage (0-100)
+        tutor_feedback: gradingData.feedback.trim() || null,
+        graded_by: session.user.id,
+        graded_at: new Date().toISOString(),
+        needs_grading: false,
+        is_correct: gradingData.score >= 50 // 50% or more = pass
+      })
+      .eq('id', answerId);
+
+    if (gradeError) {
+      console.error('❌ Error grading:', gradeError);
+      throw gradeError;
     }
 
-    try {
-      const { error: gradeError } = await supabase
-        .from('student_exercise_answers')
-        .update({
-          tutor_score: gradingData.score,
-          tutor_feedback: gradingData.feedback.trim() || null,
-          graded_by: session.user.id,
-          graded_at: new Date().toISOString(),
-          needs_grading: false,
-          is_correct: gradingData.score >= 50 // 50% lub więcej = zaliczone
-        })
-        .eq('id', answerId);
+    console.log('✅ Answer graded successfully');
 
-      if (gradeError) throw gradeError;
-
-      // Odśwież listę
-      await fetchPendingGradings();
-      
-      // Wyczyść formularz
-      setGradingAnswer(null);
-      setGradingData({ score: 0, feedback: '' });
-      
-      alert('Answer graded successfully!');
-    } catch (err: any) {
-      console.error('Error grading answer:', err);
-      alert('Failed to grade answer: ' + err.message);
-    }
-  };
+    // Refresh list
+    await fetchPendingGradings();
+    
+    // Clear form
+    setGradingAnswer(null);
+    setGradingData({ points: 0, score: 0, feedback: '' });
+    
+    alert('Answer graded successfully! Student will see the results.');
+    
+  } catch (err: any) {
+    console.error('❌ Error grading answer:', err);
+    alert('Failed to grade answer: ' + err.message);
+  }
+};
 
   const toggleExpanded = (answerId: string) => {
     setExpandedAnswers(prev => {
