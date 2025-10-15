@@ -2250,138 +2250,70 @@ export const getTutorDashboardData = async (tutorId: string) => {
 /**
  * Get comprehensive stats for current student
  */
-export const getStudentDashboardData = async (): Promise<StudentStats> => {
+/**
+ * Get student dashboard data
+ * ✅ ZAKTUALIZOWANE: używa nowych funkcji
+ */
+export const getStudentDashboardData = async (studentId: string) => {
   try {
-    console.log('📊 Getting student dashboard data...');
-    
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      throw new Error('Not authenticated');
-    }
+    // ✅ DODANE: pobierz tutorów przez RPC
+    const tutors = await getStudentTutors(studentId);
 
-    console.log('👤 Current student ID:', user.id);
-
-    // 1. Get student's lesson assignments with lesson and tutor details
+    // Pobierz przypisane lekcje
     const { data: studentLessons, error: lessonsError } = await supabase
       .from('student_lessons')
       .select(`
-        id,
-        lesson_id,
-        status,
-        progress,
-        assigned_at,
-        completed_at,
-        updated_at,
-        lessons:lessons!lesson_id (
+        *,
+        lessons (
           id,
           title,
           description,
-          tutor_id,
-          created_at,
-          tutor:users!tutor_id (
-            first_name,
-            last_name
-          )
+          tutor_id
         )
       `)
-      .eq('student_id', user.id)
+      .eq('student_id', studentId)
       .order('assigned_at', { ascending: false });
 
-    if (lessonsError) {
-      console.error('❌ Error fetching student lessons:', lessonsError);
-      throw lessonsError;
-    }
+    if (lessonsError) throw lessonsError;
 
-    console.log('📚 Student lessons found:', studentLessons?.length || 0);
-
-    const lessons = studentLessons || [];
-
-    // 2. Calculate KPIs
-    const totalLessonsAssigned = lessons.length;
-    const completedLessons = lessons.filter(l => l.status === 'completed');
-    const lessonsCompleted = completedLessons.length;
-
-    // Calculate total study time (estimate based on progress)
-    const totalProgressPoints = lessons.reduce((sum, l) => sum + l.progress, 0);
-    const totalHours = Math.round(totalProgressPoints / 100 * 1.5 * 10) / 10; // ~1.5 hours per 100% lesson
-
-    // Calculate average progress
-    const averageProgress = totalLessonsAssigned > 0 
-      ? Math.round(lessons.reduce((sum, l) => sum + l.progress, 0) / totalLessonsAssigned)
+    // Oblicz statystyki
+    const completedLessons = studentLessons?.filter(l => l.status === 'completed').length || 0;
+    const totalTimeMinutes = studentLessons?.reduce((sum, l) => sum + (l.time_spent || 0), 0) || 0;
+    const totalHours = Math.floor(totalTimeMinutes / 3600);
+    const averageProgress = studentLessons && studentLessons.length > 0
+      ? Math.round(studentLessons.reduce((sum, l) => sum + (l.progress || 0), 0) / studentLessons.length)
       : 0;
 
-    // Determine current level
-    let currentLevel = 'Beginner';
-    if (lessonsCompleted >= 20) {
-      currentLevel = 'Advanced';
-    } else if (lessonsCompleted >= 8) {
-      currentLevel = 'Intermediate';  
-    }
-
-    // Calculate study streak (days with activity in last week)
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    
-    const recentActivities = lessons.filter(l => 
-      l.updated_at && new Date(l.updated_at) > oneWeekAgo
-    );
-
-    // Simple streak calculation - days with any lesson activity
-    const activeDays = new Set(
-      recentActivities.map(l => 
-        new Date(l.updated_at).toDateString()
-      )
-    );
-    const studyStreak = activeDays.size;
-
-    // 3. Get upcoming lessons (assigned or in progress, not completed)
-    const upcomingLessons: StudentUpcomingLesson[] = lessons
-      .filter(l => l.status === 'assigned' || l.status === 'in_progress')
-      .slice(0, 6) // Limit to 6 most recent
-      .map(l => ({
-        id: l.id,
-        title: l.lessons.title,
-        description: l.lessons.description || undefined,
-        tutor_name: l.lessons.tutor 
-          ? `${l.lessons.tutor.first_name} ${l.lessons.tutor.last_name}` 
-          : 'Unknown Tutor',
-        assigned_at: l.assigned_at,
-        status: l.status as 'assigned' | 'in_progress',
-        progress: l.progress,
-        lesson_id: l.lesson_id
-      }));
-
-    // 4. Get most recent activity
-    const recentActivity = lessons.length > 0 
-      ? lessons
-          .map(l => l.updated_at || l.assigned_at)
-          .sort()
-          .reverse()[0]
-      : null;
-
-    const kpis: StudentKPIs = {
-      lessonsCompleted,
-      studyStreak,
-      totalHours,
-      totalLessonsAssigned,
-      averageProgress,
-      currentLevel
-    };
-
-    console.log('✅ Student KPIs calculated:', kpis);
-    console.log('📅 Upcoming lessons:', upcomingLessons.length);
+    // Study streak (przykładowa implementacja)
+    const studyStreak = calculateStudyStreak(studentLessons || []);
 
     return {
-      kpis,
-      upcomingLessons,
-      recentActivity
+      kpis: {
+        lessonsCompleted: completedLessons,
+        studyStreak,
+        totalHours,
+        totalLessonsAssigned: studentLessons?.length || 0,
+        averageProgress,
+        currentLevel: 'Beginner' // placeholder
+      },
+      upcomingLessons: (studentLessons || []).filter(l => l.status === 'assigned' || l.status === 'in_progress'),
+      tutors
     };
-
   } catch (error) {
-    console.error('❌ Error fetching student dashboard data:', error);
+    console.error('Error fetching student dashboard data:', error);
     throw error;
   }
 };
+
+function calculateStudyStreak(lessons: any[]): number {
+  // Prosta implementacja - policz dni z ukończonymi lekcjami
+  const completedDates = lessons
+    .filter(l => l.completed_at)
+    .map(l => new Date(l.completed_at).toDateString());
+  
+  const uniqueDates = [...new Set(completedDates)];
+  return uniqueDates.length;
+}
 
 /**
  * Get pending text answer gradings for a tutor
