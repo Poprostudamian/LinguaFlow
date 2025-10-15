@@ -356,6 +356,8 @@ const formatDate = (date: Date) => {
         </button>
       </div>
 
+      <PendingGradingsCompact />
+      
       {/* Success notification */}
       {showSuccess && (
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
@@ -367,8 +369,6 @@ const formatDate = (date: Date) => {
           </div>
         </div>
       )}
-
-      <PendingGradingsCompact />
       
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
