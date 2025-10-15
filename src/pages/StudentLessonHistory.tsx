@@ -25,6 +25,23 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 
+const calculatePointsFromPercentage = (percentage: number, maxPoints: number): number => {
+  return (percentage / 100) * maxPoints;
+};
+
+const getGradeStatusColor = (percentage: number) => {
+  if (percentage >= 80) return 'green';
+  if (percentage >= 50) return 'yellow';
+  return 'red';
+};
+
+const getGradeIcon = (percentage: number) => {
+  if (percentage >= 50) {
+    return <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />;
+  }
+  return <XCircle className="h-6 w-6 text-red-600 dark:text-red-400" />;
+};
+
 interface LessonHistoryItem {
   id: string;
   lesson_id: string;
