@@ -1575,7 +1575,6 @@ export const saveStudentExerciseAnswers = async (
       answers: exerciseAnswers
     });
 
-    // Walidacja danych wejściowych
     if (!studentId || !lessonId) {
       throw new Error('Missing studentId or lessonId');
     }
@@ -1585,12 +1584,9 @@ export const saveStudentExerciseAnswers = async (
       return;
     }
 
-    // Strategy: Delete old answers first, then insert new ones
-    // This works even without unique constraints
-    
     const exerciseIds = exerciseAnswers.map(a => a.exercise_id);
     
-    // Step 1: Delete any existing answers for these exercises
+    // Step 1: Delete old answers
     console.log('🗑️ Deleting old answers for exercises:', exerciseIds);
     const { error: deleteError } = await supabase
       .from('student_exercise_answers')
@@ -1600,7 +1596,6 @@ export const saveStudentExerciseAnswers = async (
 
     if (deleteError) {
       console.warn('⚠️ Warning deleting old answers:', deleteError);
-      // Continue anyway - maybe there were no old answers
     } else {
       console.log('✅ Old answers deleted (if any existed)');
     }
@@ -1610,7 +1605,7 @@ export const saveStudentExerciseAnswers = async (
       student_id: studentId,
       exercise_id: answer.exercise_id,
       answer: String(answer.answer || ''),
-      is_correct: Boolean(answer.is_correct),
+      is_correct: answer.is_correct, 
       submitted_at: new Date().toISOString()
     }));
 
@@ -1629,7 +1624,6 @@ export const saveStudentExerciseAnswers = async (
         code: insertError.code
       });
       
-      // Provide helpful error message
       if (insertError.code === '23505') {
         throw new Error('Duplicate answer detected. Please try again or contact support.');
       } else if (insertError.code === '23503') {
@@ -1639,10 +1633,10 @@ export const saveStudentExerciseAnswers = async (
       }
     }
 
-    console.log('✅ Exercise answers saved successfully:', insertedData);
+    console.log('✅ Student exercise answers saved successfully:', insertedData?.length);
 
-  } catch (error: any) {
-    console.error('❌ Error in saveStudentExerciseAnswers:', error);
+  } catch (error) {
+    console.error('Error saving student exercise answers:', error);
     throw error;
   }
 };
