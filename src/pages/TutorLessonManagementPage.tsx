@@ -464,11 +464,17 @@ function FlashcardBuilder({ exercise, onChange, t }: { exercise: Exercise; onCha
   );
 }
 
-function TextAnswerBuilder({ exercise, onChange, t }: { exercise: Exercise; onChange: (ex: Exercise) => void; t: any }) {
+function TextAnswerBuilder({ exercise, onChange, t }: { 
+  exercise: Exercise; 
+  onChange: (ex: Exercise) => void; 
+  t: any 
+}) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t.questionRequired}</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          {t.questionRequired}
+        </label>
         <input
           type="text"
           value={exercise.question}
@@ -479,7 +485,9 @@ function TextAnswerBuilder({ exercise, onChange, t }: { exercise: Exercise; onCh
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t.sampleAnswer}</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          {t.sampleAnswer}
+        </label>
         <textarea
           value={exercise.correctAnswer || ''}
           onChange={(e) => onChange({ ...exercise, correctAnswer: e.target.value })}
@@ -487,28 +495,69 @@ function TextAnswerBuilder({ exercise, onChange, t }: { exercise: Exercise; onCh
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white resize-none"
           placeholder={t.sampleAnswerPlaceholder}
         />
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Optional: Provide a sample answer as reference for grading
+        </p>
+      </div>
+
+      {/* ✅ ADDED: Word Limit Field */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Word Limit
+        </label>
+        <div className="flex items-center space-x-4">
+          <input
+            type="number"
+            min="10"
+            max="5000"
+            value={exercise.wordLimit || 500}
+            onChange={(e) => onChange({ 
+              ...exercise, 
+              wordLimit: parseInt(e.target.value) || 500 
+            })}
+            className="w-32 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+          />
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            words maximum
+          </span>
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Students will be required to stay within this word limit
+        </p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t.maxLength}</label>
-        <input
-          type="number"
-          min="50"
-          value={exercise.maxLength || 500}
-          onChange={(e) => onChange({ ...exercise, maxLength: parseInt(e.target.value) || 500 })}
-          className="w-32 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t.points}</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          {t.points}
+        </label>
         <input
           type="number"
           min="1"
+          max="100"
           value={exercise.points}
-          onChange={(e) => onChange({ ...exercise, points: parseInt(e.target.value) || 1 })}
+          onChange={(e) => onChange({ 
+            ...exercise, 
+            points: parseInt(e.target.value) || 1 
+          })}
           className="w-32 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
         />
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Maximum points for this exercise
+        </p>
+      </div>
+
+      {/* ✅ ADDED: Information Box */}
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <div className="flex items-start space-x-2">
+          <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-blue-800 dark:text-blue-300">
+            <p className="font-medium mb-1">📝 Manual Grading Required</p>
+            <p>
+              Text answers will be submitted to you for review and grading. 
+              Students will receive a notification once you grade their answer.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
