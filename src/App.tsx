@@ -63,6 +63,12 @@ function App() {
                             <Route index element={<TutorDashboard />} />
                             <Route path="students" element={<TutorStudentsPage />} />
                             <Route path="lessons" element={<TutorLessonManagementPage />} />
+                            <Route path="/tutor/grading" element = 
+                              { session && userRole === 'tutor' ? ( <TutorGradingPage /> ) : (
+                                  <Navigate to="/login" replace />
+                                )
+                              } 
+                            />
                             <Route path="schedule" element={<TutorSchedulePage />} />
                             <Route path="messages" element={<TutorMessagesPage />} />
                           </Routes>
