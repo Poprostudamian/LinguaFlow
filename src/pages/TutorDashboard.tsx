@@ -664,5 +664,31 @@ const formatDate = (date: Date) => {
         </div>
       </div>
     </div>
+    // KPICard component (jeśli go nie masz)
+interface KPICardProps {
+  title: string;
+  value: string | number;
+  icon: React.ElementType;
+  color: 'purple' | 'blue' | 'green' | 'orange';
+}
+
+function KPICard({ title, value, icon: Icon, color }: KPICardProps) {
+  const colors = {
+    purple: 'from-purple-600 to-purple-700',
+    blue: 'from-blue-600 to-blue-700',
+    green: 'from-green-600 to-green-700',
+    orange: 'from-orange-600 to-orange-700'
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200">
+      <div className="flex items-center justify-between mb-4">
+        <div className={`bg-gradient-to-r ${colors[color]} p-3 rounded-lg`}>
+          <Icon className="h-6 w-6 text-white" />
+        </div>
+      </div>
+      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{title}</h3>
+      <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+    </div>
   );
 }
