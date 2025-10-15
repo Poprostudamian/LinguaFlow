@@ -438,8 +438,6 @@ export const translations = {
       today: 'Today',
       previousMonth: 'Previous month',
       nextMonth: 'Next month',
-
-      hasMeetings: 'Has meetings',
       
       // Days of Week
       sunday: 'Sun',
@@ -449,6 +447,30 @@ export const translations = {
       thursday: 'Thu',
       friday: 'Fri',
       saturday: 'Sat',
+
+      // Days of Week (pełne nazwy dla formatDate)
+        sundayFull: 'Sunday',
+        mondayFull: 'Monday',
+        tuesdayFull: 'Tuesday',
+        wednesdayFull: 'Wednesday',
+        thursdayFull: 'Thursday',
+        fridayFull: 'Friday',
+        saturdayFull: 'Saturday',
+        
+        // Months (pełne nazwy dla formatDate)
+        january: 'January',
+        february: 'February',
+        march: 'March',
+        april: 'April',
+        may: 'May',
+        june: 'June',
+        july: 'July',
+        august: 'August',
+        september: 'September',
+        october: 'October',
+        november: 'November',
+        december: 'December',
+      },
       
       // Selected Day Panel
       selectedDay: 'Selected Day',
