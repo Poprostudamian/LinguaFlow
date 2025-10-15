@@ -65,7 +65,8 @@ interface Exercise {
   options?: string[];
   correctAnswer?: string;
   flashcards?: Array<{ front: string; back: string }>;
-  maxLength?: number;
+  // maxLength?: number;
+  wordLimit?: number;
   explanation?: string;
 }
 
@@ -1003,8 +1004,11 @@ export function TutorLessonManagementPage() {
           } else if (exercise.type === 'text_answer') {
             return {
               ...baseExercise,
-              correct_answer: exercise.correctAnswer || '',
-              options: JSON.stringify({ maxLength: exercise.maxLength || 500 })
+            correct_answer: exercise.correctAnswer || '',
+            word_limit: exercise.wordLimit || 500,
+            options: JSON.stringify({ 
+      maxLength: exercise.wordLimit || exercise.maxLength || 500 
+    })
             };
           }
 
