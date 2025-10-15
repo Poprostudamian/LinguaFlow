@@ -593,7 +593,7 @@ export function StudentLessonHistory() {
       </div>
     )}
   </div>
-)}
+)} 
 
                   {/* Flashcard */}
                   {exercise.exercise_type === 'flashcard' && (
