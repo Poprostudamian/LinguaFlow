@@ -323,79 +323,115 @@ export function TutorGradingPage() {
                     )}
 
                     {/* Grading Form */}
-                    {!isGrading ? (
-                      <button
-                        onClick={() => {
-                          setGradingAnswer(grading.answer_id);
-                          setGradingData({ 
-                            score: Math.round(grading.max_points * 0.8), // Domyślnie 80% punktów
-                            feedback: '' 
-                          });
-                        }}
-                        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 hover:shadow-lg flex items-center justify-center space-x-2"
-                      >
-                        <Award className="h-5 w-5" />
-                        <span>Grade This Answer</span>
-                      </button>
-                    ) : (
-                      <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Score (0-100)
-                          </label> 
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={gradingData.score}
-                            onChange={(e) => setGradingData({
-                              ...gradingData,
-                              score: parseInt(e.target.value) || 0
-                            })}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:text-white"
-                          />
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            Max points for this exercise: {grading.max_points}
-                          </p>
-                        </div>
+                    <div className="space-y-6">
+  <div>
+    <div className="flex items-center justify-between mb-2">
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        Score
+      </label>
+      <span className="text-xs text-gray-500 dark:text-gray-400">
+        Max: {gradingAnswer.max_points} points
+      </span>
+    </div>
+    
+    {/* ✅ UPDATED: Points input with visual percentage display */}
+    <div className="space-y-2">
+      <input
+        type="number"
+        min="0"
+        max={gradingAnswer.max_points}
+        step="0.5"
+        value={gradingData.points !== undefined ? gradingData.points : ''}
+        onChange={(e) => {
+          const points = parseFloat(e.target.value) || 0;
+          const percentage = Math.round((points / gradingAnswer.max_points) * 100);
+          setGradingData({ 
+            ...gradingData, 
+            points: points,
+            score: percentage 
+          });
+        }}
+        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white text-lg font-semibold"
+        placeholder={`Enter points (0-${gradingAnswer.max_points})`}
+      />
+      
+      {/* Visual percentage indicator */}
+      {gradingData.points !== undefined && gradingData.points >= 0 && (
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div 
+                className={`h-full transition-all duration-300 ${
+                  gradingData.score >= 80 
+                    ? 'bg-green-500' 
+                    : gradingData.score >= 50 
+                    ? 'bg-yellow-500' 
+                    : 'bg-red-500'
+                }`}
+                style={{ width: `${Math.min(gradingData.score, 100)}%` }}
+              />
+            </div>
+          </div>
+          <span className={`ml-4 text-sm font-semibold ${
+            gradingData.score >= 80 
+              ? 'text-green-600 dark:text-green-400' 
+              : gradingData.score >= 50 
+              ? 'text-yellow-600 dark:text-yellow-400' 
+              : 'text-red-600 dark:text-red-400'
+          }`}>
+            {gradingData.score}%
+          </span>
+        </div>
+      )}
+    </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Feedback for Student (Optional)
-                          </label>
-                          <textarea
-                            value={gradingData.feedback}
-                            onChange={(e) => setGradingData({
-                              ...gradingData,
-                              feedback: e.target.value
-                            })}
-                            placeholder="Provide constructive feedback about their answer..."
-                            rows={4}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:text-white resize-none"
-                          />
-                        </div>
+    {/* ✅ ADDED: Info box explaining points */}
+    <div className="mt-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+      <p className="text-xs text-blue-800 dark:text-blue-300 flex items-start space-x-2">
+        <AlertCircle className="h-3 w-3 flex-shrink-0 mt-0.5" />
+        <span>
+          Enter the points earned (e.g., 3.5 out of {gradingAnswer.max_points}). 
+          Student will see both points and percentage.
+        </span>
+      </p>
+    </div>
+  </div>
 
-                        <div className="flex items-center space-x-3">
-                          <button
-                            onClick={() => handleGradeAnswer(grading.answer_id)}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
-                          >
-                            <Check className="h-4 w-4" />
-                            <span>Submit Grade</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setGradingAnswer(null);
-                              setGradingData({ score: 0, feedback: '' });
-                            }}
-                            className="flex-1 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
-                          >
-                            <X className="h-4 w-4" />
-                            <span>Cancel</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
+  {/* Feedback section stays the same */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      Feedback (Optional)
+    </label>
+    <textarea
+      value={gradingData.feedback}
+      onChange={(e) => setGradingData({ ...gradingData, feedback: e.target.value })}
+      rows={4}
+      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+      placeholder="Provide feedback to help the student improve..."
+    />
+  </div>
+
+  {/* Submit button */}
+  <div className="flex items-center justify-end space-x-3">
+    <button
+      onClick={() => {
+        setGradingAnswer(null);
+        setGradingData({ points: 0, score: 0, feedback: '' });
+      }}
+      className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+    >
+      Cancel
+    </button>
+    <button
+      onClick={() => handleGradeAnswer(gradingAnswer.answer_id)}
+      disabled={gradingData.points === undefined || gradingData.points < 0}
+      className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+    >
+      <CheckCircle className="h-5 w-5" />
+      <span>Submit Grade</span>
+    </button>
+  </div>
+</div>
                   </div>
                 )}
               </div>
