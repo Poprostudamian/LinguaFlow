@@ -297,57 +297,71 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Interactive
         );
 
       case 'text_answer':
-        // ✅ ADDED: Word count and limit validation
-        const currentWordCount = wordCounts[currentExercise.id] || 0;
-        const wordLimit = currentExercise.word_limit;
-        const exceedsLimit = wordLimit && currentWordCount > wordLimit;
+  const userAnswer = userAnswers[currentExercise.id] || '';
+  const wordLimit = currentExercise.word_limit || 500;
+  const currentWordCount = countWords(userAnswer);
+  const exceedsLimit = currentWordCount > wordLimit;
 
-        return (
-          <div className="space-y-3">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Your Answer:
-                </label>
-                {wordLimit && (
-                  <span className={`text-sm font-medium px-3 py-1 rounded-lg ${
-                    exceedsLimit
-                      ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                      : currentWordCount > wordLimit * 0.9
-                        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  }`}>
-                    {currentWordCount} / {wordLimit} words
-                  </span>
-                )}
-              </div>
-              <textarea
-                value={userAnswer}
-                onChange={(e) => handleAnswerChange(e.target.value)}
-                placeholder="Write your detailed answer here..."
-                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 dark:bg-gray-800 dark:text-white resize-none ${
-                  exceedsLimit
-                    ? 'border-red-300 dark:border-red-700 focus:border-red-500'
-                    : 'border-gray-200 dark:border-gray-700 focus:border-purple-500'
-                }`}
-                rows={6}
-              />
-              {exceedsLimit && (
-                <div className="flex items-start space-x-2 mt-2 text-sm text-red-600 dark:text-red-400">
-                  <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                  <p>
-                    Your answer exceeds the word limit. Please reduce it to {wordLimit} words or less before continuing.
-                  </p>
-                </div>
-              )}
-              {wordLimit && !exceedsLimit && currentWordCount > wordLimit * 0.9 && (
-                <p className="text-sm text-yellow-600 dark:text-yellow-400 mt-2">
-                  ⚠️ You're approaching the word limit
-                </p>
-              )}
-            </div>
+  return (
+    <div className="space-y-4">
+      {/* ✅ ADDED: Information about grading */}
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+        <div className="flex items-start space-x-2">
+          <Send className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-blue-800 dark:text-blue-300">
+            <p className="font-medium">📝 Manual Grading Required</p>
+            <p className="text-xs mt-1">
+              This answer will be reviewed by your tutor. You'll receive a grade out of <strong>{currentExercise.points} points</strong> after review.
+            </p>
           </div>
-        );
+        </div>
+      </div>
+
+      <textarea
+        value={userAnswer}
+        onChange={(e) => handleAnswerChange(e.target.value)}
+        placeholder="Type your answer here..."
+        maxLength={wordLimit * 10} // Soft limit
+        className={`
+          w-full p-4 rounded-xl border-2 transition-all
+          ${exceedsLimit 
+            ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+            : 'border-gray-200 dark:border-gray-700 focus:border-purple-500 focus:ring-purple-500'
+          }
+          dark:bg-gray-700 dark:text-white
+          placeholder-gray-400 dark:placeholder-gray-500
+        `}
+        rows={6}
+      />
+      
+      {/* Word counter */}
+      <div className="flex items-center justify-between text-sm">
+        <span className={`
+          ${exceedsLimit 
+            ? 'text-red-600 dark:text-red-400 font-semibold' 
+            : 'text-gray-500 dark:text-gray-400'
+          }
+        `}>
+          {currentWordCount} / {wordLimit} words
+          {exceedsLimit && ' (exceeds limit!)'}
+        </span>
+        <span className="text-xs text-gray-400">
+          {currentExercise.points} points available
+        </span>
+      </div>
+
+      {exceedsLimit && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+          <p className="text-sm text-red-800 dark:text-red-300 flex items-center space-x-2">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            <span>
+              Your answer exceeds the word limit. Please reduce it to {wordLimit} words or less.
+            </span>
+          </p>
+        </div>
+      )}
+    </div>
+  );
 
       default:
         return null;
