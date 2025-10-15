@@ -252,6 +252,10 @@ export function TutorGradingPage() {
         /* Pending Gradings List */
         <div className="space-y-4">
           {pendingGradings.map((grading) => {
+          if (!grading) {
+            console.warn('⚠️ Null grading in map');
+            return null;
+          }
             const isExpanded = expandedAnswers.has(grading.answer_id);
             const isGrading = gradingAnswer === grading.answer_id;
             const wordCount = countWords(grading.answer);
