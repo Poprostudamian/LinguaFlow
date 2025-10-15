@@ -72,7 +72,7 @@ function App() {
                   </Route>
                   
                   {/* Fallback - redirect to home */}
-                  <Route path="*" element={<Navigate to="/" replace />} /> {/* ← ZMIENIONE: przekieruj do Landing, nie login */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </div>
             </Router>
