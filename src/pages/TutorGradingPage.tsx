@@ -616,7 +616,6 @@ export function TutorGradingPage() {
               </div>
             );
           })}
-        </div>
       )}
     </div>
   );
