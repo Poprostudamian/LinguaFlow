@@ -368,6 +368,8 @@ const formatDate = (date: Date) => {
         </div>
       )}
 
+      <PendingGradingsCompact />
+      
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <KPICard
