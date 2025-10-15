@@ -2348,6 +2348,27 @@ export const getTutorPendingGradings = async (tutorId: string) => {
   }
 };
 
+/**
+ * Count pending gradings for a tutor
+ */
+export const countTutorPendingGradings = async (tutorId: string): Promise<number> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('count_tutor_pending_gradings', {
+        p_tutor_id: tutorId
+      });
+
+    if (error) {
+      console.error('Error counting pending gradings:', error);
+      return 0;
+    }
+
+    return data || 0;
+  } catch (error) {
+    console.error('Error in countTutorPendingGradings:', error);
+    return 0;
+  }
+};
 
 /**
  * Grade a student's text answer
