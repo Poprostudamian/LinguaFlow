@@ -19,7 +19,6 @@ import {
   XCircle,  
   Lightbulb,
   AlertCircle,
-  Award,
   MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
