@@ -369,7 +369,7 @@ export function StudentSchedulePage() {
                 </div>
                 <div className="flex items-center space-x-1">
                   <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                  <span>{t.studentSchedulePage.hasMeetings || hasMeetings}</span>
+                  <span>{t.studentSchedulePage.hasMeetings || "Ma spotkanie"}</span>
                 </div>
               </div>
             </div>
