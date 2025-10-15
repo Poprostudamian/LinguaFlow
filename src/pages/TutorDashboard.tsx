@@ -23,6 +23,7 @@ import { StudentCard } from '../components/StudentCard';
 import { useRealTutorData } from '../lib/studentStats';
 import { createLessonWithAssignments, CreateLessonInput } from '../lib/lessonManagement';
 import { getTutorMeetings, MeetingWithParticipants } from '../lib/meetingsAPI';
+import { PendingGradingsWidget, PendingGradingsCompact } from '../components/PendingGradingsWidget';
 
 export function TutorDashboard() {
   const { session } = useAuth();
