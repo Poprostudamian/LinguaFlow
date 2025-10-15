@@ -546,130 +546,130 @@ export function StudentLessonHistory() {
                     </div>
 
    
-    {exercise.tutor_score !== null && exercise.tutor_score !== undefined ? (
-      // Graded by tutor - show points and percentage
-      <div className={`
-        border-2 rounded-lg p-4
-        ${getGradeStatusColor(exercise.tutor_score) === 'green' 
-          ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800'
-          : getGradeStatusColor(exercise.tutor_score) === 'yellow'
-          ? 'bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-yellow-200 dark:border-yellow-800'
-          : 'bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border-red-200 dark:border-red-800'
-        }
-      `}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <Award className={`h-5 w-5 ${
-              getGradeStatusColor(exercise.tutor_score) === 'green'
-                ? 'text-green-600 dark:text-green-400'
-                : getGradeStatusColor(exercise.tutor_score) === 'yellow'
-                ? 'text-yellow-600 dark:text-yellow-400'
-                : 'text-red-600 dark:text-red-400'
-            }`} />
-            <span className="font-semibold text-gray-900 dark:text-white">
-              Tutor's Grade
-            </span>
-          </div>
-          <div className="flex items-center space-x-3">
-            {/* ✅ NEW: Display Points */}
-            <div className="text-right">
-              <div className={`text-2xl font-bold ${
-                getGradeStatusColor(exercise.tutor_score) === 'green'
-                  ? 'text-green-600 dark:text-green-400'
-                  : getGradeStatusColor(exercise.tutor_score) === 'yellow'
-                  ? 'text-yellow-600 dark:text-yellow-400'
-                  : 'text-red-600 dark:text-red-400'
-              }`}>
-                {calculatePointsFromPercentage(exercise.tutor_score, exercise.points).toFixed(1)}
-                <span className="text-lg text-gray-600 dark:text-gray-400">
-                  /{exercise.points}
-                </span>
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                ({exercise.tutor_score}%)
-              </div>
-            </div>
-            {/* Icon based on score */}
-            {getGradeIcon(exercise.tutor_score)}
-          </div>
-        </div>
+                  {exercise.tutor_score !== null && exercise.tutor_score !== undefined ? (
+                    // Graded by tutor - show points and percentage
+                    <div className={`
+                      border-2 rounded-lg p-4
+                      ${getGradeStatusColor(exercise.tutor_score) === 'green' 
+                        ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800'
+                        : getGradeStatusColor(exercise.tutor_score) === 'yellow'
+                        ? 'bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-yellow-200 dark:border-yellow-800'
+                        : 'bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border-red-200 dark:border-red-800'
+                      }
+                    `}>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-2">
+                          <Award className={`h-5 w-5 ${
+                            getGradeStatusColor(exercise.tutor_score) === 'green'
+                              ? 'text-green-600 dark:text-green-400'
+                              : getGradeStatusColor(exercise.tutor_score) === 'yellow'
+                              ? 'text-yellow-600 dark:text-yellow-400'
+                              : 'text-red-600 dark:text-red-400'
+                          }`} />
+                          <span className="font-semibold text-gray-900 dark:text-white">
+                            Tutor's Grade
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          {/* ✅ NEW: Display Points */}
+                          <div className="text-right">
+                            <div className={`text-2xl font-bold ${
+                              getGradeStatusColor(exercise.tutor_score) === 'green'
+                                ? 'text-green-600 dark:text-green-400'
+                                : getGradeStatusColor(exercise.tutor_score) === 'yellow'
+                                ? 'text-yellow-600 dark:text-yellow-400'
+                                : 'text-red-600 dark:text-red-400'
+                            }`}>
+                              {calculatePointsFromPercentage(exercise.tutor_score, exercise.points).toFixed(1)}
+                              <span className="text-lg text-gray-600 dark:text-gray-400">
+                                /{exercise.points}
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              ({exercise.tutor_score}%)
+                            </div>
+                          </div>
+                          {/* Icon based on score */}
+                          {getGradeIcon(exercise.tutor_score)}
+                        </div>
+                      </div>
+              
+                      {/* Tutor Feedback */}
+                      {exercise.tutor_feedback && (
+                        <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">
+                          <div className="flex items-start space-x-2">
+                            <MessageSquare className={`h-4 w-4 flex-shrink-0 mt-1 ${
+                              getGradeStatusColor(exercise.tutor_score) === 'green'
+                                ? 'text-green-600 dark:text-green-400'
+                                : getGradeStatusColor(exercise.tutor_score) === 'yellow'
+                                ? 'text-yellow-600 dark:text-yellow-400'
+                                : 'text-red-600 dark:text-red-400'
+                            }`} />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Feedback from your tutor:
+                              </p>
+                              <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                {exercise.tutor_feedback}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+              
+                     {/* Graded info */}
+                      {exercise.graded_at && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 flex items-center space-x-1">
+                          <Clock className="h-3 w-3" />
+                          <span>Graded on {formatDate(exercise.graded_at)}</span>
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    // ✅ UPDATED: Not graded yet - Pending Review
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-lg">
+                          <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">
+                              ⏳ Awaiting Tutor Review
+                            </p>
+                            <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
+                              Pending Grading
+                            </span>
+                          </div>
+                          <p className="text-sm text-blue-700 dark:text-blue-400">
+                            Your answer has been submitted successfully. Your tutor will review and grade it soon. You'll see the results here once it's graded.
+                          </p>
+                          <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700">
+                            <p className="text-xs text-blue-600 dark:text-blue-400 flex items-center space-x-1">
+                              <AlertCircle className="h-3 w-3" />
+                              <span>Possible points: {exercise.points} pts</span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-        {/* Tutor Feedback */}
-        {exercise.tutor_feedback && (
-          <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">
-            <div className="flex items-start space-x-2">
-              <MessageSquare className={`h-4 w-4 flex-shrink-0 mt-1 ${
-                getGradeStatusColor(exercise.tutor_score) === 'green'
-                  ? 'text-green-600 dark:text-green-400'
-                  : getGradeStatusColor(exercise.tutor_score) === 'yellow'
-                  ? 'text-yellow-600 dark:text-yellow-400'
-                  : 'text-red-600 dark:text-red-400'
-              }`} />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Feedback from your tutor:
-                </p>
-                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                  {exercise.tutor_feedback}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-       {/* Graded info */}
-        {exercise.graded_at && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 flex items-center space-x-1">
-            <Clock className="h-3 w-3" />
-            <span>Graded on {formatDate(exercise.graded_at)}</span>
-          </p>
-        )}
-      </div>
-    ) : (
-      // ✅ UPDATED: Not graded yet - Pending Review
-      <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <div className="flex items-start space-x-3">
-          <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-lg">
-            <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">
-                ⏳ Awaiting Tutor Review
-              </p>
-              <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
-                Pending Grading
-              </span>
-            </div>
-            <p className="text-sm text-blue-700 dark:text-blue-400">
-              Your answer has been submitted successfully. Your tutor will review and grade it soon. You'll see the results here once it's graded.
-            </p>
-            <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700">
-              <p className="text-xs text-blue-600 dark:text-blue-400 flex items-center space-x-1">
-                <AlertCircle className="h-3 w-3" />
-                <span>Possible points: {exercise.points} pts</span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    )}
-
-    {/* Sample Answer (if available) */}
-    {exercise.correct_answer && (
-      <div>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-          Sample Answer (Reference):
-        </p>
-        <div className="p-3 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
-          <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap text-sm">
-            {exercise.correct_answer}
-          </p>
-        </div>
-      </div>
-    )}
-  </div>
-)} 
+                    {/* Sample Answer (if available) */}
+                    {exercise.correct_answer && exercise.tutor_score !== null && (
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                          Sample Answer (Reference):
+                        </p>
+                        <div className="p-3 rounded-lg border border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-700">
+                          <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap text-sm">
+                            {exercise.correct_answer}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )} 
 
                   {/* Flashcard */}
                   {exercise.exercise_type === 'flashcard' && (
