@@ -1459,7 +1459,6 @@ export const getLessonExercises = async (lessonId: string): Promise<any[]> => {
       .order('order_number', { ascending: true });
 
     if (error) {
-      // Jeśli tabela nie istnieje, zwróć pustą tablicę
       if (error.code === '42P01') {
         console.log('ℹ️ lesson_exercises table does not exist yet');
         return [];
@@ -1470,17 +1469,21 @@ export const getLessonExercises = async (lessonId: string): Promise<any[]> => {
 
     console.log('✅ Found', data?.length || 0, 'exercises');
     
-    // Parsuj opcje JSON dla ćwiczeń ABCD
-    const formattedExercises = (data || []).map(exercise => ({
-      ...exercise,
-      options: exercise.options ? JSON.parse(exercise.options) : null
-    }));
+    // ✅ UPDATED: Parsuj opcje JSON i dodaj word_limit
+    const formattedExercises = (data || []).map(exercise => {
+      const parsed = {
+        ...exercise,
+        options: exercise.options ? JSON.parse(exercise.options) : null,
+        word_limit: exercise.word_limit || null // ✅ ADDED
+      };
+
+      return parsed;
+    });
 
     return formattedExercises;
 
   } catch (error) {
     console.error('Error getting lesson exercises:', error);
-    // Zwróć pustą tablicę zamiast rzucać błąd
     return [];
   }
 };
