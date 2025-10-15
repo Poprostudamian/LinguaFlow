@@ -2371,6 +2371,96 @@ export const countTutorPendingGradings = async (tutorId: string): Promise<number
 };
 
 /**
+ * Grading service - wszystkie operacje związane z oceną w jednym miejscu
+ */
+export const gradingService = {
+  /**
+   * Pobierz pending gradings dla tutora
+   */
+  getPending: async (tutorId: string) => {
+    const { data, error } = await supabase
+      .rpc('get_tutor_pending_gradings', {
+        p_tutor_id: tutorId
+      });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  /**
+   * Policz pending gradings
+   */
+  countPending: async (tutorId: string): Promise<number> => {
+    const { data, error } = await supabase
+      .rpc('count_tutor_pending_gradings', {
+        p_tutor_id: tutorId
+      });
+    
+    if (error) return 0;
+    return data || 0;
+  },
+
+  /**
+   * Oceń odpowiedź studenta
+   */
+  gradeAnswer: async (
+    answerId: string,
+    tutorId: string,
+    score: number,
+    feedback: string | null = null
+  ) => {
+    if (score < 0 || score > 100) {
+      throw new Error('Score must be between 0 and 100');
+    }
+
+    const { error } = await supabase
+      .from('student_exercise_answers')
+      .update({
+        tutor_score: score,
+        tutor_feedback: feedback,
+        graded_by: tutorId,
+        graded_at: new Date().toISOString(),
+        needs_grading: false,
+        is_correct: score >= 50
+      })
+      .eq('id', answerId);
+
+    if (error) throw error;
+  },
+
+  /**
+   * Pobierz historię ocen dla studenta
+   */
+  getStudentGrades: async (studentId: string, lessonId?: string) => {
+    let query = supabase
+      .from('student_exercise_answers')
+      .select(`
+        *,
+        lesson_exercises (
+          question,
+          points,
+          lesson_id,
+          lessons (
+            title,
+            tutor_id
+          )
+        )
+      `)
+      .eq('student_id', studentId)
+      .not('tutor_score', 'is', null)
+      .order('graded_at', { ascending: false });
+
+    if (lessonId) {
+      query = query.eq('lesson_exercises.lesson_id', lessonId);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  }
+};
+
+/**
  * Grade a student's text answer
  */
 export const gradeStudentAnswer = async (
