@@ -63,29 +63,60 @@ export function TutorGradingPage() {
     fetchPendingGradings();
   }, [session]);
 
-  const fetchPendingGradings = async () => {
-    if (!session?.user) return;
+ const fetchPendingGradings = async () => {
+  if (!session?.user) return;
+  
+  setIsLoading(true);
+  setError(null);
+
+  try {
+    console.log('📝 Fetching pending gradings for tutor:', session.user.id);
     
-    setIsLoading(true);
-    setError(null);
+    // Call RPC function
+    const { data, error: fetchError } = await supabase
+      .rpc('get_tutor_pending_gradings', {
+        p_tutor_id: session.user.id
+      });
 
-    try {
-      // ✅ ZMIENIONE: Używamy funkcji RPC zamiast SELECT FROM view
-      const { data, error: fetchError } = await supabase
-        .rpc('get_tutor_pending_gradings', {
-          p_tutor_id: session.user.id
-        });
-
-      if (fetchError) throw fetchError;
-
-      setPendingGradings(data || []);
-    } catch (err: any) {
-      console.error('Error fetching pending gradings:', err);
-      setError(err.message || 'Failed to load pending gradings');
-    } finally {
-      setIsLoading(false);
+    if (fetchError) {
+      console.error('❌ RPC Error:', fetchError);
+      throw fetchError;
     }
-  };
+
+    console.log('✅ Received data:', data);
+
+    // ✅ ADDED: Filter and validate data to remove any null/invalid entries
+    const validGradings = (data || []).filter(item => {
+      // Validate required fields
+      if (!item) {
+        console.warn('⚠️ Null item in gradings');
+        return false;
+      }
+      
+      if (!item.answer_id || !item.exercise_id || !item.student_id) {
+        console.warn('⚠️ Missing IDs in grading:', item);
+        return false;
+      }
+
+      if (item.max_points === null || item.max_points === undefined) {
+        console.warn('⚠️ Missing max_points for grading:', item);
+        // Set default value instead of filtering out
+        item.max_points = 5; // Default to 5 points
+      }
+
+      return true;
+    });
+
+    console.log('✅ Valid gradings:', validGradings.length);
+    setPendingGradings(validGradings);
+    
+  } catch (err: any) {
+    console.error('❌ Error fetching pending gradings:', err);
+    setError(err.message || 'Failed to load pending gradings');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleGradeAnswer = async (answerId: string) => {
     if (!session?.user) return;
