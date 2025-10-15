@@ -472,7 +472,6 @@ const formatDate = (date: Date) => {
               )}
             </div>
           )}
-           <PendingGradingsWidget />
         </div>
         
         {/* Calendar Section */}
