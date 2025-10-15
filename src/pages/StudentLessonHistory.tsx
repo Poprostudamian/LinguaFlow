@@ -617,25 +617,39 @@ export function StudentLessonHistory() {
           </div>
         )}
 
-        {/* Graded info */}
+       {/* Graded info */}
         {exercise.graded_at && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
-            Graded on {formatDate(exercise.graded_at)}
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 flex items-center space-x-1">
+            <Clock className="h-3 w-3" />
+            <span>Graded on {formatDate(exercise.graded_at)}</span>
           </p>
         )}
       </div>
     ) : (
-      // Not graded yet
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-        <div className="flex items-start space-x-2">
-          <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
-              Waiting for tutor review
+      // ✅ UPDATED: Not graded yet - Pending Review
+      <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <div className="flex items-start space-x-3">
+          <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-lg">
+            <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">
+                ⏳ Awaiting Tutor Review
+              </p>
+              <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
+                Pending Grading
+              </span>
+            </div>
+            <p className="text-sm text-blue-700 dark:text-blue-400">
+              Your answer has been submitted successfully. Your tutor will review and grade it soon. You'll see the results here once it's graded.
             </p>
-            <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">
-              Your tutor will grade this answer soon. You'll be notified once it's reviewed.
-            </p>
+            <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700">
+              <p className="text-xs text-blue-600 dark:text-blue-400 flex items-center space-x-1">
+                <AlertCircle className="h-3 w-3" />
+                <span>Possible points: {exercise.points} pts</span>
+              </p>
+            </div>
           </div>
         </div>
       </div>
