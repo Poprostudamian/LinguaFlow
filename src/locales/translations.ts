@@ -438,6 +438,8 @@ export const translations = {
       today: 'Today',
       previousMonth: 'Previous month',
       nextMonth: 'Next month',
+
+      hasMeetings: 'Has meetings',
       
       // Days of Week
       sunday: 'Sun',
