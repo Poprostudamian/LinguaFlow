@@ -50,10 +50,10 @@ export function TutorGradingPage() {
   const [expandedAnswers, setExpandedAnswers] = useState<Set<string>>(new Set());
   const [gradingAnswer, setGradingAnswer] = useState<string | null>(null);
   const [gradingData, setGradingData] = useState<{
-    points: number;
-    score: number;
-    feedback: string;
-    }>({ 
+  points: number;
+  score: number;
+  feedback: string;
+}>({ 
   points: 0,
   score: 0,
   feedback: '' 
@@ -616,6 +616,7 @@ export function TutorGradingPage() {
               </div>
             );
           })}
+        </div>
       )}
     </div>
   );
