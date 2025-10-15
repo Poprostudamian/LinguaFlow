@@ -664,7 +664,10 @@ const formatDate = (date: Date) => {
         </div>
       </div>
     </div>
-    // KPICard component (jeśli go nie masz)
+  );
+}
+
+// KPICard component (jeśli go nie masz)
 interface KPICardProps {
   title: string;
   value: string | number;
