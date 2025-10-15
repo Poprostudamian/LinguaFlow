@@ -500,7 +500,6 @@ export function TutorGradingPage() {
     </div>
   );
 }).filter(Boolean)}
-        </div>
 
                     {/* Grading Form */}
                     <div className="space-y-6">
