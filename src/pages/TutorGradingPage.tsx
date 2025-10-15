@@ -264,12 +264,9 @@ const handleGradeAnswer = async (answerId: string) => {
         /* Pending Gradings List */
         <div className="space-y-4">
           {pendingGradings.map((grading) => {
-  // ✅ ADDED: Defensive checks
-  if (!grading) {
-    console.warn('⚠️ Null grading in map');
-    return null;
-  }
-
+  // Defensive check for null grading
+  if (!grading) return null;
+  
   const isExpanded = expandedAnswers.has(grading.answer_id);
   const isGrading = gradingAnswer === grading.answer_id;
   const wordCount = countWords(grading.answer || '');
@@ -297,7 +294,7 @@ const handleGradeAnswer = async (answerId: string) => {
                   <div className="flex items-center space-x-1">
                     <User className="h-4 w-4" />
                     <span>
-                      {grading.student_first_name || ''} {grading.student_last_name || ''}
+                      {grading.student_first_name} {grading.student_last_name}
                     </span>
                   </div>
                   <div className="flex items-center space-x-1">
@@ -315,11 +312,20 @@ const handleGradeAnswer = async (answerId: string) => {
               {grading.question || 'No question text'}
             </p>
           </div>
-          {/* Rest of the card... */}
+          <button
+            onClick={() => toggleExpanded(grading.answer_id)}
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          >
+            {isExpanded ? (
+              <ChevronUp className="h-5 w-5" />
+            ) : (
+              <ChevronDown className="h-5 w-5" />
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Expanded content - Add null checks throughout */}
+      {/* Expanded Content */}
       {isExpanded && (
         <div className="p-5 space-y-4">
           {/* Student's Answer */}
@@ -335,8 +341,12 @@ const handleGradeAnswer = async (answerId: string) => {
                     : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                 }`}>
                   {wordCount} words
-                  {grading.word_limit && ` / ${grading.word_limit} limit`}
                 </span>
+                {grading.word_limit && (
+                  <span className="text-gray-500 dark:text-gray-400">
+                    (limit: {grading.word_limit})
+                  </span>
+                )}
                 {exceedsLimit && (
                   <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                 )}
@@ -347,9 +357,15 @@ const handleGradeAnswer = async (answerId: string) => {
                 {grading.answer || 'No answer provided'}
               </p>
             </div>
+            {exceedsLimit && (
+              <p className="text-sm text-red-600 dark:text-red-400 mt-2 flex items-center space-x-1">
+                <AlertCircle className="h-4 w-4" />
+                <span>This answer exceeds the word limit</span>
+              </p>
+            )}
           </div>
 
-          {/* Sample Answer (if available) */}
+          {/* Sample Answer (if provided) */}
           {grading.sample_answer && (
             <div>
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
@@ -363,13 +379,13 @@ const handleGradeAnswer = async (answerId: string) => {
             </div>
           )}
 
-          {/* Grading Form - UPDATE to use maxPoints variable */}
+          {/* Grading Form or Button */}
           {!isGrading ? (
             <button
               onClick={() => {
                 setGradingAnswer(grading.answer_id);
                 setGradingData({ 
-                  points: maxPoints * 0.8, // Default to 80%
+                  points: maxPoints * 0.8, 
                   score: 80,
                   feedback: '' 
                 });
@@ -381,7 +397,7 @@ const handleGradeAnswer = async (answerId: string) => {
             </button>
           ) : (
             <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 space-y-6">
-              {/* Grading form - use the new points-based input from previous artifact */}
+              {/* Score Input */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -392,7 +408,6 @@ const handleGradeAnswer = async (answerId: string) => {
                   </span>
                 </div>
                 
-                {/* Points input with visual percentage display */}
                 <div className="space-y-2">
                   <input
                     type="number"
@@ -455,7 +470,7 @@ const handleGradeAnswer = async (answerId: string) => {
                 </div>
               </div>
 
-              {/* Feedback */}
+              {/* Feedback Textarea */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Feedback (Optional)
@@ -464,26 +479,26 @@ const handleGradeAnswer = async (answerId: string) => {
                   value={gradingData.feedback}
                   onChange={(e) => setGradingData({ ...gradingData, feedback: e.target.value })}
                   rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white resize-none"
                   placeholder="Provide feedback to help the student improve..."
                 />
               </div>
 
-              {/* Buttons */}
+              {/* Action Buttons */}
               <div className="flex items-center justify-end space-x-3">
                 <button
                   onClick={() => {
                     setGradingAnswer(null);
                     setGradingData({ points: 0, score: 0, feedback: '' });
                   }}
-                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => handleGradeAnswer(grading.answer_id)}
                   disabled={gradingData.points === undefined || gradingData.points < 0}
-                  className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                  className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 transition-all"
                 >
                   <CheckCircle2 className="h-5 w-5" />
                   <span>Submit Grade</span>
@@ -495,123 +510,7 @@ const handleGradeAnswer = async (answerId: string) => {
       )}
     </div>
   );
-}).filter(Boolean)}
-
-                    {/* Grading Form */}
-                    <div className="space-y-6">
-  <div>
-    <div className="flex items-center justify-between mb-2">
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        Score
-      </label>
-      <span className="text-xs text-gray-500 dark:text-gray-400">
-        Max: {gradingAnswer.max_points} points
-      </span>
-    </div>
-    
-    {/* ✅ UPDATED: Points input with visual percentage display */}
-    <div className="space-y-2">
-      <input
-        type="number"
-        min="0"
-        max={gradingAnswer.max_points}
-        step="0.5"
-        value={gradingData.points !== undefined ? gradingData.points : ''}
-        onChange={(e) => {
-          const points = parseFloat(e.target.value) || 0;
-          const percentage = Math.round((points / gradingAnswer.max_points) * 100);
-          setGradingData({ 
-            ...gradingData, 
-            points: points,
-            score: percentage 
-          });
-        }}
-        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white text-lg font-semibold"
-        placeholder={`Enter points (0-${gradingAnswer.max_points})`}
-      />
-      
-      {/* Visual percentage indicator */}
-      {gradingData.points !== undefined && gradingData.points >= 0 && (
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div 
-                className={`h-full transition-all duration-300 ${
-                  gradingData.score >= 80 
-                    ? 'bg-green-500' 
-                    : gradingData.score >= 50 
-                    ? 'bg-yellow-500' 
-                    : 'bg-red-500'
-                }`}
-                style={{ width: `${Math.min(gradingData.score, 100)}%` }}
-              />
-            </div>
-          </div>
-          <span className={`ml-4 text-sm font-semibold ${
-            gradingData.score >= 80 
-              ? 'text-green-600 dark:text-green-400' 
-              : gradingData.score >= 50 
-              ? 'text-yellow-600 dark:text-yellow-400' 
-              : 'text-red-600 dark:text-red-400'
-          }`}>
-            {gradingData.score}%
-          </span>
-        </div>
-      )}
-    </div>
-
-    {/* ✅ ADDED: Info box explaining points */}
-    <div className="mt-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-      <p className="text-xs text-blue-800 dark:text-blue-300 flex items-start space-x-2">
-        <AlertCircle className="h-3 w-3 flex-shrink-0 mt-0.5" />
-        <span>
-          Enter the points earned (e.g., 3.5 out of {gradingAnswer.max_points}). 
-          Student will see both points and percentage.
-        </span>
-      </p>
-    </div>
-  </div>
-
-  {/* Feedback section stays the same */}
-  <div>
-    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-      Feedback (Optional)
-    </label>
-    <textarea
-      value={gradingData.feedback}
-      onChange={(e) => setGradingData({ ...gradingData, feedback: e.target.value })}
-      rows={4}
-      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
-      placeholder="Provide feedback to help the student improve..."
-    />
-  </div>
-
-  {/* Submit button */}
-  <div className="flex items-center justify-end space-x-3">
-    <button
-      onClick={() => {
-        setGradingAnswer(null);
-        setGradingData({ points: 0, score: 0, feedback: '' });
-      }}
-      className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-    >
-      Cancel
-    </button>
-    <button
-      onClick={() => handleGradeAnswer(gradingAnswer.answer_id)}
-      disabled={gradingData.points === undefined || gradingData.points < 0}
-      className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-    >
-      <CheckCircle className="h-5 w-5" />
-      <span>Submit Grade</span>
-    </button>
-  </div>
-</div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+})}
         </div>
       )}
     </div>
