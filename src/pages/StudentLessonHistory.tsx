@@ -23,7 +23,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useLanguage } from '../contexts/LanguageContext'; // ← DODANE
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 
 interface LessonHistoryItem {
