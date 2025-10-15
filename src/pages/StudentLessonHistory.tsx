@@ -144,7 +144,7 @@ export function StudentLessonHistory() {
         answersMap.set(answer.exercise_id, {
           answer: answer.answer,
           is_correct: answer.is_correct,
-          submitted_at: answer.submitted_at
+          submitted_at: answer.submitted_at,
           tutor_score: answer.tutor_score,
           tutor_feedback: answer.tutor_feedback,
           graded_by: answer.graded_by,
