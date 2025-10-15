@@ -152,41 +152,67 @@ export function StudentLessonViewer() {
   };
 
   const handleExercisesComplete = async (results: any[]) => {
-    if (!lessonId || !session?.user?.id) return;
+  if (!lessonId || !session?.user?.id) return;
 
-    setIsCompleting(true);
-    try {
-      // Save student answers
-      await saveStudentExerciseAnswers(results);
+  setIsCompleting(true);
+  try {
+    console.log('📝 Starting lesson completion...', {
+      lessonId,
+      studentId: session.user.id,
+      resultsCount: results.length
+    });
 
-      // Calculate score
-      const correctCount = results.filter(r => r.is_correct).length;
-      const totalCount = results.length;
-      const score = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+    // ✅ FIX: Pass all 3 required parameters
+    await saveStudentExerciseAnswers(
+      session.user.id,  // studentId
+      lessonId,         // lessonId
+      results           // exerciseAnswers
+    );
 
-      // Update student_lesson
-      const { error: updateError } = await supabase
-        .from('student_lessons')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-          score: score,
-          progress: 100,
-        })
-        .eq('lesson_id', lessonId)
-        .eq('student_id', session.user.id);
+    console.log('✅ Answers saved successfully');
 
-      if (updateError) throw updateError;
+    // Calculate score
+    const correctCount = results.filter(r => r.is_correct).length;
+    const totalCount = results.length;
+    const score = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
 
-      // Refresh lesson details
-      await fetchLessonDetails();
-    } catch (err: any) {
-      console.error('Error completing lesson:', err);
-      setError(t.studentLessonViewer.errorCompletingLesson); // ← ZMIENIONE
-    } finally {
-      setIsCompleting(false);
+    // Calculate time spent (in seconds)
+    const timeSpent = lesson?.student_lesson?.started_at
+      ? Math.floor((Date.now() - new Date(lesson.student_lesson.started_at).getTime()) / 1000)
+      : 0;
+
+    console.log('📊 Calculated results:', { score, timeSpent, correctCount, totalCount });
+
+    // Update student_lesson with completion data
+    const { error: updateError } = await supabase
+      .from('student_lessons')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        progress: 100,
+        score: score,
+        time_spent: timeSpent,
+      })
+      .eq('lesson_id', lessonId)
+      .eq('student_id', session.user.id);
+
+    if (updateError) {
+      console.error('❌ Error updating lesson status:', updateError);
+      throw updateError;
     }
-  };
+
+    console.log('✅ Lesson marked as completed');
+
+    // Refresh lesson details to show completion
+    await fetchLessonDetails();
+    
+  } catch (err: any) {
+    console.error('❌ Error completing lesson:', err);
+    setError(t.studentLessonViewer.errorCompletingLesson);
+  } finally {
+    setIsCompleting(false);
+  }
+};
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
