@@ -1066,6 +1066,29 @@ export const translations = {
       november: 'Listopad',
       december: 'Grudzień',
     },
+
+    // Days of Week (pełne nazwy dla formatDate)
+  sundayFull: 'Niedziela',
+  mondayFull: 'Poniedziałek',
+  tuesdayFull: 'Wtorek',
+  wednesdayFull: 'Środa',
+  thursdayFull: 'Czwartek',
+  fridayFull: 'Piątek',
+  saturdayFull: 'Sobota',
+  
+  // Months (pełne nazwy dla formatDate - w dopełniaczu)
+  january: 'stycznia',
+  february: 'lutego',
+  march: 'marca',
+  april: 'kwietnia',
+  may: 'maja',
+  june: 'czerwca',
+  july: 'lipca',
+  august: 'sierpnia',
+  september: 'września',
+  october: 'października',
+  november: 'listopada',
+  december: 'grudnia',
     
     // Common
     common: {
