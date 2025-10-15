@@ -537,7 +537,6 @@ export function StudentLessonHistory() {
             )}
           </div>
         </div>
-      </div>
 
                   {/* Flashcard */}
                   {exercise.exercise_type === 'flashcard' && (
