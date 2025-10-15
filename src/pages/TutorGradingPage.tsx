@@ -118,10 +118,9 @@ export function TutorGradingPage() {
   }
 };
 
-  const handleGradeAnswer = async (answerId: string) => {
+const handleGradeAnswer = async (answerId: string) => {
   if (!session?.user) return;
   
-  // ✅ UPDATED: Validate score (percentage) instead of raw points
   if (gradingData.score < 0 || gradingData.score > 100) {
     alert('Score must be between 0 and 100%');
     return;
@@ -135,16 +134,15 @@ export function TutorGradingPage() {
       feedback: gradingData.feedback
     });
 
-    // ✅ IMPORTANT: Store percentage in database (not points)
     const { error: gradeError } = await supabase
       .from('student_exercise_answers')
       .update({
-        tutor_score: gradingData.score,  // Store as percentage (0-100)
+        tutor_score: gradingData.score,
         tutor_feedback: gradingData.feedback.trim() || null,
         graded_by: session.user.id,
         graded_at: new Date().toISOString(),
         needs_grading: false,
-        is_correct: gradingData.score >= 50 // 50% or more = pass
+        is_correct: gradingData.score >= 50
       })
       .eq('id', answerId);
 
@@ -155,10 +153,8 @@ export function TutorGradingPage() {
 
     console.log('✅ Answer graded successfully');
 
-    // Refresh list
     await fetchPendingGradings();
     
-    // Clear form
     setGradingAnswer(null);
     setGradingData({ points: 0, score: 0, feedback: '' });
     
