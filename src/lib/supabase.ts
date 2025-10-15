@@ -1400,17 +1400,45 @@ export interface CreateLessonData {
 export const createLessonExercises = async (lessonId: string, exercises: any[]) => {
   if (exercises.length === 0) return;
 
-  const exercisesData = exercises.map((exercise, index) => ({
-    lesson_id: lessonId,
-    exercise_type: exercise.type,
-    title: exercise.title,
-    question: exercise.question,
-    correct_answer: exercise.correct_answer,
-    options: exercise.options ? JSON.stringify(exercise.options) : null,
-    explanation: exercise.explanation,
-    order_number: index + 1,
-    points: exercise.points || 1
-  }));
+  const exercisesData = exercises.map((exercise, index) => {
+    const baseExercise = {
+      lesson_id: lessonId,
+      exercise_type: exercise.type,
+      title: exercise.title || exercise.question,
+      question: exercise.question,
+      order_number: index + 1,
+      points: exercise.points || 1,
+      explanation: exercise.explanation || null
+    };
+
+    if (exercise.type === 'multiple_choice') {
+      return {
+        ...baseExercise,
+        correct_answer: exercise.correctAnswer || 'A',
+        options: JSON.stringify(exercise.options || []),
+        word_limit: null // Multiple choice nie ma limitu słów
+      };
+    } else if (exercise.type === 'flashcard') {
+      return {
+        ...baseExercise,
+        correct_answer: exercise.flashcards?.[0]?.back || '',
+        options: JSON.stringify(exercise.flashcards || []),
+        word_limit: null // Flashcards nie mają limitu słów
+      };
+    } else if (exercise.type === 'text_answer') {
+      // ✅ UPDATED: Zapisz word_limit jako osobne pole
+      return {
+        ...baseExercise,
+        correct_answer: exercise.correctAnswer || '',
+        options: JSON.stringify({ 
+          maxLength: exercise.wordLimit || exercise.maxLength || 500 
+        }),
+        word_limit: exercise.wordLimit || exercise.maxLength || 500 // ✅ ADDED
+      };
+    }
+
+    return baseExercise;
+  });
 
   const { error } = await supabase
     .from('lesson_exercises')
