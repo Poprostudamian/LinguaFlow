@@ -1,4 +1,6 @@
 // src/App.tsx
+// ✅ FIXED: Dodano routing dla TutorGradingPage
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -21,7 +23,7 @@ import { StudentLessonViewer } from './pages/StudentLessonViewer';
 import { StudentLessonHistory } from './pages/StudentLessonHistory';
 import { StudentSchedulePage } from './pages/StudentSchedulePage';
 import { StudentMessagesPage } from './pages/StudentMessagesPage';
-import { TutorGradingPage } from './pages/TutorGradingPage';
+import { TutorGradingPage } from './pages/TutorGradingPage'; // ✅ ADDED
 
 function App() {
   return (
@@ -63,12 +65,7 @@ function App() {
                             <Route index element={<TutorDashboard />} />
                             <Route path="students" element={<TutorStudentsPage />} />
                             <Route path="lessons" element={<TutorLessonManagementPage />} />
-                            <Route path="/tutor/grading" element = 
-                              { session && userRole === 'tutor' ? ( <TutorGradingPage /> ) : (
-                                  <Navigate to="/login" replace />
-                                )
-                              } 
-                            />
+                            <Route path="grading" element={<TutorGradingPage />} /> {/* ✅ ADDED */}
                             <Route path="schedule" element={<TutorSchedulePage />} />
                             <Route path="messages" element={<TutorMessagesPage />} />
                           </Routes>
