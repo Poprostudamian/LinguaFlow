@@ -1535,6 +1535,7 @@ export const translations = {
       statusCompleted: 'Ukończone',
       statusCancelled: 'Anulowane',
       statusUnknown: 'Nieznany',
+      hasMeetings: 'Spotkanie',
       
       // Meeting Details
       duration: 'min',
