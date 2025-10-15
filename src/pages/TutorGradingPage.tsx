@@ -50,9 +50,14 @@ export function TutorGradingPage() {
   const [expandedAnswers, setExpandedAnswers] = useState<Set<string>>(new Set());
   const [gradingAnswer, setGradingAnswer] = useState<string | null>(null);
   const [gradingData, setGradingData] = useState<{
+    points: number;
     score: number;
     feedback: string;
-  }>({ score: 0, feedback: '' });
+    }>({ 
+  points: 0,
+  score: 0,
+  feedback: '' 
+});
 
   useEffect(() => {
     fetchPendingGradings();
