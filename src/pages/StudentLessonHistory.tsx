@@ -532,45 +532,65 @@ export function StudentLessonHistory() {
 
                   {/* Text Answer */}
                   {exercise.exercise_type === 'text_answer' && (
-  <div className="space-y-3">
-    {/* Student's Answer */}
-    <div>
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-        {t.lessonViewer.yourAnswer}:
-      </p>
-      <div className="p-3 rounded-lg border-2 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
-        <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
-          {exercise.student_answer}
-        </p>
-      </div>
-    </div>
+                  <div className="space-y-3">
+                    {/* Student's Answer */}
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                        {t.lessonViewer.yourAnswer}:
+                      </p>
+                      <div className="p-3 rounded-lg border-2 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
+                        <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
+                          {exercise.student_answer}
+                        </p>
+                      </div>
+                    </div>
 
-    {/* ✅ ADDED: Tutor Grading Section */}
+   
     {exercise.tutor_score !== null && exercise.tutor_score !== undefined ? (
-      // Graded by tutor
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-lg p-4">
+      // Graded by tutor - show points and percentage
+      <div className={`
+        border-2 rounded-lg p-4
+        ${getGradeStatusColor(exercise.tutor_score) === 'green' 
+          ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800'
+          : getGradeStatusColor(exercise.tutor_score) === 'yellow'
+          ? 'bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-yellow-200 dark:border-yellow-800'
+          : 'bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border-red-200 dark:border-red-800'
+        }
+      `}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
-            <Award className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            <Award className={`h-5 w-5 ${
+              getGradeStatusColor(exercise.tutor_score) === 'green'
+                ? 'text-green-600 dark:text-green-400'
+                : getGradeStatusColor(exercise.tutor_score) === 'yellow'
+                ? 'text-yellow-600 dark:text-yellow-400'
+                : 'text-red-600 dark:text-red-400'
+            }`} />
             <span className="font-semibold text-gray-900 dark:text-white">
               Tutor's Grade
             </span>
           </div>
-          <div className="flex items-center space-x-2">
-            <span className={`text-2xl font-bold ${
-              exercise.tutor_score >= 80 
-                ? 'text-green-600 dark:text-green-400' 
-                : exercise.tutor_score >= 50
+          <div className="flex items-center space-x-3">
+            {/* ✅ NEW: Display Points */}
+            <div className="text-right">
+              <div className={`text-2xl font-bold ${
+                getGradeStatusColor(exercise.tutor_score) === 'green'
+                  ? 'text-green-600 dark:text-green-400'
+                  : getGradeStatusColor(exercise.tutor_score) === 'yellow'
                   ? 'text-yellow-600 dark:text-yellow-400'
                   : 'text-red-600 dark:text-red-400'
-            }`}>
-              {exercise.tutor_score}%
-            </span>
-            {exercise.tutor_score >= 50 ? (
-              <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-            ) : (
-              <XCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
-            )}
+              }`}>
+                {calculatePointsFromPercentage(exercise.tutor_score, exercise.points).toFixed(1)}
+                <span className="text-lg text-gray-600 dark:text-gray-400">
+                  /{exercise.points}
+                </span>
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                ({exercise.tutor_score}%)
+              </div>
+            </div>
+            {/* Icon based on score */}
+            {getGradeIcon(exercise.tutor_score)}
           </div>
         </div>
 
