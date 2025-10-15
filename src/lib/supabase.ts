@@ -2190,6 +2190,64 @@ export interface StudentStats {
 }
 
 /**
+ * Get tutor dashboard data
+ * ✅ ZAKTUALIZOWANE: używa nowych funkcji
+ */
+export const getTutorDashboardData = async (tutorId: string) => {
+  try {
+    // ✅ ZMIENIONE: używamy RPC zamiast direct query
+    const students = await getTutorStudents(tutorId);
+
+    // Pobierz statystyki
+    const { data: lessonsData, error: lessonsError } = await supabase
+      .from('lessons')
+      .select('id')
+      .eq('tutor_id', tutorId);
+
+    if (lessonsError) throw lessonsError;
+
+    const { data: studentLessons, error: studentLessonsError } = await supabase
+      .from('student_lessons')
+      .select('*')
+      .in('lesson_id', (lessonsData || []).map(l => l.id));
+
+    if (studentLessonsError) throw studentLessonsError;
+
+    // Oblicz KPIs
+    const totalStudents = students.length;
+    const activeStudents = students.filter(s => {
+      const hasActiveLessons = studentLessons?.some(
+        sl => sl.student_id === s.id && sl.status === 'in_progress'
+      );
+      return hasActiveLessons;
+    }).length;
+
+    const teachingHours = Math.floor(
+      (studentLessons?.reduce((sum, sl) => sum + (sl.time_spent || 0), 0) || 0) / 3600
+    );
+
+    const completedLessons = studentLessons?.filter(sl => sl.status === 'completed').length || 0;
+    const totalAssignedLessons = studentLessons?.length || 0;
+    const completionRate = totalAssignedLessons > 0 
+      ? Math.round((completedLessons / totalAssignedLessons) * 100) 
+      : 0;
+
+    return {
+      kpis: {
+        totalStudents,
+        activeStudents,
+        teachingHours,
+        completionRate
+      },
+      students
+    };
+  } catch (error) {
+    console.error('Error fetching tutor dashboard data:', error);
+    throw error;
+  }
+};
+
+/**
  * Get comprehensive stats for current student
  */
 export const getStudentDashboardData = async (): Promise<StudentStats> => {
