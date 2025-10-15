@@ -18,7 +18,9 @@ import {
   FileText,
   XCircle,  
   Lightbulb,
-  AlertCircle
+  AlertCircle,
+  Award,
+  MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext'; // ← DODANE
@@ -177,6 +179,10 @@ export function StudentLessonHistory() {
             student_answer: studentAnswer?.answer || null,
             is_correct: studentAnswer?.is_correct || false,
             submitted_at: studentAnswer?.submitted_at || null
+            tutor_score: studentAnswer?.tutor_score || null,
+            tutor_feedback: studentAnswer?.tutor_feedback || null,
+            graded_by: studentAnswer?.graded_by || null,
+            graded_at: studentAnswer?.graded_at || null
           };
         })
       };
