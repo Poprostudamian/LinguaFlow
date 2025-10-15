@@ -338,16 +338,26 @@ export function TutorGradingPage() {
                         <span>Grade This Answer</span>
                       </button>
                     ) : (
-                      <div className="space-y-6">
+                      <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 space-y-4">
                         <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                              Score
-                            </label>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              Max: {gradingAnswer.max_points} points
-                            </span>
-                          </div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Score (0-100)
+                          </label> 
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={gradingData.score}
+                            onChange={(e) => setGradingData({
+                              ...gradingData,
+                              score: parseInt(e.target.value) || 0
+                            })}
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:text-white"
+                          />
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            Max points for this exercise: {grading.max_points}
+                          </p>
+                        </div>
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
