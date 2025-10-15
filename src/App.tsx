@@ -33,7 +33,7 @@ function App() {
               <div className="App">
                 <Routes>
                   {/* Public Routes */}
-                  <Route path="/" element={<LandingPage />} /> {/* ← ZMIENIONE: Landing jako strona główna */}
+                  <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<SignUp />} />
                   
