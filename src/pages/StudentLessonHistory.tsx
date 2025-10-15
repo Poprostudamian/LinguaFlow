@@ -47,6 +47,10 @@ interface LessonHistoryItem {
     student_answer: string | null;
     is_correct: boolean;
     submitted_at: string | null;
+    tutor_score?: number | null;
+    tutor_feedback?: string | null;
+    graded_by?: string | null;
+    graded_at?: string | null;
   }[];
 }
 
