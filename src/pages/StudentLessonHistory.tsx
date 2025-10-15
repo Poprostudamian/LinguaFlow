@@ -596,9 +596,15 @@ export function StudentLessonHistory() {
 
         {/* Tutor Feedback */}
         {exercise.tutor_feedback && (
-          <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-700">
+          <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">
             <div className="flex items-start space-x-2">
-              <MessageSquare className="h-4 w-4 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-1" />
+              <MessageSquare className={`h-4 w-4 flex-shrink-0 mt-1 ${
+                getGradeStatusColor(exercise.tutor_score) === 'green'
+                  ? 'text-green-600 dark:text-green-400'
+                  : getGradeStatusColor(exercise.tutor_score) === 'yellow'
+                  ? 'text-yellow-600 dark:text-yellow-400'
+                  : 'text-red-600 dark:text-red-400'
+              }`} />
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Feedback from your tutor:
