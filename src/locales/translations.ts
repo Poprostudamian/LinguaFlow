@@ -1331,6 +1331,7 @@ export const translations = {
       editMeeting: 'Edytuj Spotkanie',
       cancelMeeting: 'Anuluj Spotkanie',
       meetingDetails: 'Szczegóły Spotkania',
+      hasMeetings: 'Ma spotkania'
       noMeetings: 'Brak zaplanowanych spotkań',
       today: 'Dziś',
       thisWeek: 'Ten Tydzień',
