@@ -177,7 +177,7 @@ export function StudentLessonHistory() {
             points: exercise.points,
             student_answer: studentAnswer?.answer || null,
             is_correct: studentAnswer?.is_correct || false,
-            submitted_at: studentAnswer?.submitted_at || null
+            submitted_at: studentAnswer?.submitted_at || null,
             tutor_score: studentAnswer?.tutor_score || null,
             tutor_feedback: studentAnswer?.tutor_feedback || null,
             graded_by: studentAnswer?.graded_by || null,
