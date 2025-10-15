@@ -2330,19 +2330,24 @@ export const getStudentDashboardData = async (): Promise<StudentStats> => {
  */
 export const getTutorPendingGradings = async (tutorId: string) => {
   try {
+    // ✅ ZMIENIONE: Używamy funkcji RPC zamiast SELECT FROM view
     const { data, error } = await supabase
-      .from('tutor_pending_gradings')
-      .select('*')
-      .eq('tutor_id', tutorId)
-      .order('submitted_at', { ascending: true });
+      .rpc('get_tutor_pending_gradings', {
+        p_tutor_id: tutorId
+      });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching pending gradings:', error);
+      throw error;
+    }
+
     return data || [];
   } catch (error) {
-    console.error('Error fetching pending gradings:', error);
+    console.error('Error in getTutorPendingGradings:', error);
     throw error;
   }
 };
+
 
 /**
  * Grade a student's text answer
