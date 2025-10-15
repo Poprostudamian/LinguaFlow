@@ -2330,3 +2330,51 @@ export const getStudentDashboardData = async (): Promise<StudentStats> => {
     throw error;
   }
 };
+
+/**
+ * Get pending text answer gradings for a tutor
+ */
+export const getTutorPendingGradings = async (tutorId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('tutor_pending_gradings')
+      .select('*')
+      .eq('tutor_id', tutorId)
+      .order('submitted_at', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching pending gradings:', error);
+    throw error;
+  }
+};
+
+/**
+ * Grade a student's text answer
+ */
+export const gradeStudentAnswer = async (
+  answerId: string,
+  tutorId: string,
+  score: number,
+  feedback: string | null
+) => {
+  try {
+    const { error } = await supabase
+      .from('student_exercise_answers')
+      .update({
+        tutor_score: score,
+        tutor_feedback: feedback,
+        graded_by: tutorId,
+        graded_at: new Date().toISOString(),
+        needs_grading: false,
+        is_correct: score >= 50 // 50% or more = correct
+      })
+      .eq('id', answerId);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error grading student answer:', error);
+    throw error;
+  }
+};
