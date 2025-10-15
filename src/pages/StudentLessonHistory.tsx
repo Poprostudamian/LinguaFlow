@@ -123,15 +123,15 @@ export function StudentLessonHistory() {
       // Get student's answers
       const { data: studentAnswers, error: answersError } = await supabase
         .from('student_exercise_answers')
-  .select(`
-    *,
-    tutor_score,
-    tutor_feedback,
-    graded_by,
-    graded_at
-  `)
-  .eq('student_id', session.user.id)
-  .in('exercise_id', (exercises || []).map(ex => ex.id));
+        .select(`
+          *,
+          tutor_score,
+          tutor_feedback,
+          graded_by,
+          graded_at
+        `)
+        .eq('student_id', session.user.id)
+        .in('exercise_id', (exercises || []).map(ex => ex.id));
 
       if (answersError) {
         console.error('Error loading student answers:', answersError);
