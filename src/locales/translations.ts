@@ -502,6 +502,7 @@ export const translations = {
     
     // Tutor Dashboard
     tutorDashboard: {
+      welcome: 'Welcome back',
       // Page Title
       title: 'Tutor Dashboard',
       subtitle: 'Real-time statistics from your database',
