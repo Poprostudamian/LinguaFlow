@@ -62,7 +62,7 @@ export function StudentLessonsPage() {
   
   // State
   const [lessons, setLessons] = useState<StudentLessonData[]>([]);
-  const [averageScoreFromAPI, setAverageScoreFromAPI] = useState<number>(0);
+  const [averageScoreFromAPI, setAverageScoreFromAPI] = useState<number>(-1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -424,7 +424,7 @@ export function StudentLessonsPage() {
             <span className="text-sm font-medium text-orange-900 dark:text-orange-300">{t.studentDashboard.averageScore}</span>
           </div>
           <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
-            {stats.averageScore > 0 ? `${stats.averageScore}%` : 'N/A'}
+            {stats.averageScore >= 0 ? `${stats.averageScore}%` : 'N/A'}
           </p>
         </div>
       </div>

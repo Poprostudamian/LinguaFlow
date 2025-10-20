@@ -281,12 +281,12 @@ export async function getStudentKPIsReal(studentId: string): Promise<StudentKPIs
       completedLessons: stats.completed_lessons,
       inProgressLessons: stats.in_progress_lessons,
       assignedLessons: stats.total_lessons - stats.completed_lessons - stats.in_progress_lessons,
-      averageScore: 0, // Obliczamy poniżej
+      averageScore: -1, // Will be calculated below
       totalStudyTime: stats.total_study_time_minutes,
       averageProgress: stats.average_progress
     };
 
-    // ✅ Oblicz średni score używając scentralizowanej funkcji
+    // ✅ Calculate average score using centralized function (returns -1 if no data)
     kpis.averageScore = await calculateStudentAverageScore(studentId);
 
     console.log('✅ [STUDENT API] Final KPIs:', kpis);
@@ -308,7 +308,7 @@ export function useStudentData(studentId: string | undefined) {
     completedLessons: 0,
     inProgressLessons: 0,
     assignedLessons: 0,
-    averageScore: 0,
+    averageScore: -1,
     totalStudyTime: 0,
     averageProgress: 0
   });

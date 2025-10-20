@@ -216,7 +216,7 @@ export function StudentDashboard() {
         />
         <KPICard
           title={t.studentDashboard.averageScore}
-          value={`${Math.round(stats?.average_score || 0)}%`}
+          value={stats?.average_score !== undefined && stats.average_score >= 0 ? `${Math.round(stats.average_score)}%` : 'N/A'}
           icon={TrendingUp}
           color="purple"
         />
