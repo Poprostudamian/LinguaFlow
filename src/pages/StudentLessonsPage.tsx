@@ -527,6 +527,25 @@ export function StudentLessonsPage() {
           </p>
         </div>
       )}
+
+      {/* Sort By Dropdown (visible when lessons exist) */}
+      {filteredLessons.length > 0 && (
+        <div className="flex justify-end">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600 dark:text-gray-400">Sort by:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1 text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="recent">Most Recent</option>
+              <option value="progress">Progress</option>
+              <option value="score">Score</option>
+              <option value="alphabetical">Alphabetical</option>
+            </select>
+          </div>
+        </div>
+      )}
     </div>
   );
 }400 mb-1">
