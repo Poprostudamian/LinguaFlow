@@ -2661,10 +2661,10 @@ export const calculateStudentAverageScore = async (studentId: string): Promise<n
       }
     }
 
-    // Return average score, or -1 if no lessons had exercises (no data available)
+    // Return average score, or 0 if no lessons had exercises (no data available)
     if (scoredLessonsCount === 0) {
       console.log(`Student ${studentId} has completed lessons but none have exercises`);
-      return -1;
+      return 0;
     }
 
     const averageScore = Math.round(totalScore / scoredLessonsCount);
@@ -2673,7 +2673,7 @@ export const calculateStudentAverageScore = async (studentId: string): Promise<n
 
   } catch (error) {
     console.error('Error calculating student average score:', error);
-    return -1; // Return -1 on error to indicate no data available
+    return 0; // Return 0 on error to indicate no data available
   }
 };
 
@@ -2732,7 +2732,7 @@ export const getStudentMetrics = async (studentId: string): Promise<StudentMetri
       : null;
 
     // Determine level based on average score (not progress)
-    // If averageScore is -1, treat as Beginner (no data available)
+    // If averageScore is 0, treat as Beginner (no data available)
     const currentLevel: 'Beginner' | 'Intermediate' | 'Advanced' =
       averageScore >= 80 ? 'Advanced' :
       averageScore >= 60 ? 'Intermediate' : 'Beginner';
