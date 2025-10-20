@@ -255,6 +255,40 @@ export function StudentLessonsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Total Lessons
+                </p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {metrics.total_lessons}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {metrics.assigned_lessons} assigned, {metrics.in_progress_lessons} in progress
+                </p>
+              </div>
+              <BookOpen className="h-8 w-8 text-blue-500" />
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Completion Rate
+                </p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {metrics.completion_rate}%
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {metrics.completed_lessons} lessons completed
+                </p>
+              </div>
+              <Target className="h-8 w-8 text-green-500" />
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
                   Average Score
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -370,6 +404,21 @@ export function StudentLessonsPage() {
             >
               <List className="h-4 w-4" />
             </button>
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">Sort by:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="recent">Most Recent</option>
+              <option value="progress">Progress</option>
+              <option value="score">Score</option>
+              <option value="alphabetical">Alphabetical</option>
+            </select>
           </div>
         </div>
       </div>
@@ -527,59 +576,6 @@ export function StudentLessonsPage() {
           </p>
         </div>
       )}
-
-      {/* Sort By Dropdown (visible when lessons exist) */}
-      {filteredLessons.length > 0 && (
-        <div className="flex justify-end">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Sort by:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1 text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-purple-500"
-            >
-              <option value="recent">Most Recent</option>
-              <option value="progress">Progress</option>
-              <option value="score">Score</option>
-              <option value="alphabetical">Alphabetical</option>
-            </select>
-          </div>
-        </div>
-      )}
     </div>
   );
-}400 mb-1">
-                  Total Lessons
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {metrics.total_lessons}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {metrics.assigned_lessons} assigned, {metrics.in_progress_lessons} in progress
-                </p>
-              </div>
-              <BookOpen className="h-8 w-8 text-blue-500" />
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                  Completion Rate
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {metrics.completion_rate}%
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {metrics.completed_lessons} lessons completed
-                </p>
-              </div>
-              <Target className="h-8 w-8 text-green-500" />
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-
+}
