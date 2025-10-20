@@ -461,8 +461,6 @@ export function StudentLessonHistory() {
     </div>
   );
 } className="text-gray-600 dark:text-gray-400">Loading lesson history...</p>
-        </div>
-      </div>
     );
   }
 
