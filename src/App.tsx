@@ -1,4 +1,4 @@
-// src/App.tsx
+// src/App.tsx - Fixed routing for lesson history
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -47,8 +47,12 @@ function App() {
                           <Routes>
                             <Route index element={<StudentDashboard />} />
                             <Route path="lessons" element={<StudentLessonsPage />} />
+                            {/* ✅ FIXED: Consistent routing paths */}
                             <Route path="lessons/:lessonId" element={<StudentLessonViewer />} />
                             <Route path="lessons/:lessonId/history" element={<StudentLessonHistory />} />
+                            {/* ✅ ALTERNATIVE: Also support singular "lesson" for backward compatibility */}
+                            <Route path="lesson/:lessonId" element={<StudentLessonViewer />} />
+                            <Route path="lesson/:lessonId/history" element={<StudentLessonHistory />} />
                             <Route path="schedule" element={<StudentSchedulePage />} />
                             <Route path="messages" element={<StudentMessagesPage />} />
                           </Routes>
