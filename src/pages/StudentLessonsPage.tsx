@@ -1,91 +1,103 @@
-// src/pages/StudentLessonsPage.tsx - Z PEŁNYMI TŁUMACZENIAMI
+// 📁 Updated File: /src/pages/StudentLessonsPage.tsx
+// ✅ FIXED: Uses consistent metrics from getStudentMetrics
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
-  Search, 
   BookOpen, 
+  Search, 
+  Filter, 
+  Play, 
+  CheckCircle, 
   Clock, 
-  CheckCircle,
-  PlayCircle,
+  User,
+  ArrowRight,
   RefreshCw,
   AlertCircle,
-  User,
-  Zap,
-  TrendingUp,
   Award,
-  Grid3x3,
-  List,
-  Filter,
-  ChevronDown,
-  Star,
   Target,
-  Calendar
+  TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useLanguage } from '../contexts/LanguageContext'; // ← DODANE
-import { getStudentLessons } from '../lib/supabase';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getStudentLessons, getStudentMetrics } from '../lib/supabase'; // ✅ UPDATED: Use getStudentMetrics
+import { KPICard } from '../components/KPICard';
+import { ActionButton } from '../components/ActionButton';
 
 interface StudentLessonData {
   id: string;
   student_id: string;
   lesson_id: string;
   assigned_at: string;
-  started_at: string | null;
-  completed_at: string | null;
   status: 'assigned' | 'in_progress' | 'completed';
   progress: number;
   score: number | null;
-  time_spent: number;
   lessons: {
     id: string;
     title: string;
     description: string | null;
-    content: string;
-    created_at: string;
     users: {
       first_name: string;
       last_name: string;
-      email: string;
     };
   };
 }
 
-type ViewMode = 'grid' | 'list';
-type TabFilter = 'all' | 'assigned' | 'in_progress' | 'completed';
-type SortOption = 'recent' | 'progress' | 'score' | 'alphabetical';
+interface StudentMetrics {
+  student_id: string;
+  total_lessons: number;
+  completed_lessons: number;
+  in_progress_lessons: number;
+  assigned_lessons: number;
+  completion_rate: number;
+  average_progress: number;
+  average_score: number;
+  total_study_time_hours: number;
+  last_activity: string | null;
+  current_level: 'Beginner' | 'Intermediate' | 'Advanced';
+}
 
 export function StudentLessonsPage() {
   const navigate = useNavigate();
   const { session } = useAuth();
-  const { t } = useLanguage(); // ← DODANE
+  const { t } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
   
-  // State
   const [lessons, setLessons] = useState<StudentLessonData[]>([]);
+  const [metrics, setMetrics] = useState<StudentMetrics | null>(null); // ✅ UPDATED: Use metrics instead of separate stats
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Filters and search
   const [searchTerm, setSearchTerm] = useState('');
-  const [tabFilter, setTabFilter] = useState<TabFilter>('all');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [sortBy, setSortBy] = useState<SortOption>('recent');
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('filter') || 'all');
+  const [sortBy, setSortBy] = useState<string>('recent');
 
-  // Load lessons
   useEffect(() => {
     if (session?.user?.id) {
-      loadStudentLessons();
+      loadLessonsData();
     }
   }, [session?.user?.id]);
 
-  const loadStudentLessons = async () => {
+  const loadLessonsData = async () => {
     if (!session?.user?.id) return;
 
     try {
       setIsLoading(true);
       setError(null);
-      const data = await getStudentLessons(session.user.id);
-      setLessons(data);
+
+      // ✅ UPDATED: Load both lessons and unified metrics
+      const [lessonsData, metricsData] = await Promise.all([
+        getStudentLessons(session.user.id),
+        getStudentMetrics(session.user.id)
+      ]);
+
+      setLessons(lessonsData);
+      setMetrics(metricsData);
+
     } catch (err: any) {
-      setError(err.message || 'Failed to load lessons');
+      console.error('Error loading lessons data:', err);
+      setError(err.message || 'Failed to load lessons data');
     } finally {
       setIsLoading(false);
     }
@@ -93,9 +105,9 @@ export function StudentLessonsPage() {
 
   // Filter and sort lessons
   const filteredLessons = lessons
-    .filter(lesson => {
-      // Tab filter
-      if (tabFilter !== 'all' && lesson.status !== tabFilter) {
+    .filter((lesson) => {
+      // Status filter
+      if (statusFilter !== 'all' && lesson.status !== statusFilter) {
         return false;
       }
 
@@ -127,435 +139,268 @@ export function StudentLessonsPage() {
       }
     });
 
-  // Calculate stats
-  const stats = {
-    total: lessons.length,
-    completed: lessons.filter(l => l.status === 'completed').length,
-    inProgress: lessons.filter(l => l.status === 'in_progress').length,
-    assigned: lessons.filter(l => l.status === 'assigned').length,
-    averageProgress: lessons.length > 0 
-      ? Math.round(lessons.reduce((sum, l) => sum + l.progress, 0) / lessons.length)
-      : 0,
-    averageScore: lessons.filter(l => l.score !== null).length > 0
-      ? Math.round(
-          lessons.filter(l => l.score !== null).reduce((sum, l) => sum + (l.score || 0), 0) / 
-          lessons.filter(l => l.score !== null).length
-        )
-      : null
-  };
-
-  // Helper functions
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  // Helper function to get status config - ZAMIENIONE NA TŁUMACZENIA
-  const getStatusConfig = (status: string) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'assigned':
-        return {
-          label: t.lessons.notStarted,
-          color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-          icon: BookOpen,
-          action: t.lessons.startLesson,
-          actionColor: 'from-blue-600 to-blue-700'
-        };
-      case 'in_progress':
-        return {
-          label: t.lessons.inProgress,
-          color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-          icon: Zap,
-          action: t.lessons.continueLesson,
-          actionColor: 'from-purple-600 to-purple-700'
-        };
       case 'completed':
-        return {
-          label: t.lessons.completed,
-          color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-          icon: CheckCircle,
-          action: t.lessons.reviewLesson,
-          actionColor: 'from-green-600 to-green-700'
-        };
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'assigned':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
       default:
-        return {
-          label: 'Unknown',
-          color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
-          icon: AlertCircle,
-          action: t.lessons.viewLesson,
-          actionColor: 'from-gray-600 to-gray-700'
-        };
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
 
-  // Lesson Card Component
-  const LessonCard = ({ lesson }: { lesson: StudentLessonData }) => {
-    const statusConfig = getStatusConfig(lesson.status);
-    const StatusIcon = statusConfig.icon;
-
-    return (
-      <div className="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-300 overflow-hidden">
-        {/* Progress Bar */}
-        <div className="h-2 bg-gray-100 dark:bg-gray-700">
-          <div
-            className={`h-full bg-gradient-to-r ${
-              lesson.status === 'completed'
-                ? 'from-green-500 to-green-600'
-                : 'from-purple-500 to-blue-500'
-            } transition-all duration-500`}
-            style={{ width: `${lesson.progress}%` }}
-          />
-        </div>
-
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-2">
-                <span className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>
-                  <StatusIcon className="h-3 w-3" />
-                  <span>{statusConfig.label}</span>
-                </span>
-                {lesson.score !== null && (
-                  <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
-                    <Star className="h-3 w-3" />
-                    <span>{lesson.score}%</span>
-                  </span>
-                )}
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                {lesson.lessons.title}
-              </h3>
-              {lesson.lessons.description && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                  {lesson.lessons.description}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Tutor & Date Info */}
-          <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
-            <div className="flex items-center space-x-1">
-              <User className="h-4 w-4" />
-              <span>{lesson.lessons.users.first_name} {lesson.lessons.users.last_name}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Calendar className="h-4 w-4" />
-              <span>{formatDate(lesson.assigned_at)}</span>
-            </div>
-          </div>
-
-          {/* Progress Info */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-1 text-sm">
-                <Target className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {lesson.progress}% {t.lessonViewer.complete}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Button */}
-          <button
-            onClick={() => navigate(`/student/lessons/${lesson.lesson_id}`)}
-            className={`w-full bg-gradient-to-r ${statusConfig.actionColor} text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 hover:shadow-md hover:scale-105`}
-          >
-            <PlayCircle className="h-4 w-4" />
-            <span>{statusConfig.action}</span>
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  // List Item Component
-  const LessonListItem = ({ lesson }: { lesson: StudentLessonData }) => {
-    const statusConfig = getStatusConfig(lesson.status);
-    const StatusIcon = statusConfig.icon;
-
-    return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-600 transition-all cursor-pointer">
-        <div className="flex items-center space-x-4">
-          {/* Progress Circle */}
-          <div className="relative flex-shrink-0">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 flex items-center justify-center">
-              <span className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                {lesson.progress}%
-              </span>
-            </div>
-          </div>
-
-          {/* Lesson Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center space-x-2 mb-1">
-              <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                {lesson.lessons.title}
-              </h3>
-              <span className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}>
-                <StatusIcon className="h-3 w-3" />
-                <span>{statusConfig.label}</span>
-              </span>
-              {lesson.score !== null && (
-                <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
-                  <Star className="h-3 w-3" />
-                  <span>{lesson.score}%</span>
-                </span>
-              )}
-            </div>
-            
-            <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-              <div className="flex items-center space-x-1">
-                <User className="h-3.5 w-3.5" />
-                <span>{lesson.lessons.users.first_name} {lesson.lessons.users.last_name}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Calendar className="h-3.5 w-3.5" />
-                <span>{formatDate(lesson.assigned_at)}</span>
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="mt-2 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className={`h-full bg-gradient-to-r ${
-                  lesson.status === 'completed'
-                    ? 'from-green-500 to-green-600'
-                    : 'from-purple-500 to-blue-500'
-                }`}
-                style={{ width: `${lesson.progress}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Action Button */}
-          <button
-            onClick={() => navigate(`/student/lessons/${lesson.lesson_id}`)}
-            className={`px-6 py-2 bg-gradient-to-r ${statusConfig.actionColor} text-white font-medium rounded-lg transition-all duration-200 hover:shadow-md hover:scale-105 flex-shrink-0`}
-          >
-            {statusConfig.action}
-          </button>
-        </div>
-      </div>
-    );
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return CheckCircle;
+      case 'in_progress':
+        return Clock;
+      case 'assigned':
+        return BookOpen;
+      default:
+        return BookOpen;
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <RefreshCw className="h-12 w-12 animate-spin text-purple-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">{t.common.loading}</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <RefreshCw className="h-6 w-6 animate-spin text-blue-600" />
+          <span className="text-gray-600 dark:text-gray-300">Loading lessons...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-md">
+          <div className="flex items-center space-x-2 mb-4">
+            <AlertCircle className="h-5 w-5 text-red-600" />
+            <h3 className="font-medium text-red-800 dark:text-red-200">Error</h3>
+          </div>
+          <p className="text-red-700 dark:text-red-300 mb-4">{error}</p>
+          <ActionButton
+            onClick={loadLessonsData}
+            variant="primary"
+            size="sm"
+            icon={RefreshCw}
+          >
+            Retry
+          </ActionButton>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             {t.lessons.myLessons}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {t.studentDashboard.progress}
+          <p className="text-gray-600 dark:text-gray-300">
+            Manage your learning journey and track your progress.
           </p>
         </div>
 
-        <button
-          onClick={loadStudentLessons}
-          className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
-        >
-          <RefreshCw className="h-4 w-4" />
-          <span>{t.common.loading}</span>
-        </button>
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <AlertCircle className="h-5 w-5 text-red-600" />
-            <p className="text-red-600 dark:text-red-300">{error}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            <span className="text-sm font-medium text-blue-900 dark:text-blue-300">{t.lessons.assignedLessons}</span>
-          </div>
-          <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.assigned}</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <Zap className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-            <span className="text-sm font-medium text-purple-900 dark:text-purple-300">{t.lessons.inProgress}</span>
-          </div>
-          <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{stats.inProgress}</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-            <span className="text-sm font-medium text-green-900 dark:text-green-300">{t.lessons.completed}</span>
-          </div>
-          <p className="text-2xl font-bold text-green-900 dark:text-green-100">{stats.completed}</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <TrendingUp className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-            <span className="text-sm font-medium text-orange-900 dark:text-orange-300">{t.studentDashboard.averageScore}</span>
-          </div>
-          <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
-            {stats.averageScore !== null ? `${stats.averageScore}%` : 'N/A'}
-          </p>
-        </div>
-      </div>
-
-      {/* Filters and Controls */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
-          {/* Search */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={t.students.searchStudents}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+        {/* ✅ UPDATED: Consistent KPI Cards using unified metrics */}
+        {metrics && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <KPICard
+              title="Total Lessons"
+              value={`${metrics.total_lessons}`}
+              icon={BookOpen}
+              color="blue"
+              description={`${metrics.assigned_lessons} assigned, ${metrics.in_progress_lessons} in progress`}
+            />
+            <KPICard
+              title="Completion Rate"
+              value={`${metrics.completion_rate}%`}
+              icon={Target}
+              color="green"
+              description={`${metrics.completed_lessons} lessons completed`}
+            />
+            <KPICard
+              title="Average Score"
+              value={`${metrics.average_score}%`}
+              icon={Award}
+              color="purple"
+              description="Performance on completed lessons"
+            />
+            <KPICard
+              title="Average Progress"
+              value={`${metrics.average_progress}%`}
+              icon={TrendingUp}
+              color="orange"
+              description={`Level: ${metrics.current_level}`}
             />
           </div>
+        )}
 
-          {/* Filters */}
-          <div className="flex items-center space-x-2">
-            {/* Tab Filters */}
-            <div className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-              <button
-                onClick={() => setTabFilter('all')}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  tabFilter === 'all'
-                    ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                {t.students.allLevels}
-              </button>
-              <button
-                onClick={() => setTabFilter('assigned')}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  tabFilter === 'assigned'
-                    ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                {t.lessons.notStarted}
-              </button>
-              <button
-                onClick={() => setTabFilter('in_progress')}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  tabFilter === 'in_progress'
-                    ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                {t.lessons.inProgress}
-              </button>
-              <button
-                onClick={() => setTabFilter('completed')}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  tabFilter === 'completed'
-                    ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                {t.lessons.completed}
-              </button>
+        {/* Search and Filters */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+            {/* Search */}
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search lessons or tutors..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                />
+              </div>
             </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === 'grid'
-                    ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400'
-                }`}
+            {/* Status Filter */}
+            <div className="flex items-center space-x-2">
+              <Filter className="h-4 w-4 text-gray-500" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
               >
-                <Grid3x3 className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === 'list'
-                    ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400'
-                }`}
-              >
-                <List className="h-4 w-4" />
-              </button>
+                <option value="all">All Status</option>
+                <option value="assigned">Assigned</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+              </select>
             </div>
+
+            {/* Sort */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="recent">Most Recent</option>
+              <option value="progress">Progress</option>
+              <option value="score">Score</option>
+              <option value="alphabetical">Alphabetical</option>
+            </select>
           </div>
+        </div>
+
+        {/* Lessons List */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          {filteredLessons.length === 0 ? (
+            <div className="text-center py-12">
+              <BookOpen className="h-16 w-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                {searchTerm || statusFilter !== 'all' ? 'No lessons found' : t.lessons.noLessons}
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400">
+                {searchTerm || statusFilter !== 'all'
+                  ? 'Try adjusting your search or filters'
+                  : 'Wait for your tutor to assign lessons'
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              {filteredLessons.map((lesson) => {
+                const StatusIcon = getStatusIcon(lesson.status);
+                
+                return (
+                  <div
+                    key={lesson.id}
+                    className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/lesson/${lesson.lesson_id}`)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-3">
+                          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                            {lesson.lessons.title}
+                          </h3>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(lesson.status)}`}>
+                            <StatusIcon className="h-3 w-3 mr-1" />
+                            {lesson.status.replace('_', ' ')}
+                          </span>
+                        </div>
+
+                        <p className="text-gray-600 dark:text-gray-300 mb-3">
+                          {lesson.lessons.description}
+                        </p>
+
+                        <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-gray-400">
+                          <div className="flex items-center space-x-1">
+                            <User className="h-4 w-4" />
+                            <span>
+                              {lesson.lessons.users.first_name} {lesson.lessons.users.last_name}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center space-x-1">
+                            <Clock className="h-4 w-4" />
+                            <span>
+                              Assigned {new Date(lesson.assigned_at).toLocaleDateString()}
+                            </span>
+                          </div>
+
+                          {lesson.status === 'completed' && lesson.score && (
+                            <div className="flex items-center space-x-1">
+                              <Award className="h-4 w-4" />
+                              <span>Score: {lesson.score}%</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Progress Bar */}
+                        {lesson.status !== 'assigned' && (
+                          <div className="mt-4">
+                            <div className="flex items-center justify-between text-sm mb-1">
+                              <span className="text-gray-600 dark:text-gray-300">Progress</span>
+                              <span className="font-medium text-gray-900 dark:text-white">
+                                {lesson.progress}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div
+                                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${lesson.progress}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="ml-6 flex items-center">
+                        <ActionButton
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/lesson/${lesson.lesson_id}`);
+                          }}
+                          variant={lesson.status === 'assigned' ? 'primary' : 'secondary'}
+                          size="sm"
+                          icon={lesson.status === 'assigned' ? Play : ArrowRight}
+                        >
+                          {lesson.status === 'assigned' 
+                            ? t.lessons.startLesson
+                            : lesson.status === 'completed'
+                            ? t.lessons.reviewLesson
+                            : t.lessons.continueLesson
+                          }
+                        </ActionButton>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Lessons Display */}
-      {filteredLessons.length > 0 ? (
-        viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredLessons.map(lesson => (
-              <LessonCard key={lesson.id} lesson={lesson} />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredLessons.map(lesson => (
-              <LessonListItem key={lesson.id} lesson={lesson} />
-            ))}
-          </div>
-        )
-      ) : (
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 p-12 text-center">
-          <div className="max-w-md mx-auto">
-            <div className="bg-gray-100 dark:bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="h-8 w-8 text-gray-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              {searchTerm || tabFilter !== 'all' ? t.lessons.noLessons : t.studentDashboard.noLessons}
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {searchTerm || tabFilter !== 'all'
-                ? t.common.filter
-                : t.lessons.noLessons}
-            </p>
-            {(searchTerm || tabFilter !== 'all') && (
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setTabFilter('all');
-                }}
-                className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-200 hover:shadow-lg"
-              >
-                {t.common.filter}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
-} 
+}
