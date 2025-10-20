@@ -1,4 +1,4 @@
-// src/components/ExerciseViewer.tsx - WITH HISTORY LINK AND DETAILED RESULTS
+// src/components/ExerciseViewer.tsx - Complete file
 
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, ArrowRight, ArrowLeft, RotateCcw, Eye, EyeOff, History } from 'lucide-react';
@@ -21,7 +21,7 @@ interface ExerciseViewerProps {
   exercises: Exercise[];
   onComplete: (score: number, timeSpent: number) => void;
   onProgress: (currentExercise: number, totalExercises: number) => void;
-  lessonId?: string; // ✅ ADDED - to enable history link
+  lessonId?: string;
 }
 
 export function ExerciseViewer({ exercises, onComplete, onProgress, lessonId }: ExerciseViewerProps) {
@@ -86,61 +86,30 @@ export function ExerciseViewer({ exercises, onComplete, onProgress, lessonId }: 
 
     const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
     const timeSpent = Math.floor((Date.now() - startTime) / 1000);
-
+    
     setShowResults(true);
-    if (onComplete) {
-      onComplete(score, timeSpent);
-    }
+    onComplete(score, timeSpent);
   };
 
-  const toggleCardFlip = (cardId: string) => {
+  const toggleExplanation = () => {
+    setShowExplanation(!showExplanation);
+  };
+
+  const toggleCardFlip = (cardIndex: number) => {
     setFlippedCards(prev => ({
       ...prev,
-      [cardId]: !prev[cardId]
+      [cardIndex]: !prev[cardIndex]
     }));
   };
 
-  const toggleResultExpanded = (index: number) => {
+  const toggleResultExpansion = (index: number) => {
     setExpandedResults(prev => ({
       ...prev,
       [index]: !prev[index]
     }));
   };
 
-  const parseFlashcards = (exercise: Exercise): Array<{front: string, back: string}> => {
-    try {
-      if (typeof exercise.options === 'string') {
-        const parsed = JSON.parse(exercise.options);
-        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.front && parsed[0]?.back) {
-          return parsed;
-        }
-      } 
-      else if (Array.isArray(exercise.options) && exercise.options.length > 0 && exercise.options[0]?.front && exercise.options[0]?.back) {
-        return exercise.options;
-      }
-      
-      return [{
-        front: exercise.question || 'No question',
-        back: exercise.correct_answer || 'No answer'
-      }];
-    } catch (error) {
-      console.error('Error parsing flashcards:', error);
-      return [{
-        front: exercise.question || 'No question',
-        back: exercise.correct_answer || 'No answer'
-      }];
-    }
-  };
-
-  if (exercises.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-500 dark:text-gray-400">No exercises available for this lesson.</p>
-      </div>
-    );
-  }
-
-  // ✅ DETAILED RESULTS VIEW WITH HISTORY LINK
+  // RESULTS VIEW
   if (showResults) {
     const totalPoints = exercises.reduce((sum, ex) => sum + ex.points, 0);
     const earnedPoints = exercises.reduce((sum, ex) => {
@@ -173,7 +142,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress, lessonId }: 
             {earnedPoints} out of {totalPoints} points
           </p>
 
-          {/* ✅ ADDED - View Full History Button */}
+          {/* View Full History Button */}
           {lessonId && (
             <button
               onClick={() => navigate(`/student/lessons/${lessonId}/history`)}
@@ -216,193 +185,75 @@ export function ExerciseViewer({ exercises, onComplete, onProgress, lessonId }: 
                 key={ex.id} 
                 className={`border-2 rounded-xl overflow-hidden transition-all ${
                   isCorrect 
-                    ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/10' 
-                    : 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10'
+                    ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20' 
+                    : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
                 }`}
               >
-                {/* Summary Header */}
+                {/* Collapsible Header */}
                 <button
-                  onClick={() => toggleResultExpanded(index)}
-                  className="w-full p-4 flex items-center justify-between hover:bg-white/50 dark:hover:bg-gray-800/50 transition-colors"
+                  onClick={() => toggleResultExpansion(index)}
+                  className="w-full p-4 text-left hover:bg-white/50 dark:hover:bg-gray-800/50 transition-colors"
                 >
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      isCorrect 
-                        ? 'bg-green-200 dark:bg-green-800' 
-                        : 'bg-red-200 dark:bg-red-800'
-                    }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
                       {isCorrect ? (
-                        <CheckCircle className="h-6 w-6 text-green-700 dark:text-green-300" />
+                        <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
                       ) : (
-                        <XCircle className="h-6 w-6 text-red-700 dark:text-red-300" />
+                        <XCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
                       )}
+                      <div>
+                        <h5 className="font-semibold text-gray-900 dark:text-white">
+                          Exercise {index + 1}: {ex.title}
+                        </h5>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {isCorrect ? 'Correct' : 'Incorrect'} • {ex.points} point{ex.points !== 1 ? 's' : ''}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-left">
-                      <h5 className="font-semibold text-gray-900 dark:text-white">
-                        Exercise {index + 1}: {ex.title}
-                      </h5>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {ex.exercise_type} • {ex.points} {ex.points === 1 ? 'point' : 'points'}
-                      </p>
+                    <div className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                      <ArrowRight className="h-5 w-5 text-gray-400" />
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      isCorrect 
-                        ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200' 
-                        : 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200'
-                    }`}>
-                      {isCorrect ? '✓ Correct' : '✗ Incorrect'}
-                    </span>
-                    {isExpanded ? (
-                      <EyeOff className="h-5 w-5 text-gray-500" />
-                    ) : (
-                      <Eye className="h-5 w-5 text-gray-500" />
-                    )}
                   </div>
                 </button>
 
-                {/* Detailed View */}
+                {/* Expandable Content */}
                 {isExpanded && (
-                  <div className="p-6 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 space-y-4">
-                    {/* Question */}
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                        Question:
-                      </p>
-                      <p className="text-gray-900 dark:text-white">
-                        {ex.question}
-                      </p>
-                    </div>
-
-                    {/* ABCD Details */}
-                    {ex.exercise_type === 'ABCD' && Array.isArray(ex.options) && (
+                  <div className="px-4 pb-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                    <div className="pt-4 space-y-3">
                       <div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                          Answer Options:
-                        </p>
-                        <div className="space-y-2">
-                          {ex.options.map((option, optIndex) => {
-                            const optionLetter = String.fromCharCode(65 + optIndex);
-                            const isUserAnswer = userAnswer === optionLetter;
-                            const isCorrectOption = ex.correct_answer === optionLetter;
-                            
-                            return (
-                              <div 
-                                key={optIndex}
-                                className={`p-3 rounded-lg border-2 ${
-                                  isCorrectOption 
-                                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20' 
-                                    : isUserAnswer 
-                                    ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
-                                    : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'
-                                }`}
-                              >
-                                <div className="flex items-center space-x-3">
-                                  <span className={`font-bold ${
-                                    isCorrectOption ? 'text-green-700 dark:text-green-300' :
-                                    isUserAnswer ? 'text-red-700 dark:text-red-300' :
-                                    'text-gray-600 dark:text-gray-400'
-                                  }`}>
-                                    {optionLetter}.
-                                  </span>
-                                  <span className="text-gray-900 dark:text-white flex-1">
-                                    {option}
-                                  </span>
-                                  {isCorrectOption && (
-                                    <span className="text-xs font-medium text-green-700 dark:text-green-300 bg-green-200 dark:bg-green-800 px-2 py-1 rounded">
-                                      ✓ Correct
-                                    </span>
-                                  )}
-                                  {isUserAnswer && !isCorrectOption && (
-                                    <span className="text-xs font-medium text-red-700 dark:text-red-300 bg-red-200 dark:bg-red-800 px-2 py-1 rounded">
-                                      Your Answer
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Question:</p>
+                        <p className="text-gray-900 dark:text-white">{ex.question}</p>
                       </div>
-                    )}
-
-                    {/* Flashcard Details */}
-                    {ex.exercise_type === 'Fiszki' && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                          Flashcards:
-                        </p>
-                        <div className="space-y-3">
-                          {parseFlashcards(ex).map((card, cardIndex) => (
-                            <div key={cardIndex} className="grid grid-cols-2 gap-3">
-                              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
-                                <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">
-                                  Front:
-                                </p>
-                                <p className="text-gray-900 dark:text-white">
-                                  {String(card.front)}
-                                </p>
-                              </div>
-                              <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg">
-                                <p className="text-xs font-medium text-purple-600 dark:text-purple-400 mb-1">
-                                  Back:
-                                </p>
-                                <p className="text-gray-900 dark:text-white">
-                                  {String(card.back)}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Text Answer Details */}
-                    {ex.exercise_type === 'Tekstowe' && (
-                      <div className="space-y-3">
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                            Your Answer:
-                          </p>
-                          <div className={`p-3 rounded-lg border-2 ${
-                            isCorrect 
-                              ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                              : 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Your Answer:</p>
+                          <p className={`font-medium ${
+                            isCorrect ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'
                           }`}>
-                            <p className="text-gray-900 dark:text-white">
-                              {userAnswer || '(No answer provided)'}
-                            </p>
-                          </div>
+                            {userAnswer || 'No answer provided'}
+                          </p>
                         </div>
                         
-                        {!isCorrect && (
-                          <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                              Expected Answer:
-                            </p>
-                            <div className="p-3 bg-green-50 dark:bg-green-900/20 border-2 border-green-500 rounded-lg">
-                              <p className="text-gray-900 dark:text-white">
-                                {ex.correct_answer}
-                              </p>
-                            </div>
-                          </div>
-                        )}
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Correct Answer:</p>
+                          <p className="font-medium text-green-700 dark:text-green-300">
+                            {ex.correct_answer}
+                          </p>
+                        </div>
                       </div>
-                    )}
 
-                    {/* Explanation */}
-                    {ex.explanation && (
-                      <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                        <p className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
-                          💡 Explanation:
-                        </p>
-                        <p className="text-blue-800 dark:text-blue-200">
-                          {ex.explanation}
-                        </p>
-                      </div>
-                    )}
+                      {ex.explanation && (
+                        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <p className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
+                            💡 Explanation:
+                          </p>
+                          <p className="text-blue-800 dark:text-blue-200">
+                            {ex.explanation}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -410,7 +261,7 @@ export function ExerciseViewer({ exercises, onComplete, onProgress, lessonId }: 
           })}
         </div>
 
-        {/* ✅ BOTTOM HISTORY LINK - Repeated for convenience */}
+        {/* Bottom History Link */}
         {lessonId && (
           <div className="flex justify-center pt-4">
             <button
@@ -427,9 +278,10 @@ export function ExerciseViewer({ exercises, onComplete, onProgress, lessonId }: 
     );
   }
 
-  // EXERCISE SOLVING VIEW (unchanged but condensed for space)
+  // EXERCISE SOLVING VIEW
   return (
     <div className="max-w-2xl mx-auto">
+      {/* Progress Bar */}
       <div className="mb-6">
         <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mb-2">
           <span>Exercise {currentIndex + 1} of {exercises.length}</span>
@@ -443,11 +295,13 @@ export function ExerciseViewer({ exercises, onComplete, onProgress, lessonId }: 
         </div>
       </div>
 
+      {/* Exercise Content */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
           {currentExercise.title}
         </h3>
         
+        {/* Multiple Choice */}
         {currentExercise.exercise_type === 'ABCD' && currentExercise.options && (
           <>
             <p className="text-gray-700 dark:text-gray-300 mb-6">{currentExercise.question}</p>
@@ -463,13 +317,13 @@ export function ExerciseViewer({ exercises, onComplete, onProgress, lessonId }: 
                     className={`w-full text-left p-4 rounded-lg border transition-colors ${
                       isSelected
                         ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500'
                     }`}
                   >
                     <span className="font-medium text-purple-600 dark:text-purple-400 mr-3">
                       {optionLetter}.
                     </span>
-                    <span className="text-gray-900 dark:text-white">{option}</span>
+                    {option}
                   </button>
                 );
               })}
@@ -477,69 +331,70 @@ export function ExerciseViewer({ exercises, onComplete, onProgress, lessonId }: 
           </>
         )}
 
-        {currentExercise.exercise_type === 'Fiszki' && (
-          <div className="space-y-6">
-            {parseFlashcards(currentExercise).map((flashcard, cardIndex) => {
-              const cardId = `${currentExercise.id}-${cardIndex}`;
-              const isFlipped = flippedCards[cardId];
-              
-              return (
-                <div key={cardIndex}>
-                  <div 
-                    className="relative bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-8 min-h-32 cursor-pointer transform transition-all duration-300 hover:scale-105 border-2 border-blue-200 dark:border-blue-700"
-                    onClick={() => toggleCardFlip(cardId)}
+        {/* Flashcards */}
+        {currentExercise.exercise_type === 'Fiszki' && currentExercise.options && (
+          <>
+            <p className="text-gray-700 dark:text-gray-300 mb-6">{currentExercise.question}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Array.isArray(currentExercise.options) && currentExercise.options.map((card: any, index) => {
+                const isFlipped = flippedCards[index];
+                
+                return (
+                  <div
+                    key={index}
+                    onClick={() => toggleCardFlip(index)}
+                    className="relative h-32 cursor-pointer"
+                    style={{ perspective: '1000px' }}
                   >
-                    <div className="text-center">
-                      {!isFlipped ? (
-                        <>
-                          <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                            {String(flashcard.front)}
-                          </h4>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Click to reveal answer
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <h4 className="text-lg font-medium text-blue-600 dark:text-blue-400 mb-2">
-                            {String(flashcard.back)}
-                          </h4>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Click to flip back
-                          </p>
-                        </>
-                      )}
-                    </div>
-                    <div className="absolute top-3 right-3">
-                      <RotateCcw className="h-4 w-4 text-gray-400" />
+                    <div 
+                      className={`absolute inset-0 w-full h-full transition-transform duration-500 ${
+                        isFlipped ? 'transform rotateY-180' : ''
+                      }`}
+                      style={{ 
+                        transformStyle: 'preserve-3d',
+                        transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+                      }}
+                    >
+                      {/* Front */}
+                      <div 
+                        className="absolute inset-0 w-full h-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center justify-center p-4"
+                        style={{ backfaceVisibility: 'hidden' }}
+                      >
+                        <p className="text-center font-medium text-gray-900 dark:text-white">
+                          {card.front}
+                        </p>
+                      </div>
+                      
+                      {/* Back */}
+                      <div 
+                        className="absolute inset-0 w-full h-full bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-600 rounded-lg flex items-center justify-center p-4"
+                        style={{ 
+                          backfaceVisibility: 'hidden',
+                          transform: 'rotateY(180deg)'
+                        }}
+                      >
+                        <p className="text-center font-medium text-purple-900 dark:text-purple-100">
+                          {card.back}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
             
-            {parseFlashcards(currentExercise).every((_, index) => {
-              const cardId = `${currentExercise.id}-${index}`;
-              return flippedCards[cardId];
-            }) && !currentAnswer && (
-              <div className="text-center py-4">
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                  <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                  <p className="text-green-600 dark:text-green-400 font-medium">
-                    You've viewed all flashcards! Ready to continue.
-                  </p>
-                  <button
-                    onClick={() => handleAnswer('completed')}
-                    className="mt-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                  >
-                    Mark as Studied
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => handleAnswer('completed')}
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+              >
+                Mark as Studied
+              </button>
+            </div>
+          </>
         )}
 
+        {/* Text Answer */}
         {currentExercise.exercise_type === 'Tekstowe' && (
           <>
             <p className="text-gray-700 dark:text-gray-300 mb-6">{currentExercise.question}</p>
@@ -547,53 +402,68 @@ export function ExerciseViewer({ exercises, onComplete, onProgress, lessonId }: 
               value={currentAnswer}
               onChange={(e) => handleAnswer(e.target.value)}
               placeholder="Type your answer here..."
-              className="w-full p-4 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
               rows={4}
             />
           </>
         )}
 
-        {showExplanation && currentExercise.explanation && (
-          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">Explanation:</h4>
-            <p className="text-blue-800 dark:text-blue-200">{currentExercise.explanation}</p>
+        {/* Explanation Toggle */}
+        {currentExercise.explanation && (
+          <div className="mt-6">
+            <button
+              onClick={toggleExplanation}
+              className="flex items-center space-x-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition"
+            >
+              {showExplanation ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <span>{showExplanation ? 'Hide' : 'Show'} Explanation</span>
+            </button>
+            
+            {showExplanation && (
+              <div className="mt-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-blue-800 dark:text-blue-200">
+                  {currentExercise.explanation}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      <div className="flex justify-between items-center">
+      {/* Navigation */}
+      <div className="flex items-center justify-between">
         <button
           onClick={prevExercise}
           disabled={currentIndex === 0}
-          className="flex items-center space-x-2 px-4 py-2 text-gray-600 dark:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed hover:text-gray-900 dark:hover:text-white"
+          className="flex items-center space-x-2 px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Previous</span>
         </button>
 
-        <div className="flex space-x-3">
-          {currentExercise.explanation && (
-            <button
-              onClick={() => setShowExplanation(!showExplanation)}
-              className="px-4 py-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
-            >
-              {showExplanation ? 'Hide' : 'Show'} Explanation
-            </button>
-          )}
-
-          <button
-            onClick={nextExercise}
-            disabled={!currentAnswer || (currentExercise.exercise_type === 'Fiszki' && !Object.values(flippedCards).some(flipped => flipped))}
-            className="flex items-center space-x-2 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span>{currentIndex === exercises.length - 1 ? 'Finish' : 'Next'}</span>
-            {currentIndex === exercises.length - 1 ? (
-              <CheckCircle className="h-4 w-4" />
-            ) : (
-              <ArrowRight className="h-4 w-4" />
-            )}
-          </button>
+        <div className="flex items-center space-x-2">
+          {exercises.map((_, index) => (
+            <div
+              key={index}
+              className={`w-2 h-2 rounded-full transition-colors ${
+                index === currentIndex
+                  ? 'bg-purple-600'
+                  : index < currentIndex
+                  ? 'bg-green-500'
+                  : 'bg-gray-300 dark:bg-gray-600'
+              }`}
+            />
+          ))}
         </div>
+
+        <button
+          onClick={nextExercise}
+          disabled={!currentAnswer}
+          className="flex items-center space-x-2 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+        >
+          <span>{currentIndex === exercises.length - 1 ? 'Finish' : 'Next'}</span>
+          <ArrowRight className="h-4 w-4" />
+        </button>
       </div>
     </div>
   );
