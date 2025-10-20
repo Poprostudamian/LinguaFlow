@@ -420,7 +420,7 @@ export function StudentDashboard() {
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 {t.studentDashboard.completedLessons}
               </h2>
-            </div>
+            </div> 
             <button
               onClick={() => navigate('/student/lessons')}
               className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 text-sm font-medium flex items-center space-x-1"
