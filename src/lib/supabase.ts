@@ -2626,7 +2626,7 @@ export const calculateLessonScore = async (studentId: string, lessonId: string):
  * This function uses calculateLessonScore() to ensure consistency across the app
  *
  * @param studentId - The student's UUID
- * @returns Average score (0-100), or -1 if no data available (no completed lessons or no exercises)
+ * @returns Average score (0-100), or 0 if no data available (no completed lessons or no exercises)
  */
 export const calculateStudentAverageScore = async (studentId: string): Promise<number> => {
   try {
@@ -2644,7 +2644,7 @@ export const calculateStudentAverageScore = async (studentId: string): Promise<n
 
     if (!completedLessons || completedLessons.length === 0) {
       console.log(`No completed lessons found for student ${studentId}`);
-      return -1; // Return -1 to indicate no data available
+      return 0; // Return 0 when no completed lessons
     }
 
     // Calculate score for each completed lesson
