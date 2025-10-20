@@ -1,138 +1,122 @@
-// src/components/LessonActionButtons.tsx
-// Komponent z ulepszonymi przyciskami akcji dla lekcji studenta
+// src/components/LessonActionButtons.tsx - Fixed with consistent routing
 
 import React from 'react';
-import { 
-  PlayCircle, 
-  Zap, 
-  CheckCircle, 
-  History,
-  ArrowRight,
-  RotateCcw,
-  Sparkles
-} from 'lucide-react';
+import { PlayCircle, Zap, CheckCircle, History } from 'lucide-react';
 
 interface LessonActionButtonsProps {
   status: 'assigned' | 'in_progress' | 'completed';
+  progress: number;
   onPrimaryAction: () => void;
   onHistoryAction?: () => void;
-  progress?: number;
+  className?: string;
+}
+
+interface CompactActionButtonsProps {
+  status: 'assigned' | 'in_progress' | 'completed';
+  onPrimaryAction: () => void;
+  onHistoryAction?: () => void;
 }
 
 export function LessonActionButtons({ 
   status, 
+  progress, 
   onPrimaryAction, 
   onHistoryAction,
-  progress = 0 
+  className = ""
 }: LessonActionButtonsProps) {
   
   const buttonConfigs = {
     assigned: {
       icon: PlayCircle,
       label: 'Start Lesson',
-      gradient: 'from-purple-500 via-purple-600 to-indigo-600',
-      hoverGradient: 'hover:from-purple-600 hover:via-purple-700 hover:to-indigo-700',
-      shadow: 'shadow-purple-500/50',
-      hoverShadow: 'hover:shadow-purple-600/60',
-      secondaryIcon: Sparkles,
+      bgColor: 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800',
+      textColor: 'text-white',
       description: 'Begin your learning journey'
     },
     in_progress: {
       icon: Zap,
-      label: 'Continue',
-      gradient: 'from-blue-500 via-blue-600 to-cyan-600',
-      hoverGradient: 'hover:from-blue-600 hover:via-blue-700 hover:to-cyan-700',
-      shadow: 'shadow-blue-500/50',
-      hoverShadow: 'hover:shadow-blue-600/60',
-      secondaryIcon: ArrowRight,
-      description: `${progress}% completed - keep going!`
+      label: 'Continue Lesson',
+      bgColor: 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800',
+      textColor: 'text-white',
+      description: `${progress}% complete`
     },
     completed: {
       icon: CheckCircle,
-      label: 'Review',
-      gradient: 'from-green-500 via-emerald-600 to-teal-600',
-      hoverGradient: 'hover:from-green-600 hover:via-emerald-700 hover:to-teal-700',
-      shadow: 'shadow-green-500/50',
-      hoverShadow: 'hover:shadow-green-600/60',
-      secondaryIcon: RotateCcw,
-      description: 'Refresh your knowledge'
+      label: 'Review Lesson',
+      bgColor: 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800',
+      textColor: 'text-white',
+      description: 'View your results'
     }
   };
 
   const config = buttonConfigs[status];
-  const PrimaryIcon = config.icon;
-  const SecondaryIcon = config.secondaryIcon;
+  const Icon = config.icon;
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3 w-full">
+    <div className={`space-y-3 ${className}`}>
       {/* Primary Action Button */}
       <button
         onClick={onPrimaryAction}
         className={`
-          group relative flex-1 flex items-center justify-center gap-3 
-          px-6 py-4 rounded-xl font-bold text-white text-base
-          bg-gradient-to-r ${config.gradient} ${config.hoverGradient}
-          shadow-lg ${config.shadow} ${config.hoverShadow}
-          transform transition-all duration-300 
-          hover:scale-[1.02] hover:shadow-2xl
-          active:scale-[0.98]
-          overflow-hidden
+          w-full flex items-center justify-center gap-3 
+          px-6 py-4 rounded-xl font-semibold text-lg
+          ${config.bgColor} ${config.textColor}
+          shadow-lg hover:shadow-xl
+          transform transition-all duration-200
+          hover:scale-[1.02] active:scale-[0.98]
+          focus:outline-none focus:ring-4 focus:ring-purple-500/30
         `}
       >
-        {/* Animated background effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 
-                      translate-x-[-100%] group-hover:translate-x-[100%] 
-                      transition-transform duration-1000" />
-        
-        {/* Icon with animation */}
-        <PrimaryIcon className="h-6 w-6 relative z-10 group-hover:rotate-12 transition-transform duration-300" />
-        
-        {/* Label */}
-        <span className="relative z-10 flex items-center gap-2">
-          {config.label}
-          <SecondaryIcon className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
-        </span>
+        <Icon className="h-6 w-6" />
+        <span>{config.label}</span>
       </button>
 
-      {/* History Button (only for completed lessons) */}
+      {/* Progress Bar for in-progress lessons */}
+      {status === 'in_progress' && (
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600 dark:text-gray-400">Progress</span>
+            <span className="text-gray-900 dark:text-white font-medium">{progress}%</span>
+          </div>
+          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* History Button for completed lessons */}
       {status === 'completed' && onHistoryAction && (
         <button
           onClick={(e) => {
             e.stopPropagation();
             onHistoryAction();
           }}
-          className={`
-            group flex items-center justify-center gap-3 
-            px-6 py-4 rounded-xl font-bold text-base
-            bg-gradient-to-r from-gray-700 via-gray-800 to-gray-900
-            dark:from-gray-600 dark:via-gray-700 dark:to-gray-800
-            text-white
-            border-2 border-gray-600 dark:border-gray-500
-            shadow-lg shadow-gray-500/30
-            transform transition-all duration-300 
-            hover:scale-[1.02] hover:shadow-xl hover:shadow-gray-600/40
-            active:scale-[0.98]
-            sm:flex-none sm:min-w-[180px]
-          `}
+          className="
+            w-full flex items-center justify-center gap-3 
+            px-6 py-3 rounded-xl font-medium
+            bg-gray-100 dark:bg-gray-700 
+            text-gray-700 dark:text-gray-300
+            border border-gray-300 dark:border-gray-600
+            hover:bg-gray-200 dark:hover:bg-gray-600
+            shadow-md hover:shadow-lg
+            transform transition-all duration-200
+            hover:scale-[1.01] active:scale-[0.99]
+          "
         >
-          <History className="h-5 w-5 group-hover:rotate-[-15deg] transition-transform duration-300" />
-          <span className="flex items-center gap-2">
-            View History
-          </span>
+          <History className="h-5 w-5" />
+          <span>View History & Results</span>
         </button>
       )}
+
+      {/* Description */}
+      <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+        {config.description}
+      </p>
     </div>
   );
-}
-
-// ============================================================================
-// COMPACT VERSION - dla małych kart lub mobile
-// ============================================================================
-
-interface CompactActionButtonsProps {
-  status: 'assigned' | 'in_progress' | 'completed';
-  onPrimaryAction: () => void;
-  onHistoryAction?: () => void;
 }
 
 export function CompactLessonActionButtons({ 
@@ -207,36 +191,3 @@ export function CompactLessonActionButtons({
     </div>
   );
 }
-
-// ============================================================================
-// USAGE EXAMPLES - jak używać w StudentLessonsPage
-// ============================================================================
-
-/*
-// PRZYKŁAD 1: Pełnowymiarowe przyciski (w kartach lekcji)
-import { LessonActionButtons } from '../components/LessonActionButtons';
-
-<LessonActionButtons
-  status={lesson.status}
-  progress={lesson.progress}
-  onPrimaryAction={() => navigate(`/student/lessons/${lesson.lesson_id}`)}
-  onHistoryAction={
-    lesson.status === 'completed' 
-      ? () => navigate(`/student/lessons/${lesson.lesson_id}/history`)
-      : undefined
-  }
-/>
-
-// PRZYKŁAD 2: Kompaktowe przyciski (w małych kartach)
-import { CompactLessonActionButtons } from '../components/LessonActionButtons';
-
-<CompactLessonActionButtons
-  status={lesson.status}
-  onPrimaryAction={() => navigate(`/student/lessons/${lesson.lesson_id}`)}
-  onHistoryAction={
-    lesson.status === 'completed' 
-      ? () => navigate(`/student/lessons/${lesson.lesson_id}/history`)
-      : undefined
-  }
-/>
-*/
