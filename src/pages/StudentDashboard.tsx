@@ -51,6 +51,7 @@ interface StudentStats {
   in_progress_lessons: number;
   total_study_time_minutes: number;
   average_progress: number;
+  average_score: number;
   last_activity: string | null;
 }
 
