@@ -64,7 +64,7 @@ function App() {
                             <Route index element={<TutorDashboard />} />
                             <Route path="students" element={<TutorStudentsPage />} />
                             <Route path="lessons" element={<TutorLessonManagementPage />} />
-                            <Route path="grading" element={<TutorGradingPage />} /> {/* ✅ ADDED */}
+                            <Route path="grading" element={<TutorGradingPage />} />
                             <Route path="schedule" element={<TutorSchedulePage />} />
                             <Route path="messages" element={<TutorMessagesPage />} />
                           </Routes>
