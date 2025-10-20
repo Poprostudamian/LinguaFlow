@@ -191,8 +191,8 @@ export async function getTutorRealKPIs(tutorId: string): Promise<TutorKPIs> {
 function determineLevelFromStats(averageScore: number, completedLessons: number, totalLessons: number): string {
   if (completedLessons === 0) return 'Beginner';
 
-  // If averageScore is -1, it means no data is available (no exercises)
-  if (averageScore < 0) return 'Beginner';
+  // // If averageScore is -1, it means no data is available (no exercises)
+  // if (averageScore < 0) return 'Beginner'; 
 
   const completionRate = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
 
