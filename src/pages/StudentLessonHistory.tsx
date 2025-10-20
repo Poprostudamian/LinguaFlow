@@ -460,7 +460,9 @@ export function StudentLessonHistory() {
       </div>
     </div>
   );
-} className="text-gray-600 dark:text-gray-400">Loading lesson history...</p>
+} <div className="text-gray-600 dark:text-gray-400"> 
+  <p>Loading lesson history...</p>
+</div>
     );
   }
 
