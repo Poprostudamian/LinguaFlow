@@ -1,5 +1,4 @@
-// 📁 Updated File: /src/pages/TutorDashboard.tsx
-// ✅ FIXED: Uses existing structure with consistent metrics from getTutorDashboardDataV2
+// src/pages/TutorDashboard.tsx - PEŁNY Z KALENDARZEM I TŁUMACZENIAMI
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -15,58 +14,21 @@ import {
   ChevronLeft,
   ChevronRight,
   User,
-  Video,
-  Award,
-  Target
+  Video
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { KPICard } from '../components/KPICard';
 import { StudentCard } from '../components/StudentCard';
-import { getTutorDashboardDataV2, getTutorStudentsWithMetrics } from '../lib/supabase'; // ✅ UPDATED: Use V2 functions
+import { useRealTutorData } from '../lib/studentStats';
 import { createLessonWithAssignments, CreateLessonInput } from '../lib/lessonManagement';
 import { getTutorMeetings, MeetingWithParticipants } from '../lib/meetingsAPI';
 import { PendingGradingsWidget, PendingGradingsCompact } from '../components/PendingGradingsWidget';
 
-interface TutorKPIs {
-  totalStudents: number;
-  activeStudents: number;
-  teachingHours: number;
-  completionRate: number;
-}
-
-interface StudentWithMetrics {
-  id: string;
-  student_id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  created_at: string;
-  // Metrics from getStudentMetrics
-  progress: number;
-  averageScore: number;
-  completionRate: number;
-  totalHours: number;
-  lessonsCompleted: number;
-  totalLessons: number;
-  level: 'Beginner' | 'Intermediate' | 'Advanced';
-  lastActivity: string | null;
-}
-
 export function TutorDashboard() {
   const { session } = useAuth();
   const { t } = useLanguage();
-
-  // State
-  const [kpis, setKpis] = useState<TutorKPIs>({
-    totalStudents: 0,
-    activeStudents: 0,
-    teachingHours: 0,
-    completionRate: 0
-  });
-  const [students, setStudents] = useState<StudentWithMetrics[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { students, kpis, isLoading, error, refreshData } = useRealTutorData(session.user?.id);
 
   const [newLesson, setNewLesson] = useState({
     title: '',
@@ -103,37 +65,12 @@ export function TutorDashboard() {
     return monthNames[monthIndex];
   };
 
-  // ✅ UPDATED: Load data using V2 functions
+  // Load meetings
   useEffect(() => {
     if (session?.user?.id) {
-      loadDashboardData();
       loadMeetings();
     }
   }, [session?.user?.id]);
-
-  const loadDashboardData = async () => {
-    if (!session?.user?.id) return;
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // ✅ UPDATED: Use V2 functions with consistent metrics
-      const [dashboardData, studentsWithMetrics] = await Promise.all([
-        getTutorDashboardDataV2(session.user.id),
-        getTutorStudentsWithMetrics(session.user.id)
-      ]);
-
-      setKpis(dashboardData.kpis);
-      setStudents(studentsWithMetrics);
-
-    } catch (err: any) {
-      console.error('Error loading dashboard data:', err);
-      setError(err.message || 'Failed to load dashboard data');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const loadMeetings = async () => {
     if (!session?.user?.id) return;
@@ -156,33 +93,22 @@ export function TutorDashboard() {
 
   const handleCreateLesson = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!newLesson.title.trim() || !newLesson.content.trim()) {
-      setLessonError('Title and content are required');
-      return;
-    }
+    if (!session.user?.id) return;
 
-    if (!session?.user?.id) {
-      setLessonError('User session not found');
-      return;
-    }
+    setIsCreatingLesson(true);
+    setLessonError(null);
 
     try {
-      setIsCreatingLesson(true);
-      setLessonError(null);
-
       const lessonData: CreateLessonInput = {
         title: newLesson.title.trim(),
-        description: newLesson.description.trim() || null,
+        description: newLesson.description.trim(),
         content: newLesson.content.trim(),
-        tutorId: session.user.id,
         assignedStudentIds: newLesson.assignedStudentIds,
         status: 'published'
       };
 
-      await createLessonWithAssignments(lessonData);
+      await createLessonWithAssignments(session.user.id, lessonData);
 
-      // Reset form
       setNewLesson({
         title: '',
         description: '',
@@ -191,38 +117,123 @@ export function TutorDashboard() {
       });
 
       setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 5000);
+      setTimeout(() => setShowSuccess(false), 3000);
+      await refreshData();
 
-      // Refresh data to show updated lesson counts
-      loadDashboardData();
-
-    } catch (err: any) {
-      console.error('Error creating lesson:', err);
-      setLessonError(err.message || 'Failed to create lesson');
+    } catch (error: any) {
+      console.error('Error creating lesson:', error);
+      setLessonError(error.message || 'Failed to create lesson');
     } finally {
       setIsCreatingLesson(false);
     }
   };
 
-  const refreshData = () => {
-    loadDashboardData();
-    loadMeetings();
+  // Calendar helpers
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    return { daysInMonth, startingDayOfWeek, year, month };
   };
 
-  // Get today's meetings
-  const todayMeetings = meetings.filter(meeting => {
-    const meetingDate = new Date(meeting.start_time);
-    const today = new Date();
-    return meetingDate.toDateString() === today.toDateString();
-  });
+  const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentDate);
 
-  // Get upcoming meetings (next 7 days)
-  const upcomingMeetings = meetings.filter(meeting => {
-    const meetingDate = new Date(meeting.start_time);
+  const calendarDays: (number | null)[] = [];
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    calendarDays.push(null);
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    calendarDays.push(day);
+  }
+  // Fill to complete 6 rows
+  const remainingCells = 42 - calendarDays.length;
+  for (let i = 0; i < remainingCells; i++) {
+    calendarDays.push(null);
+  }
+
+  const getMeetingsForDay = (day: number | null) => {
+    if (!day) return [];
+    const dateStr = new Date(year, month, day).toDateString();
+    return meetings.filter(meeting => {
+      const meetingDate = new Date(meeting.scheduled_at).toDateString();
+      return meetingDate === dateStr;
+    });
+  };
+
+  const isToday = (day: number | null) => {
+    if (!day) return false;
     const today = new Date();
-    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-    return meetingDate >= today && meetingDate <= nextWeek;
-  }).slice(0, 5);
+    return (
+      today.getDate() === day &&
+      today.getMonth() === month &&
+      today.getFullYear() === year
+    );
+  };
+
+  const isSelected = (day: number | null) => {
+    if (!day || !selectedDate) return false;
+    return (
+      selectedDate.getDate() === day &&
+      selectedDate.getMonth() === month &&
+      selectedDate.getFullYear() === year
+    );
+  };
+
+  const hasMeetings = (day: number | null) => {
+    return getMeetingsForDay(day).length > 0;
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newDate = new Date(currentDate);
+    newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
+    setCurrentDate(newDate);
+  };
+
+  const goToToday = () => {
+    const today = new Date();
+    setCurrentDate(today);
+    setSelectedDate(today);
+  };
+
+  const handleDayClick = (day: number | null) => {
+    if (!day) return;
+    const date = new Date(year, month, day);
+    setSelectedDate(date);
+  };
+
+  const selectedDayMeetings = selectedDate ? getMeetingsForDay(selectedDate.getDate()) : [];
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  };
+
+// format: "Poniedziałek, 14 października 2025"
+const formatDate = (date: Date) => {
+  const dayNames = [
+    'Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'
+  ]; 
+  
+  // Nazwy miesięcy w dopełniaczu (dla "14 października")
+  const monthNamesGenitive = [
+    'stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca',
+    'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'
+  ];
+  
+  const dayOfWeek = dayNames[date.getDay()];
+  const monthName = monthNamesGenitive[date.getMonth()];
+  const day = date.getDate();
+  const year = date.getFullYear();
+  
+  // Format polski: "Poniedziałek, 14 października 2025"
+  return `${dayOfWeek}, ${day} ${monthName} ${year}`;
+};
 
   const getStatusConfig = (status: string) => {
     switch (status) {
@@ -232,11 +243,17 @@ export function TutorDashboard() {
           color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
           dotColor: 'bg-blue-500'
         };
+      case 'in_progress':
+        return {
+          label: t.studentSchedulePage?.statusInProgress || 'In Progress',
+          color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+          dotColor: 'bg-green-500'
+        };
       case 'completed':
         return {
           label: t.studentSchedulePage?.statusCompleted || 'Completed',
-          color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-          dotColor: 'bg-green-500'
+          color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
+          dotColor: 'bg-gray-500'
         };
       case 'cancelled':
         return {
@@ -301,7 +318,9 @@ export function TutorDashboard() {
           <div className="flex items-center space-x-2">
             <AlertCircle className="h-5 w-5 text-red-600" />
             <div>
-              <h3 className="text-red-800 dark:text-red-200 font-medium">{t.common.error}</h3>
+              <h3 className="text-red-800 dark:text-red-200 font-medium">
+                {t.tutorDashboard.databaseError}
+              </h3>
               <p className="text-red-600 dark:text-red-300 text-sm">{error}</p>
             </div>
           </div>
@@ -309,7 +328,7 @@ export function TutorDashboard() {
             onClick={refreshData}
             className="mt-3 px-3 py-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded-md hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
           >
-            Retry
+            {t.tutorDashboard.tryAgain}
           </button>
         </div>
       </div>
@@ -325,20 +344,18 @@ export function TutorDashboard() {
             {t.tutorDashboard.title}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            {t.tutorDashboard.welcome}, {session?.user?.first_name}! 👨‍🏫
+            {t.tutorDashboard.subtitle}
           </p>
         </div>
-        
         <button
           onClick={refreshData}
-          className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-          title="Refresh data"
+          className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
         >
-          <RefreshCw className="h-5 w-5" />
+          <RefreshCw className="h-4 w-4" />
+          <span>{t.tutorDashboard.refresh}</span>
         </button>
       </div>
 
-      {/* Pending Gradings Alert */}
       <PendingGradingsCompact />
       
       {/* Success notification */}
@@ -353,7 +370,7 @@ export function TutorDashboard() {
         </div>
       )}
       
-      {/* ✅ UPDATED: KPI Cards with consistent metrics */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <KPICard
           title={t.tutorDashboard.totalStudents}
@@ -374,296 +391,278 @@ export function TutorDashboard() {
           color="green"
         />
         <KPICard
-          title="Completion Rate"
+          title={t.tutorDashboard.completionRate}
           value={`${kpis.completionRate}%`}
           icon={CheckCircle}
           color="orange"
         />
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Students Section - ✅ UPDATED: Shows consistent metrics */}
-        <div className="lg:col-span-2">
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {t.tutorDashboard.myStudents} ({students.length})
-              </h2>
-              <button
-                onClick={() => window.location.href = '/tutor/students'}
-                className="text-purple-600 dark:text-purple-400 hover:underline text-sm font-medium"
-              >
-                View All
-              </button>
+      {/* Main Content Grid - Students & Calendar */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Student Roster */}
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            {t.tutorDashboard.myStudents} ({students.length})
+          </h2>
+          
+          {students.length === 0 ? (
+            <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <Users className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-500 dark:text-gray-400">
+                {t.tutorDashboard.noStudentsFound}
+              </p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">
+                {t.tutorDashboard.addStudentsHint}
+              </p>
             </div>
-            
-            {students.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-500 dark:text-gray-400 mb-4">
-                  {t.tutorDashboard.noStudents}
-                </p>
-                <button
-                  onClick={() => window.location.href = '/tutor/students'}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                >
-                  Invite Students
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {students.slice(0, 5).map((student) => (
-                  <div
-                    key={student.student_id}
-                    className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="font-medium text-gray-900 dark:text-white">
-                            {student.first_name} {student.last_name}
-                          </h3>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            student.level === 'Advanced' 
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                              : student.level === 'Intermediate'
-                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-                              : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
-                          }`}>
-                            {student.level}
-                          </span>
-                        </div>
-                        
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                          {student.email}
-                        </p>
-
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className="text-gray-500 dark:text-gray-400">Progress:</span>
-                            <span className="ml-2 font-medium text-gray-900 dark:text-white">
-                              {student.progress}%
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-gray-500 dark:text-gray-400">Score:</span>
-                            <span className="ml-2 font-medium text-gray-900 dark:text-white">
-                              {student.averageScore}%
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-gray-500 dark:text-gray-400">Lessons:</span>
-                            <span className="ml-2 font-medium text-gray-900 dark:text-white">
-                              {student.lessonsCompleted}/{student.totalLessons}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-gray-500 dark:text-gray-400">Hours:</span>
-                            <span className="ml-2 font-medium text-gray-900 dark:text-white">
-                              {student.totalHours}h
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Progress bar for completion rate */}
-                        <div className="mt-3">
-                          <div className="flex items-center justify-between text-xs mb-1">
-                            <span className="text-gray-500 dark:text-gray-400">Completion Rate</span>
-                            <span className="font-medium text-gray-700 dark:text-gray-300">
-                              {student.completionRate}%
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                            <div
-                              className="bg-purple-600 h-1.5 rounded-full transition-all duration-300"
-                              style={{ width: `${student.completionRate}%` }}
-                            />
-                          </div>
-                        </div>
+          ) : (
+            <div className="space-y-4">
+              {students.slice(0, 6).map((student) => (
+                <div key={student.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                        <span className="text-white font-medium text-sm">
+                          {student.name.split(' ').map(n => n[0]).join('')}
+                        </span>
                       </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">{student.name}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{student.level}</p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      {student.progress}%
+                    </span>
+                  </div>
+                  
+                  <div className="mb-3">
+                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      <span>{t.tutorDashboard.progress}</span>
+                      <span>{student.progress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${student.progress}%` }}
+                      />
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right Sidebar */}
-        <div className="space-y-6">
-          
-          {/* Quick Stats Summary */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Teaching Overview
-            </h3>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Users className="h-4 w-4 text-purple-600" />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Total Students</span>
-                </div>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {kpis.totalStudents}
-                </span>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <TrendingUp className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Active Students</span>
-                </div>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {kpis.activeStudents}
-                </span>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4 text-orange-600" />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Completion Rate</span>
-                </div>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {kpis.completionRate}%
-                </span>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Teaching Hours</span>
-                </div>
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {kpis.teachingHours}h
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Today's Meetings */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Today's Meetings
-              </h3>
-              <CalendarIcon className="h-5 w-5 text-gray-400" />
-            </div>
-
-            {todayMeetings.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {t.tutorDashboard.noMeetings}
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {todayMeetings.slice(0, 3).map((meeting) => {
-                  const statusConfig = getStatusConfig(meeting.status);
                   
-                  return (
-                    <div
-                      key={meeting.id}
-                      className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                    >
-                      <div className={`w-2 h-2 rounded-full ${statusConfig.dotColor}`} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {meeting.title}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {new Date(meeting.start_time).toLocaleTimeString([], { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                        </p>
-                      </div>
-                      <Video className="h-4 w-4 text-gray-400" />
+                  <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center space-x-1">
+                      <BookOpen className="h-4 w-4" />
+                      <span>{student.lessonsCompleted}/{student.totalLessons} {t.tutorDashboard.lessons}</span>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Quick Actions
-            </h3>
-            
-            <div className="space-y-3">
-              <button
-                onClick={() => window.location.href = '/tutor/lessons'}
-                className="w-full flex items-center space-x-3 px-4 py-3 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
-              >
-                <BookOpen className="h-5 w-5" />
-                <span className="font-medium">Create New Lesson</span>
-              </button>
+                    <div className="flex items-center space-x-1">
+                      <Clock className="h-4 w-4" />
+                      <span>{student.totalHours}{t.tutorDashboard.hours}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
               
-              <button
-                onClick={() => window.location.href = '/tutor/students'}
-                className="w-full flex items-center space-x-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-              >
-                <Users className="h-5 w-5" />
-                <span className="font-medium">Manage Students</span>
-              </button>
-              
-              <button
-                onClick={() => window.location.href = '/tutor/grading'}
-                className="w-full flex items-center space-x-3 px-4 py-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
-              >
-                <CheckCircle className="h-5 w-5" />
-                <span className="font-medium">Grade Assignments</span>
-              </button>
-              
-              <button
-                onClick={() => window.location.href = '/tutor/schedule'}
-                className="w-full flex items-center space-x-3 px-4 py-3 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
-              >
-                <CalendarIcon className="h-5 w-5" />
-                <span className="font-medium">Schedule Meeting</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Student Performance Insight */}
-          {students.length > 0 && (
-            <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-6 text-white">
-              <h3 className="font-semibold mb-4">Performance Insights</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-purple-100">Average Score:</span>
-                  <span className="font-medium">
-                    {Math.round(
-                      students.reduce((sum, s) => sum + s.averageScore, 0) / 
-                      students.length
-                    )}%
+              {students.length > 6 && (
+                <div className="text-center pt-2">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {t.tutorDashboard.andMoreStudents.replace('{count}', String(students.length - 6))}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-purple-100">Average Progress:</span>
-                  <span className="font-medium">
-                    {Math.round(
-                      students.reduce((sum, s) => sum + s.progress, 0) / 
-                      students.length
-                    )}%
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-purple-100">Completion Rate:</span>
-                  <span className="font-medium">
-                    {Math.round(
-                      students.reduce((sum, s) => sum + s.completionRate, 0) / 
-                      students.length
-                    )}%
-                  </span>
-                </div>
-              </div>
+              )}
             </div>
           )}
+        </div>
+        
+        {/* Calendar Section */}
+        <div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            {/* Calendar Header */}
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
+                  <CalendarIcon className="h-5 w-5 text-purple-600" />
+                  <span>{getMonthName(currentDate)} {currentDate.getFullYear()}</span>
+                </h2>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={goToToday}
+                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    {t.tutorDashboard.today}
+                  </button>
+                  <button
+                    onClick={() => navigateMonth('prev')}
+                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                  </button>
+                  <button
+                    onClick={() => navigateMonth('next')}
+                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 rounded-full bg-purple-600"></div>
+                  <span>{t.tutorDashboard.today}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                  <span>{t.tutorDashboard.hasMeetings}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Days of week header */}
+            <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+              {daysOfWeek.map(day => (
+                <div
+                  key={day}
+                  className="p-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-400"
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7">
+              {calendarDays.map((day, index) => {
+                const dayMeetings = getMeetingsForDay(day);
+                const today = isToday(day);
+                const selected = isSelected(day);
+                const meetings = hasMeetings(day);
+
+                return (
+                  <div
+                    key={index}
+                    onClick={() => handleDayClick(day)}
+                    className={`
+                      relative min-h-[70px] p-2 border-b border-r border-gray-200 dark:border-gray-700
+                      transition-all duration-200
+                      ${day ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : 'bg-gray-50 dark:bg-gray-900'}
+                      ${selected ? 'bg-purple-50 dark:bg-purple-900/30 ring-2 ring-purple-500 ring-inset' : ''}
+                    `}
+                  >
+                    {day && (
+                      <div className="space-y-1">
+                        {/* Day number */}
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={`
+                              text-xs font-medium flex items-center justify-center
+                              ${today 
+                                ? 'bg-purple-600 text-white w-6 h-6 rounded-full' 
+                                : selected
+                                ? 'text-purple-600 dark:text-purple-400'
+                                : 'text-gray-900 dark:text-gray-100'
+                              }
+                            `}
+                          >
+                            {day}
+                          </span>
+                          {meetings && (
+                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                          )}
+                        </div>
+
+                        {/* Meeting dots */}
+                        {dayMeetings.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {dayMeetings.slice(0, 2).map((meeting, i) => {
+                              const config = getStatusConfig(meeting.status);
+                              return (
+                                <div
+                                  key={i}
+                                  className={`w-1.5 h-1.5 rounded-full ${config.dotColor}`}
+                                  title={meeting.title}
+                                />
+                              );
+                            })}
+                            {dayMeetings.length > 2 && (
+                              <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                                +{dayMeetings.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Selected Date Meetings */}
+            {selectedDate && (
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 max-h-[300px] overflow-y-auto">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                  {formatDate(selectedDate)}
+                </h3>
+
+                {selectedDayMeetings.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                    {t.tutorDashboard.noMeetingsScheduled}
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {selectedDayMeetings.map(meeting => {
+                      const config = getStatusConfig(meeting.status);
+                      return (
+                        <div
+                          key={meeting.id}
+                          className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
+                                {meeting.title}
+                              </h4>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                {formatTime(meeting.scheduled_at)} • {meeting.duration_minutes} {t.tutorDashboard.minutes}
+                              </p>
+                            </div>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${config.color}`}>
+                              {config.label}
+                            </span>
+                          </div>
+
+                          {meeting.participants && meeting.participants.length > 0 && (
+                            <div className="flex items-center space-x-1 mt-2">
+                              <User className="h-3 w-3 text-gray-400" />
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {meeting.participants.length} {meeting.participants.length !== 1 ? t.tutorDashboard.students : t.tutorDashboard.student}
+                              </span>
+                            </div>
+                          )}
+
+                          {meeting.meeting_url && (
+                            <a
+                              href={meeting.meeting_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 inline-flex items-center space-x-1 text-xs text-purple-600 dark:text-purple-400 hover:underline"
+                            >
+                              <Video className="h-3 w-3" />
+                              <span>{t.tutorDashboard.joinMeeting}</span>
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
-} 
+}
