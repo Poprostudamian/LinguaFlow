@@ -2612,3 +2612,314 @@ export const calculateLessonScore = async (studentId: string, lessonId: string):
     };
   }
 };
+
+/**
+ * Get comprehensive and accurate student metrics
+ * ✅ ENHANCED: Unified calculation for all student statistics
+ */
+export const getStudentMetrics = async (studentId: string): Promise<StudentMetrics> => {
+  try {
+    // Get all student lesson assignments
+    const { data: studentLessons, error: lessonsError } = await supabase
+      .from('student_lessons')
+      .select(`
+        lesson_id,
+        status,
+        progress,
+        score,
+        assigned_at,
+        completed_at,
+        updated_at,
+        time_spent
+      `)
+      .eq('student_id', studentId);
+
+    if (lessonsError) throw lessonsError;
+
+    const lessons = studentLessons || [];
+    
+    // Basic counts
+    const totalLessons = lessons.length;
+    const completedLessons = lessons.filter(l => l.status === 'completed').length;
+    const inProgressLessons = lessons.filter(l => l.status === 'in_progress').length;
+    const assignedLessons = lessons.filter(l => l.status === 'assigned').length;
+
+    // Completion rate (% of lessons finished)
+    const completionRate = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+
+    // Average progress (% of lesson content viewed/completed)
+    const averageProgress = totalLessons > 0 
+      ? Math.round(lessons.reduce((sum, l) => sum + (l.progress || 0), 0) / totalLessons)
+      : 0;
+
+    // Calculate accurate average score for completed lessons
+    let totalScore = 0;
+    let scoredLessonsCount = 0;
+
+    for (const lesson of lessons.filter(l => l.status === 'completed')) {
+      const scoreCalc = await calculateLessonScore(studentId, lesson.lesson_id);
+      if (scoreCalc.total_exercises > 0) {
+        totalScore += scoreCalc.final_score;
+        scoredLessonsCount++;
+      }
+    }
+
+    const averageScore = scoredLessonsCount > 0 ? Math.round(totalScore / scoredLessonsCount) : 0;
+
+    // Study time calculation
+    const totalTimeMinutes = lessons.reduce((sum, l) => sum + (l.time_spent || 0), 0);
+    const totalStudyTimeHours = Math.round((totalTimeMinutes / 60) * 10) / 10;
+
+    // Last activity
+    const lastActivity = lessons.length > 0 
+      ? lessons
+          .map(l => l.updated_at)
+          .sort()
+          .reverse()[0]
+      : null;
+
+    // Determine level based on average score (not progress)
+    const currentLevel: 'Beginner' | 'Intermediate' | 'Advanced' = 
+      averageScore >= 80 ? 'Advanced' : 
+      averageScore >= 60 ? 'Intermediate' : 'Beginner';
+
+    return {
+      student_id: studentId,
+      total_lessons: totalLessons,
+      completed_lessons: completedLessons,
+      in_progress_lessons: inProgressLessons,
+      assigned_lessons: assignedLessons,
+      completion_rate: completionRate,
+      average_progress: averageProgress,
+      average_score: averageScore,
+      total_study_time_hours: totalStudyTimeHours,
+      last_activity: lastActivity,
+      current_level: currentLevel
+    };
+
+  } catch (error) {
+    console.error('Error fetching student metrics:', error);
+    // Return safe defaults
+    return {
+      student_id: studentId,
+      total_lessons: 0,
+      completed_lessons: 0,
+      in_progress_lessons: 0,
+      assigned_lessons: 0,
+      completion_rate: 0,
+      average_progress: 0,
+      average_score: 0,
+      total_study_time_hours: 0,
+      last_activity: null,
+      current_level: 'Beginner'
+    };
+  }
+};
+
+/**
+ * Update lesson progress and score when student completes exercises
+ * ✅ ENHANCED: Properly updates both progress and score
+ */
+export const updateLessonProgressAndScore = async (
+  studentId: string,
+  lessonId: string,
+  newProgress: number,
+  status?: 'assigned' | 'in_progress' | 'completed'
+): Promise<void> => {
+  try {
+    console.log('📊 Updating lesson progress and score:', lessonId, 'progress:', newProgress + '%');
+    
+    // Verify session
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || session.user.id !== studentId) {
+      throw new Error('Not authenticated or invalid student ID');
+    }
+    
+    // Calculate actual score based on exercise performance
+    const scoreCalc = await calculateLessonScore(studentId, lessonId);
+    
+    const updateData: any = {
+      progress: Math.max(0, Math.min(100, newProgress)),
+      updated_at: new Date().toISOString()
+    };
+
+    // Update status if provided
+    if (status) {
+      updateData.status = status;
+    }
+
+    // If lesson is being completed
+    if (newProgress >= 100 || status === 'completed') {
+      updateData.status = 'completed';
+      updateData.completed_at = new Date().toISOString();
+      updateData.score = scoreCalc.final_score; // Use calculated score, not progress
+      updateData.progress = 100;
+    } else if (newProgress > 0 && status !== 'assigned') {
+      updateData.status = 'in_progress';
+      // Update score incrementally for in-progress lessons
+      updateData.score = scoreCalc.final_score;
+    }
+
+    const { error } = await supabase
+      .from('student_lessons')
+      .update(updateData)
+      .eq('student_id', studentId)
+      .eq('lesson_id', lessonId);
+
+    if (error) {
+      console.error('❌ Error updating lesson progress and score:', error);
+      throw new Error(`Failed to update lesson: ${error.message}`);
+    }
+
+    console.log('✅ Lesson progress and score updated successfully');
+  } catch (error) {
+    console.error('❌ Error in updateLessonProgressAndScore:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get tutor dashboard data with consistent metrics
+ * ✅ UPDATED: Uses new student metrics calculation
+ */
+export const getTutorDashboardDataV2 = async (tutorId: string) => {
+  try {
+    // Get tutor's students
+    const students = await getTutorStudents(tutorId);
+
+    // Get lessons created by this tutor
+    const { data: lessonsData, error: lessonsError } = await supabase
+      .from('lessons')
+      .select('id')
+      .eq('tutor_id', tutorId);
+
+    if (lessonsError) throw lessonsError;
+
+    // Get all lesson assignments for tutor's lessons
+    const { data: studentLessons, error: studentLessonsError } = await supabase
+      .from('student_lessons')
+      .select('*')
+      .in('lesson_id', (lessonsData || []).map(l => l.id));
+
+    if (studentLessonsError) throw studentLessonsError;
+
+    // Calculate KPIs
+    const totalStudents = students.length;
+    const activeStudents = students.filter(s => {
+      const hasActiveLessons = studentLessons?.some(
+        sl => sl.student_id === s.id && (sl.status === 'in_progress' || sl.status === 'assigned')
+      );
+      return hasActiveLessons;
+    }).length;
+
+    // Teaching hours calculation
+    const teachingHours = Math.floor(
+      (studentLessons?.reduce((sum, sl) => sum + (sl.time_spent || 0), 0) || 0) / 3600
+    );
+
+    // Completion rate calculation
+    const completedLessons = studentLessons?.filter(sl => sl.status === 'completed').length || 0;
+    const totalAssignedLessons = studentLessons?.length || 0;
+    const completionRate = totalAssignedLessons > 0 
+      ? Math.round((completedLessons / totalAssignedLessons) * 100) 
+      : 0;
+
+    return {
+      kpis: {
+        totalStudents,
+        activeStudents,
+        teachingHours,
+        completionRate
+      },
+      students
+    };
+  } catch (error) {
+    console.error('Error fetching tutor dashboard data:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get student dashboard data with consistent metrics
+ * ✅ UPDATED: Uses new student metrics calculation
+ */
+export const getStudentDashboardDataV2 = async (studentId: string) => {
+  try {
+    // Get student metrics using unified calculation
+    const metrics = await getStudentMetrics(studentId);
+    
+    // Get tutors
+    const tutors = await getStudentTutors(studentId);
+
+    // Get upcoming lessons
+    const { data: upcomingLessons, error: lessonsError } = await supabase
+      .from('student_lessons')
+      .select(`
+        *,
+        lessons (
+          id,
+          title,
+          description,
+          tutor_id
+        )
+      `)
+      .eq('student_id', studentId)
+      .in('status', ['assigned', 'in_progress'])
+      .order('assigned_at', { ascending: false });
+
+    if (lessonsError) throw lessonsError;
+
+    return {
+      kpis: {
+        lessonsCompleted: metrics.completed_lessons,
+        studyStreak: Math.ceil(metrics.total_study_time_hours), // Convert to streak approximation
+        totalHours: metrics.total_study_time_hours,
+        totalLessonsAssigned: metrics.total_lessons,
+        averageProgress: metrics.average_progress,
+        averageScore: metrics.average_score,
+        completionRate: metrics.completion_rate,
+        currentLevel: metrics.current_level
+      },
+      upcomingLessons: upcomingLessons || [],
+      tutors
+    };
+  } catch (error) {
+    console.error('Error fetching student dashboard data:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get students with consistent metrics for tutor view
+ * ✅ NEW: Unified student statistics for tutor pages
+ */
+export const getTutorStudentsWithMetrics = async (tutorId: string) => {
+  try {
+    // Get basic student list
+    const students = await getTutorStudents(tutorId);
+    
+    // Get detailed metrics for each student
+    const studentsWithMetrics = await Promise.all(
+      students.map(async (student) => {
+        const metrics = await getStudentMetrics(student.student_id);
+        return {
+          ...student,
+          // Add consistent metric fields
+          progress: metrics.average_progress, // For backward compatibility
+          averageScore: metrics.average_score,
+          completionRate: metrics.completion_rate,
+          totalHours: metrics.total_study_time_hours,
+          lessonsCompleted: metrics.completed_lessons,
+          totalLessons: metrics.total_lessons,
+          level: metrics.current_level,
+          lastActivity: metrics.last_activity
+        };
+      })
+    );
+
+    return studentsWithMetrics;
+  } catch (error) {
+    console.error('Error fetching students with metrics:', error);
+    throw error;
+  }
+};
