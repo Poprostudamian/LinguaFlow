@@ -62,7 +62,7 @@ export function StudentLessonsPage() {
   
   // State
   const [lessons, setLessons] = useState<StudentLessonData[]>([]);
-  const [averageScoreFromAPI, setAverageScoreFromAPI] = useState<number>(-1);
+  const [averageScoreFromAPI, setAverageScoreFromAPI] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
