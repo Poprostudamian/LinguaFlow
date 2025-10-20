@@ -281,7 +281,7 @@ export async function getStudentKPIsReal(studentId: string): Promise<StudentKPIs
       completedLessons: stats.completed_lessons,
       inProgressLessons: stats.in_progress_lessons,
       assignedLessons: stats.total_lessons - stats.completed_lessons - stats.in_progress_lessons,
-      averageScore: -1, // Will be calculated below
+      averageScore: 0, // Will be calculated below
       totalStudyTime: stats.total_study_time_minutes,
       averageProgress: stats.average_progress
     };
