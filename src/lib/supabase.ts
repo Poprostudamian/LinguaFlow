@@ -2478,3 +2478,137 @@ export const gradeStudentAnswer = async (
     throw error;
   }
 };
+
+
+// ============================================================================
+// ENHANCED STATISTICS INTERFACES
+// ============================================================================
+
+export interface StudentMetrics {
+  student_id: string;
+  // Progress metrics (completion-based)
+  total_lessons: number;
+  completed_lessons: number;
+  in_progress_lessons: number;
+  assigned_lessons: number;
+  completion_rate: number; // % of lessons completed
+  average_progress: number; // Average progress across all lessons
+  
+  // Performance metrics (score-based)
+  average_score: number; // Average score from completed lessons with exercises
+  total_study_time_hours: number;
+  last_activity: string | null;
+  
+  // Level determination
+  current_level: 'Beginner' | 'Intermediate' | 'Advanced';
+}
+
+export interface LessonScoreCalculation {
+  lesson_id: string;
+  total_exercises: number;
+  completed_exercises: number;
+  auto_graded_score: number; // Score from auto-graded exercises
+  tutor_graded_score: number; // Score from tutor-graded exercises
+  final_score: number; // Weighted final score
+  progress_percentage: number; // Completion progress
+}
+
+/**
+ * Calculate accurate lesson score based on exercise performance
+ * ✅ NEW: Proper score calculation considering both auto and tutor grading
+ */
+export const calculateLessonScore = async (studentId: string, lessonId: string): Promise<LessonScoreCalculation> => {
+  try {
+    // Get all exercises for this lesson
+    const { data: exercises, error: exercisesError } = await supabase
+      .from('lesson_exercises')
+      .select('*')
+      .eq('lesson_id', lessonId)
+      .order('order_index');
+
+    if (exercisesError) throw exercisesError;
+
+    // Get student answers for these exercises
+    const { data: answers, error: answersError } = await supabase
+      .from('student_exercise_answers')
+      .select('*')
+      .eq('student_id', studentId)
+      .in('exercise_id', (exercises || []).map(e => e.id));
+
+    if (answersError) throw answersError;
+
+    const totalExercises = exercises?.length || 0;
+    const completedExercises = answers?.length || 0;
+    
+    if (totalExercises === 0) {
+      return {
+        lesson_id: lessonId,
+        total_exercises: 0,
+        completed_exercises: 0,
+        auto_graded_score: 0,
+        tutor_graded_score: 0,
+        final_score: 0,
+        progress_percentage: 0
+      };
+    }
+
+    // Calculate scores by grading type
+    let autoGradedPoints = 0;
+    let autoGradedMaxPoints = 0;
+    let tutorGradedPoints = 0;
+    let tutorGradedMaxPoints = 0;
+
+    exercises?.forEach(exercise => {
+      const answer = answers?.find(a => a.exercise_id === exercise.id);
+      const maxPoints = exercise.points || 1;
+
+      if (exercise.type === 'text_answer') {
+        // Tutor-graded exercise
+        tutorGradedMaxPoints += maxPoints;
+        if (answer?.tutor_score !== null && answer?.tutor_score !== undefined) {
+          tutorGradedPoints += (answer.tutor_score / 100) * maxPoints;
+        }
+      } else {
+        // Auto-graded exercise (multiple_choice, fill_blank, etc.)
+        autoGradedMaxPoints += maxPoints;
+        if (answer?.is_correct) {
+          autoGradedPoints += maxPoints;
+        }
+      }
+    });
+
+    // Calculate individual scores
+    const autoGradedScore = autoGradedMaxPoints > 0 ? (autoGradedPoints / autoGradedMaxPoints) * 100 : 0;
+    const tutorGradedScore = tutorGradedMaxPoints > 0 ? (tutorGradedPoints / tutorGradedMaxPoints) * 100 : 0;
+
+    // Calculate weighted final score
+    const totalMaxPoints = autoGradedMaxPoints + tutorGradedMaxPoints;
+    const totalEarnedPoints = autoGradedPoints + tutorGradedPoints;
+    const finalScore = totalMaxPoints > 0 ? (totalEarnedPoints / totalMaxPoints) * 100 : 0;
+
+    // Progress is based on completion, not performance
+    const progressPercentage = (completedExercises / totalExercises) * 100;
+
+    return {
+      lesson_id: lessonId,
+      total_exercises: totalExercises,
+      completed_exercises: completedExercises,
+      auto_graded_score: Math.round(autoGradedScore),
+      tutor_graded_score: Math.round(tutorGradedScore),
+      final_score: Math.round(finalScore),
+      progress_percentage: Math.round(progressPercentage)
+    };
+
+  } catch (error) {
+    console.error('Error calculating lesson score:', error);
+    return {
+      lesson_id: lessonId,
+      total_exercises: 0,
+      completed_exercises: 0,
+      auto_graded_score: 0,
+      tutor_graded_score: 0,
+      final_score: 0,
+      progress_percentage: 0
+    };
+  }
+};
