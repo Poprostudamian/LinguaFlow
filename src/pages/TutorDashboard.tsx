@@ -22,7 +22,6 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { getTutorDashboardDataV2, getTutorStudentsWithMetrics } from '../lib/supabase'; // ✅ UPDATED: Use V2 functions
 import { KPICard } from '../components/KPICard';
 import { ActionButton } from '../components/ActionButton';
-import { PendingGradingsCompact } from '../components/PendingGradingsCompact';
 
 interface TutorDashboardData {
   kpis: {
