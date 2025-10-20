@@ -1,5 +1,5 @@
 // src/components/InteractiveExerciseViewer.tsx
-// ✅ FIXED: Usunięto nieprawidłowe użycie useState w renderExerciseInput
+// ✅ FIXED: Dodano poprawne parsowanie JSON dla opcji z bazy danych
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -22,7 +22,7 @@ export interface Exercise {
   title: string;
   question: string;
   correct_answer?: string;
-  options?: string[] | Array<{front: string; back: string}>;
+  options?: string[] | Array<{front: string; back: string}> | string; // ✅ ADDED string for JSON from DB
   explanation?: string;
   order_number: number;
   points: number;
@@ -57,6 +57,33 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Interactive
   const currentExercise = exercises[currentIndex];
   const totalExercises = exercises.length;
   const progress = ((currentIndex + 1) / totalExercises) * 100;
+
+  // ✅ ADDED: Helper function to safely parse JSON options
+  const parseOptions = (options: any, exerciseType: string): any => {
+    if (!options) return null;
+    
+    // If already parsed (array or object), return as is
+    if (typeof options !== 'string') {
+      return options;
+    }
+    
+    // If it's a JSON string, parse it
+    try {
+      const parsed = JSON.parse(options);
+      console.log(`📋 Parsed options for ${exerciseType}:`, parsed);
+      return parsed;
+    } catch (error) {
+      console.warn('❌ Failed to parse options JSON:', error, options);
+      
+      // Fallback based on exercise type
+      if (exerciseType === 'multiple_choice') {
+        return ['Option A', 'Option B', 'Option C', 'Option D'];
+      } else if (exerciseType === 'flashcard') {
+        return [{ front: 'Front', back: 'Back' }];
+      }
+      return null;
+    }
+  };
 
   // ✅ ADDED: Calculate word count
   const countWords = (text: string): number => {
@@ -162,9 +189,13 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Interactive
 
     switch (currentExercise.exercise_type) {
       case 'multiple_choice':
-        const options = Array.isArray(currentExercise.options) 
-          ? currentExercise.options as string[]
-          : ['A', 'B', 'C', 'D'];
+        // ✅ FIXED: Properly parse options from database
+        const parsedOptions = parseOptions(currentExercise.options, 'multiple_choice');
+        const options = Array.isArray(parsedOptions) 
+          ? parsedOptions as string[]
+          : ['Option A', 'Option B', 'Option C', 'Option D'];
+
+        console.log('🔤 Multiple choice options:', options);
 
         return (
           <div className="space-y-3">
@@ -203,9 +234,13 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Interactive
         );
 
       case 'flashcard':
-        const flashcards = Array.isArray(currentExercise.options)
-          ? currentExercise.options as Array<{front: string; back: string}>
-          : [{ front: currentExercise.question, back: currentExercise.correct_answer || '' }];
+        // ✅ FIXED: Properly parse flashcard options from database
+        const parsedFlashcards = parseOptions(currentExercise.options, 'flashcard');
+        const flashcards = Array.isArray(parsedFlashcards)
+          ? parsedFlashcards as Array<{front: string; back: string}>
+          : [{ front: currentExercise.question, back: currentExercise.correct_answer || 'Answer' }];
+        
+        console.log('🃏 Flashcards:', flashcards);
         
         // ✅ FIXED: Use component-level state instead of local useState
         const exerciseCardIndex = currentCardIndex[currentExercise.id] || 0;
@@ -251,7 +286,7 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Interactive
                 >
                   <div>
                     <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                      {flashcards[exerciseCardIndex]?.front}
+                      {flashcards[exerciseCardIndex]?.front || 'Front'}
                     </h4>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       Click to reveal answer
@@ -272,7 +307,7 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Interactive
                 >
                   <div>
                     <h4 className="text-lg font-medium text-purple-600 dark:text-purple-400 mb-2">
-                      {flashcards[exerciseCardIndex]?.back}
+                      {flashcards[exerciseCardIndex]?.back || 'Back'}
                     </h4>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       Click to flip back
@@ -447,13 +482,21 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Interactive
                   <div className="ml-9 space-y-2">
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Your answer:</p>
-                      <p className="text-gray-900 dark:text-white">{userAnswer}</p>
+                      <p className="text-gray-900 dark:text-white">
+                        {exercise.exercise_type === 'multiple_choice' 
+                          ? `${userAnswer}. ${parseOptions(exercise.options, 'multiple_choice')?.[userAnswer?.charCodeAt(0) - 65] || userAnswer}`
+                          : userAnswer
+                        }
+                      </p>
                     </div>
                     {exercise.exercise_type !== 'text_answer' && !result.is_correct && exercise.correct_answer && (
                       <div>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Correct answer:</p>
                         <p className="text-green-700 dark:text-green-300 font-medium">
-                          {exercise.correct_answer}
+                          {exercise.exercise_type === 'multiple_choice' 
+                            ? `${exercise.correct_answer}. ${parseOptions(exercise.options, 'multiple_choice')?.[exercise.correct_answer?.charCodeAt(0) - 65] || exercise.correct_answer}`
+                            : exercise.correct_answer
+                          }
                         </p>
                       </div>
                     )}
@@ -540,4 +583,4 @@ export function InteractiveExerciseViewer({ exercises, onComplete }: Interactive
       </div>
     </div>
   );
-} 
+}
