@@ -1554,6 +1554,7 @@ export const translations = {
 // TUTOR ---------------------------------------------------------------------------
      // Tutor Dashboard
     tutorDashboard: {
+      welcome: 'Witaj ponownie',
       // Page Title
       title: 'Panel korepetytora',
       subtitle: 'Statystyki w czasie rzeczywistym z Twojej bazy danych',
