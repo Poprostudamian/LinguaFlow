@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext'; // ← DODANE
-import { getStudentLessons } from '../lib/supabase';
+import { getStudentLessons, getStudentStats } from '../lib/supabase';
 
 interface StudentLessonData {
   id: string;
@@ -62,6 +62,7 @@ export function StudentLessonsPage() {
   
   // State
   const [lessons, setLessons] = useState<StudentLessonData[]>([]);
+  const [averageScoreFromAPI, setAverageScoreFromAPI] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -69,7 +70,7 @@ export function StudentLessonsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
 
-  // Load lessons
+  // Load lessons and stats
   useEffect(() => {
     if (session?.user?.id) {
       loadStudentLessons();
@@ -82,8 +83,15 @@ export function StudentLessonsPage() {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await getStudentLessons(session.user.id);
-      setLessons(data);
+
+      // ✅ Load both lessons and stats in parallel for consistency
+      const [lessonsData, statsData] = await Promise.all([
+        getStudentLessons(session.user.id),
+        getStudentStats(session.user.id)
+      ]);
+
+      setLessons(lessonsData);
+      setAverageScoreFromAPI(statsData.average_score);
     } catch (err: any) {
       setError(err.message || 'Failed to load lessons');
     } finally {
@@ -133,15 +141,11 @@ export function StudentLessonsPage() {
     completed: lessons.filter(l => l.status === 'completed').length,
     inProgress: lessons.filter(l => l.status === 'in_progress').length,
     assigned: lessons.filter(l => l.status === 'assigned').length,
-    averageProgress: lessons.length > 0 
+    averageProgress: lessons.length > 0
       ? Math.round(lessons.reduce((sum, l) => sum + l.progress, 0) / lessons.length)
       : 0,
-    averageScore: lessons.filter(l => l.score !== null).length > 0
-      ? Math.round(
-          lessons.filter(l => l.score !== null).reduce((sum, l) => sum + (l.score || 0), 0) / 
-          lessons.filter(l => l.score !== null).length
-        )
-      : null
+    // ✅ Use centralized calculation from API instead of local calculation
+    averageScore: averageScoreFromAPI
   };
 
   // Helper functions
@@ -420,7 +424,7 @@ export function StudentLessonsPage() {
             <span className="text-sm font-medium text-orange-900 dark:text-orange-300">{t.studentDashboard.averageScore}</span>
           </div>
           <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
-            {stats.averageScore !== null ? `${stats.averageScore}%` : 'N/A'}
+            {stats.averageScore > 0 ? `${stats.averageScore}%` : 'N/A'}
           </p>
         </div>
       </div>

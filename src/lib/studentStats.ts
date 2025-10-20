@@ -1,6 +1,6 @@
 // src/lib/studentStats.ts - API dla prawdziwych statystyk z bazy
 
-import { supabase } from './supabase';
+import { supabase, calculateStudentAverageScore } from './supabase';
 
 export interface StudentWithRealStats {
   id: string;
@@ -68,11 +68,8 @@ export async function getTutorStudentsWithRealStats(tutorId: string): Promise<St
         const totalMinutes = lessonStats?.reduce((acc, l) => acc + (l.time_spent || 0), 0) || 0;
         const totalHours = Math.round(totalMinutes / 60 * 10) / 10;
 
-        // Średni wynik tylko z ukończonych lekcji
-        const completedScores = lessonStats?.filter(l => l.score !== null && l.score > 0).map(l => l.score) || [];
-        const averageScore = completedScores.length > 0 
-          ? Math.round(completedScores.reduce((acc, score) => acc + score, 0) / completedScores.length)
-          : 0;
+        // ✅ Średni wynik używając scentralizowanej funkcji
+        const averageScore = await calculateStudentAverageScore(student.id);
 
         // Ostatnia aktywność
         const activities = lessonStats?.filter(l => l.completed_at || l.assigned_at)

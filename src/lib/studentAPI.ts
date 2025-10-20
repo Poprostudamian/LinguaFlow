@@ -1,6 +1,6 @@
 // src/lib/studentAPI.ts - ENHANCED VERSION of your working code
 import React from 'react';
-import { supabase } from './supabase';
+import { supabase, calculateStudentAverageScore } from './supabase';
 import { getStudentStats } from './supabase'; // Używamy istniejącego API
 
 export interface StudentLessonWithDetails {
@@ -286,20 +286,8 @@ export async function getStudentKPIsReal(studentId: string): Promise<StudentKPIs
       averageProgress: stats.average_progress
     };
 
-    // Oblicz średni score z ukończonych lekcji
-    if (stats.completed_lessons > 0) {
-      const { data: completedLessons } = await supabase
-        .from('student_lessons')
-        .select('score')
-        .eq('student_id', studentId)
-        .eq('status', 'completed')
-        .not('score', 'is', null);
-
-      if (completedLessons && completedLessons.length > 0) {
-        const totalScore = completedLessons.reduce((sum, lesson) => sum + (lesson.score || 0), 0);
-        kpis.averageScore = Math.round(totalScore / completedLessons.length);
-      }
-    }
+    // ✅ Oblicz średni score używając scentralizowanej funkcji
+    kpis.averageScore = await calculateStudentAverageScore(studentId);
 
     console.log('✅ [STUDENT API] Final KPIs:', kpis);
     return kpis;

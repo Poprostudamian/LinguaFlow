@@ -37,6 +37,7 @@ export interface StudentStats {
   in_progress_lessons: number;
   total_study_time_minutes: number;
   average_progress: number;
+  average_score: number; // ✅ ADDED: Average score from completed lessons with exercises
   last_activity: string | null;
 }
 
@@ -1185,11 +1186,13 @@ export interface StudentStats {
   in_progress_lessons: number;
   total_study_time_minutes: number;
   average_progress: number;
+  average_score: number; // ✅ ADDED: Average score from completed lessons with exercises
   last_activity: string | null;
 }
 
 /**
  * Get comprehensive stats for a student
+ * ✅ UPDATED: Now includes average_score using centralized calculation
  */
 export const getStudentStats = async (studentId: string): Promise<StudentStats> => {
   try {
@@ -1224,12 +1227,15 @@ export const getStudentStats = async (studentId: string): Promise<StudentStats> 
     const totalStudyTimeMinutes = lessons.reduce((sum, l) => sum + l.progress, 0);
 
     // Find last activity
-    const lastActivity = lessons.length > 0 
+    const lastActivity = lessons.length > 0
       ? lessons
           .map(l => l.updated_at)
           .sort()
           .reverse()[0]
       : null;
+
+    // ✅ Calculate average score using centralized function
+    const averageScore = await calculateStudentAverageScore(studentId);
 
     return {
       student_id: studentId,
@@ -1238,6 +1244,7 @@ export const getStudentStats = async (studentId: string): Promise<StudentStats> 
       in_progress_lessons: inProgressLessons,
       total_study_time_minutes: totalStudyTimeMinutes,
       average_progress: averageProgress,
+      average_score: averageScore,
       last_activity: lastActivity
     };
 
@@ -2614,6 +2621,52 @@ export const calculateLessonScore = async (studentId: string, lessonId: string):
 };
 
 /**
+ * Calculate student's average score across all completed lessons
+ * ✅ CENTRALIZED: Single source of truth for average score calculation
+ * This function uses calculateLessonScore() to ensure consistency across the app
+ *
+ * @param studentId - The student's UUID
+ * @returns Average score (0-100) or 0 if no completed lessons with exercises
+ */
+export const calculateStudentAverageScore = async (studentId: string): Promise<number> => {
+  try {
+    // Get all completed lessons for the student
+    const { data: completedLessons, error } = await supabase
+      .from('student_lessons')
+      .select('lesson_id')
+      .eq('student_id', studentId)
+      .eq('status', 'completed');
+
+    if (error) throw error;
+
+    if (!completedLessons || completedLessons.length === 0) {
+      return 0; // No completed lessons
+    }
+
+    // Calculate score for each completed lesson
+    let totalScore = 0;
+    let scoredLessonsCount = 0;
+
+    for (const lesson of completedLessons) {
+      const scoreCalc = await calculateLessonScore(studentId, lesson.lesson_id);
+
+      // Only count lessons that have exercises
+      if (scoreCalc.total_exercises > 0) {
+        totalScore += scoreCalc.final_score;
+        scoredLessonsCount++;
+      }
+    }
+
+    // Return average score, or 0 if no lessons had exercises
+    return scoredLessonsCount > 0 ? Math.round(totalScore / scoredLessonsCount) : 0;
+
+  } catch (error) {
+    console.error('Error calculating student average score:', error);
+    return 0;
+  }
+};
+
+/**
  * Get comprehensive and accurate student metrics
  * ✅ ENHANCED: Unified calculation for all student statistics
  */
@@ -2652,19 +2705,8 @@ export const getStudentMetrics = async (studentId: string): Promise<StudentMetri
       ? Math.round(lessons.reduce((sum, l) => sum + (l.progress || 0), 0) / totalLessons)
       : 0;
 
-    // Calculate accurate average score for completed lessons
-    let totalScore = 0;
-    let scoredLessonsCount = 0;
-
-    for (const lesson of lessons.filter(l => l.status === 'completed')) {
-      const scoreCalc = await calculateLessonScore(studentId, lesson.lesson_id);
-      if (scoreCalc.total_exercises > 0) {
-        totalScore += scoreCalc.final_score;
-        scoredLessonsCount++;
-      }
-    }
-
-    const averageScore = scoredLessonsCount > 0 ? Math.round(totalScore / scoredLessonsCount) : 0;
+    // ✅ Calculate accurate average score using centralized function
+    const averageScore = await calculateStudentAverageScore(studentId);
 
     // Study time calculation
     const totalTimeMinutes = lessons.reduce((sum, l) => sum + (l.time_spent || 0), 0);
