@@ -1,98 +1,73 @@
-// src/pages/StudentLessonsPage.tsx - Z PEŁNYMI TŁUMACZENIAMI
+// src/pages/StudentLessonsPage.tsx - Updated for consistent score calculation
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Search, 
-  BookOpen, 
-  Clock, 
-  CheckCircle,
-  PlayCircle,
-  RefreshCw,
-  AlertCircle,
+import {
+  BookOpen,
+  Search,
+  Filter,
+  Clock,
   User,
+  Play,
+  CheckCircle,
+  AlertCircle,
   Zap,
   TrendingUp,
   Award,
-  Grid3x3,
-  List,
-  Filter,
-  ChevronDown,
-  Star,
-  Target,
-  Calendar
+  Calendar,
+  BarChart3
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useLanguage } from '../contexts/LanguageContext'; // ← DODANE
-import { getStudentLessons, getStudentStats } from '../lib/supabase';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getStudentLessons } from '../lib/supabase';
 
 interface StudentLessonData {
   id: string;
   student_id: string;
   lesson_id: string;
   assigned_at: string;
-  started_at: string | null;
-  completed_at: string | null;
   status: 'assigned' | 'in_progress' | 'completed';
   progress: number;
   score: number | null;
-  time_spent: number;
   lessons: {
     id: string;
     title: string;
     description: string | null;
-    content: string;
-    created_at: string;
     users: {
       first_name: string;
       last_name: string;
-      email: string;
     };
   };
 }
 
-type ViewMode = 'grid' | 'list';
-type TabFilter = 'all' | 'assigned' | 'in_progress' | 'completed';
-type SortOption = 'recent' | 'progress' | 'score' | 'alphabetical';
-
 export function StudentLessonsPage() {
   const navigate = useNavigate();
   const { session } = useAuth();
-  const { t } = useLanguage(); // ← DODANE
+  const { t } = useLanguage();
   
-  // State
   const [lessons, setLessons] = useState<StudentLessonData[]>([]);
-  const [averageScoreFromAPI, setAverageScoreFromAPI] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [tabFilter, setTabFilter] = useState<TabFilter>('all');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [sortBy, setSortBy] = useState<SortOption>('recent');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('recent');
 
-  // Load lessons and stats
   useEffect(() => {
     if (session?.user?.id) {
-      loadStudentLessons();
+      loadLessons();
     }
   }, [session?.user?.id]);
 
-  const loadStudentLessons = async () => {
+  const loadLessons = async () => {
     if (!session?.user?.id) return;
 
     try {
       setIsLoading(true);
       setError(null);
-
-      // ✅ Load both lessons and stats in parallel for consistency
-      const [lessonsData, statsData] = await Promise.all([
-        getStudentLessons(session.user.id),
-        getStudentStats(session.user.id)
-      ]);
-
+      const lessonsData = await getStudentLessons(session.user.id);
       setLessons(lessonsData);
-      setAverageScoreFromAPI(statsData.average_score);
     } catch (err: any) {
+      console.error('Error loading lessons:', err);
       setError(err.message || 'Failed to load lessons');
     } finally {
       setIsLoading(false);
@@ -101,9 +76,9 @@ export function StudentLessonsPage() {
 
   // Filter and sort lessons
   const filteredLessons = lessons
-    .filter(lesson => {
-      // Tab filter
-      if (tabFilter !== 'all' && lesson.status !== tabFilter) {
+    .filter((lesson) => {
+      // Status filter
+      if (statusFilter !== 'all' && lesson.status !== statusFilter) {
         return false;
       }
 
@@ -135,17 +110,22 @@ export function StudentLessonsPage() {
       }
     });
 
-  // Calculate stats
+  // ✅ FIXED: Calculate stats with proper score handling
   const stats = {
     total: lessons.length,
     completed: lessons.filter(l => l.status === 'completed').length,
     inProgress: lessons.filter(l => l.status === 'in_progress').length,
     assigned: lessons.filter(l => l.status === 'assigned').length,
-    averageProgress: lessons.length > 0
+    averageProgress: lessons.length > 0 
       ? Math.round(lessons.reduce((sum, l) => sum + l.progress, 0) / lessons.length)
       : 0,
-    // ✅ Use centralized calculation from API instead of local calculation
-    averageScore: averageScoreFromAPI
+    // ✅ FIXED: Only calculate average score from completed lessons with actual scores
+    averageScore: (() => {
+      const completedWithScores = lessons.filter(l => l.status === 'completed' && l.score !== null);
+      return completedWithScores.length > 0
+        ? Math.round(completedWithScores.reduce((sum, l) => sum + (l.score || 0), 0) / completedWithScores.length)
+        : null;
+    })()
   };
 
   // Helper functions
@@ -157,7 +137,7 @@ export function StudentLessonsPage() {
     });
   };
 
-  // Helper function to get status config - ZAMIENIONE NA TŁUMACZENIA
+  // Helper function to get status config
   const getStatusConfig = (status: string) => {
     switch (status) {
       case 'assigned':
@@ -207,9 +187,11 @@ export function StudentLessonsPage() {
           <div
             className={`h-full bg-gradient-to-r ${
               lesson.status === 'completed'
-                ? 'from-green-500 to-green-600'
-                : 'from-purple-500 to-blue-500'
-            } transition-all duration-500`}
+                ? 'from-green-500 to-emerald-500'
+                : lesson.status === 'in_progress'
+                ? 'from-purple-500 to-purple-600'
+                : 'from-blue-500 to-blue-600'
+            }`}
             style={{ width: `${lesson.progress}%` }}
           />
         </div>
@@ -218,346 +200,245 @@ export function StudentLessonsPage() {
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-2">
-                <span className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>
-                  <StatusIcon className="h-3 w-3" />
-                  <span>{statusConfig.label}</span>
-                </span>
-                {lesson.score !== null && (
-                  <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
-                    <Star className="h-3 w-3" />
-                    <span>{lesson.score}%</span>
-                  </span>
-                )}
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                 {lesson.lessons.title}
               </h3>
-              {lesson.lessons.description && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                  {lesson.lessons.description}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Tutor & Date Info */}
-          <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
-            <div className="flex items-center space-x-1">
-              <User className="h-4 w-4" />
-              <span>{lesson.lessons.users.first_name} {lesson.lessons.users.last_name}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Calendar className="h-4 w-4" />
-              <span>{formatDate(lesson.assigned_at)}</span>
-            </div>
-          </div>
-
-          {/* Progress Info */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-1 text-sm">
-                <Target className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {lesson.progress}% {t.lessonViewer.complete}
+              <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                <User className="h-4 w-4" />
+                <span>
+                  {lesson.lessons.users.first_name} {lesson.lessons.users.last_name}
                 </span>
               </div>
-            </div>
-          </div>
-
-          {/* Action Button */}
-          <button
-            onClick={() => navigate(`/student/lessons/${lesson.lesson_id}`)}
-            className={`w-full bg-gradient-to-r ${statusConfig.actionColor} text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 hover:shadow-md hover:scale-105`}
-          >
-            <PlayCircle className="h-4 w-4" />
-            <span>{statusConfig.action}</span>
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  // List Item Component
-  const LessonListItem = ({ lesson }: { lesson: StudentLessonData }) => {
-    const statusConfig = getStatusConfig(lesson.status);
-    const StatusIcon = statusConfig.icon;
-
-    return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-600 transition-all cursor-pointer">
-        <div className="flex items-center space-x-4">
-          {/* Progress Circle */}
-          <div className="relative flex-shrink-0">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 flex items-center justify-center">
-              <span className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                {lesson.progress}%
-              </span>
-            </div>
-          </div>
-
-          {/* Lesson Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center space-x-2 mb-1">
-              <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                {lesson.lessons.title}
-              </h3>
-              <span className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}>
-                <StatusIcon className="h-3 w-3" />
-                <span>{statusConfig.label}</span>
-              </span>
-              {lesson.score !== null && (
-                <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
-                  <Star className="h-3 w-3" />
-                  <span>{lesson.score}%</span>
-                </span>
-              )}
             </div>
             
-            <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-              <div className="flex items-center space-x-1">
-                <User className="h-3.5 w-3.5" />
-                <span>{lesson.lessons.users.first_name} {lesson.lessons.users.last_name}</span>
+            {/* Status Badge */}
+            <div className={`px-3 py-1 rounded-full text-xs font-medium ${statusConfig.color} flex items-center space-x-1`}>
+              <StatusIcon className="h-3 w-3" />
+              <span>{statusConfig.label}</span>
+            </div>
+          </div>
+
+          {/* Description */}
+          {lesson.lessons.description && (
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
+              {lesson.lessons.description}
+            </p>
+          )}
+
+          {/* Progress and Score */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                {lesson.progress}%
               </div>
-              <div className="flex items-center space-x-1">
-                <Calendar className="h-3.5 w-3.5" />
-                <span>{formatDate(lesson.assigned_at)}</span>
+              <div className="text-xs text-gray-600 dark:text-gray-400">
+                Progress
               </div>
             </div>
-
-            {/* Progress Bar */}
-            <div className="mt-2 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className={`h-full bg-gradient-to-r ${
-                  lesson.status === 'completed'
-                    ? 'from-green-500 to-green-600'
-                    : 'from-purple-500 to-blue-500'
-                }`}
-                style={{ width: `${lesson.progress}%` }}
-              />
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                {/* ✅ FIXED: Show actual score for completed lessons, progress for others */}
+                {lesson.status === 'completed' && lesson.score !== null 
+                  ? `${lesson.score}%` 
+                  : lesson.status === 'completed' 
+                    ? 'N/A'
+                    : `${lesson.progress}%`
+                }
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">
+                {lesson.status === 'completed' ? 'Score' : 'Progress'}
+              </div>
             </div>
           </div>
 
           {/* Action Button */}
           <button
-            onClick={() => navigate(`/student/lessons/${lesson.lesson_id}`)}
-            className={`px-6 py-2 bg-gradient-to-r ${statusConfig.actionColor} text-white font-medium rounded-lg transition-all duration-200 hover:shadow-md hover:scale-105 flex-shrink-0`}
+            onClick={() => {
+              if (lesson.status === 'completed') {
+                navigate(`/student/lesson/${lesson.lesson_id}/history`);
+              } else {
+                navigate(`/student/lesson/${lesson.lesson_id}`);
+              }
+            }}
+            className={`w-full bg-gradient-to-r ${statusConfig.actionColor} text-white py-3 px-4 rounded-lg hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 font-medium`}
           >
-            {statusConfig.action}
+            <StatusIcon className="h-4 w-4" />
+            <span>{statusConfig.action}</span>
           </button>
+
+          {/* Assignment Date */}
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex items-center space-x-1">
+                <Calendar className="h-3 w-3" />
+                <span>Assigned {formatDate(lesson.assigned_at)}</span>
+              </div>
+              {lesson.status === 'completed' && lesson.score && (
+                <div className="flex items-center space-x-1">
+                  <Award className="h-3 w-3" />
+                  <span>Score: {lesson.score}%</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );
   };
 
+  // Loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+          <span className="text-gray-600 dark:text-gray-300">Loading lessons...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <RefreshCw className="h-12 w-12 animate-spin text-purple-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">{t.common.loading}</p>
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error Loading Lessons</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+          <button
+            onClick={loadLessons}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {t.lessons.myLessons}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {t.studentDashboard.progress}
-          </p>
-        </div>
-
-        <button
-          onClick={loadStudentLessons}
-          className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
-        >
-          <RefreshCw className="h-4 w-4" />
-          <span>{t.common.loading}</span>
-        </button>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          {t.lessons.myLessons}
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          Track your progress and continue learning
+        </p>
       </div>
 
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center space-x-2">
-            <AlertCircle className="h-5 w-5 text-red-600" />
-            <p className="text-red-600 dark:text-red-300">{error}</p>
+            <BookOpen className="h-5 w-5 text-blue-600" />
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total</span>
           </div>
+          <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</div>
         </div>
-      )}
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            <span className="text-sm font-medium text-blue-900 dark:text-blue-300">{t.lessons.assignedLessons}</span>
+        
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="flex items-center space-x-2">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Completed</span>
           </div>
-          <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.assigned}</p>
+          <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.completed}</div>
         </div>
-
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <Zap className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-            <span className="text-sm font-medium text-purple-900 dark:text-purple-300">{t.lessons.inProgress}</span>
+        
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="flex items-center space-x-2">
+            <Zap className="h-5 w-5 text-purple-600" />
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">In Progress</span>
           </div>
-          <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{stats.inProgress}</p>
+          <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.inProgress}</div>
         </div>
-
-        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-            <span className="text-sm font-medium text-green-900 dark:text-green-300">{t.lessons.completed}</span>
+        
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="flex items-center space-x-2">
+            <TrendingUp className="h-5 w-5 text-orange-600" />
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Progress</span>
           </div>
-          <p className="text-2xl font-bold text-green-900 dark:text-green-100">{stats.completed}</p>
+          <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.averageProgress}%</div>
         </div>
-
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <TrendingUp className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-            <span className="text-sm font-medium text-orange-900 dark:text-orange-300">{t.studentDashboard.averageScore}</span>
+        
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="flex items-center space-x-2">
+            <BarChart3 className="h-5 w-5 text-green-600" />
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Score</span>
           </div>
-          <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
-            {stats.averageScore}%
-          </p>
+          <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+            {/* ✅ FIXED: Show actual average score or N/A */}
+            {stats.averageScore !== null ? `${stats.averageScore}%` : 'N/A'}
+          </div>
         </div>
       </div>
 
-      {/* Filters and Controls */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
-          {/* Search */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+      {/* Filters and Search */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        {/* Search */}
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
+              placeholder="Search lessons..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={t.students.searchStudents}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
           </div>
+        </div>
 
-          {/* Filters */}
-          <div className="flex items-center space-x-2">
-            {/* Tab Filters */}
-            <div className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-              <button
-                onClick={() => setTabFilter('all')}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  tabFilter === 'all'
-                    ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                {t.students.allLevels}
-              </button>
-              <button
-                onClick={() => setTabFilter('assigned')}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  tabFilter === 'assigned'
-                    ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                {t.lessons.notStarted}
-              </button>
-              <button
-                onClick={() => setTabFilter('in_progress')}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  tabFilter === 'in_progress'
-                    ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                {t.lessons.inProgress}
-              </button>
-              <button
-                onClick={() => setTabFilter('completed')}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  tabFilter === 'completed'
-                    ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                {t.lessons.completed}
-              </button>
-            </div>
+        {/* Status Filter */}
+        <div className="flex items-center space-x-2">
+          <Filter className="h-4 w-4 text-gray-400" />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          >
+            <option value="all">All Status</option>
+            <option value="assigned">Not Started</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === 'grid'
-                    ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400'
-                }`}
-              >
-                <Grid3x3 className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === 'list'
-                    ? 'bg-white dark:bg-gray-600 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400'
-                }`}
-              >
-                <List className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
+        {/* Sort */}
+        <div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          >
+            <option value="recent">Most Recent</option>
+            <option value="alphabetical">Alphabetical</option>
+            <option value="progress">Progress</option>
+            <option value="score">Score</option>
+          </select>
         </div>
       </div>
 
-      {/* Lessons Display */}
+      {/* Lessons Grid */}
       {filteredLessons.length > 0 ? (
-        viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredLessons.map(lesson => (
-              <LessonCard key={lesson.id} lesson={lesson} />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredLessons.map(lesson => (
-              <LessonListItem key={lesson.id} lesson={lesson} />
-            ))}
-          </div>
-        )
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredLessons.map((lesson) => (
+            <LessonCard key={lesson.id} lesson={lesson} />
+          ))}
+        </div>
       ) : (
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 p-12 text-center">
-          <div className="max-w-md mx-auto">
-            <div className="bg-gray-100 dark:bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="h-8 w-8 text-gray-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              {searchTerm || tabFilter !== 'all' ? t.lessons.noLessons : t.studentDashboard.noLessons}
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {searchTerm || tabFilter !== 'all'
-                ? t.common.filter
-                : t.lessons.noLessons}
-            </p>
-            {(searchTerm || tabFilter !== 'all') && (
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setTabFilter('all');
-                }}
-                className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-200 hover:shadow-lg"
-              >
-                {t.common.filter}
-              </button>
-            )}
-          </div>
+        <div className="text-center py-12">
+          <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            {lessons.length === 0 ? t.lessons.noLessons : 'No lessons found'}
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400">
+            {lessons.length === 0 
+              ? 'Contact your tutor to get started with your first lesson.'
+              : 'Try adjusting your search or filter criteria.'
+            }
+          </p>
         </div>
       )}
     </div>
