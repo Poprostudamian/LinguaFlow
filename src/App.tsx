@@ -22,7 +22,7 @@ import { StudentLessonViewer } from './pages/StudentLessonViewer';
 import { StudentLessonHistory } from './pages/StudentLessonHistory';
 import { StudentSchedulePage } from './pages/StudentSchedulePage';
 import { StudentMessagesPage } from './pages/StudentMessagesPage';
-import { TutorGradingPage } from './pages/TutorGradingPage'; // ✅ ADDED
+import { TutorGradingPage } from './pages/TutorGradingPage';
 
 function App() {
   return (
