@@ -171,7 +171,6 @@ export const translations = {
     lessonViewer: {
       backToLessons: 'Back to Lessons',
       lessonOverview: 'Lesson Overview',
-      exercises: 'Exercises',
       progress: 'Progress',
       complete: 'Complete',
       checkAnswer: 'Check Answer',
