@@ -36,8 +36,8 @@ import { supabase } from '../lib/supabase';
 import { useTutorStudents } from '../contexts/StudentsContext';
 import {
   getLessonsWithLockStatus,
-  checkLessonLockStatus,
-  getLessonEditPermissions
+  checkLessonLockStatus
+  // getLessonEditPermissions
 } from '../lib/supabase';
 
 // ============================================================================
