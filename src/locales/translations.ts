@@ -1395,15 +1395,15 @@ export const translations = {
       
       // Start Lesson Card
       readyToStart: 'Gotowy na rozpoczęcie tej lekcji?',
-      beginJourney: 'Rozpocznij swoją naukę już teraz',
+      beginJourney: 'Rozpocznij swoją edukacyjną podróż już teraz',
       startLesson: 'Rozpocznij lekcję',
       starting: 'Rozpoczynanie...',
       
       // Progress Stats
       yourProgress: 'Twój postęp',
-      timeSpent: 'Czas poświęcony',
+      timeSpent: 'Spędzony czas',
       minutes: 'min',
-      startedOn: 'Rozpoczęta',
+      startedOn: 'Rozpoczęto',
       
       // Lesson Content
       lessonContent: 'Treść lekcji',
@@ -1419,7 +1419,7 @@ export const translations = {
       
       // Completed Lesson
       lessonCompleted: 'Lekcja ukończona!',
-      completedMessage: 'Ukończyłeś już tę lekcję z wynikiem',
+      completedMessage: 'Już ukończyłeś tę lekcję z wynikiem',
       viewDetailsHistory: 'Zobacz szczegółowe wyniki i odpowiedzi w historii lekcji',
       viewHistory: 'Zobacz historię i wyniki',
       viewLessonHistory: 'Zobacz historię lekcji',
