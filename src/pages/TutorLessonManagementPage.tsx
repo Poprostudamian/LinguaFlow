@@ -32,13 +32,14 @@ import {
   Save
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+// import { supabase } from '../lib/supabase';
 import { useTutorStudents } from '../contexts/StudentsContext';
-import {
+import { 
+  supabase, 
   getLessonsWithLockStatus,
   checkLessonLockStatus,
   getLessonEditPermissions
-} from '../lib/supabase'; 
+} from '../lib/supabase';
  
 // ============================================================================
 // TYPES
