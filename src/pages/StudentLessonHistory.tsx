@@ -127,7 +127,7 @@ export function StudentLessonHistory() {
 
       // Get exercises for this lesson
       const { data: exercises, error: exercisesError } = await supabase
-        .from('exercises')
+        .from('lesson_exercises')
         .select('*')
         .eq('lesson_id', lessonId)
         .order('order_index', { ascending: true });
