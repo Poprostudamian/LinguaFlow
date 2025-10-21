@@ -76,143 +76,167 @@ export function StudentLessonHistory() {
   }, [lessonId, session?.user?.id]);
 
   const loadLessonHistory = async () => {
-    if (!lessonId || !session?.user?.id) return;
+  if (!lessonId || !session?.user?.id) return;
 
-    try {
-      setIsLoading(true);
-      setError(null);
+  try {
+    setIsLoading(true);
+    setError(null);
 
-      console.log('📖 Loading lesson history for:', { lessonId, studentId: session.user.id });
+    console.log('📖 Loading lesson history for:', { lessonId, studentId: session.user.id });
 
-      // ✅ FIXED: First check if student_lesson exists at all (any status)
-      const { data: studentLessonCheck, error: checkError } = await supabase
-        .from('student_lessons')
-        .select('*')
-        .eq('lesson_id', lessonId)
-        .eq('student_id', session.user.id);
+    // ✅ FIXED: First check if student_lesson exists at all (any status)
+    const { data: studentLessonCheck, error: checkError } = await supabase
+      .from('student_lessons')
+      .select('*')
+      .eq('lesson_id', lessonId)
+      .eq('student_id', session.user.id);
 
-      if (checkError) {
-        console.error('❌ Error checking student lesson:', checkError);
-        throw checkError;
-      }
+    if (checkError) {
+      console.error('❌ Error checking student lesson:', checkError);
+      throw checkError;
+    }
 
-      console.log('🎯 Student lesson check result:', studentLessonCheck);
+    console.log('🎯 Student lesson check result:', studentLessonCheck);
 
-      if (!studentLessonCheck || studentLessonCheck.length === 0) {
-        setError('This lesson is not assigned to you or does not exist.');
-        return;
-      }
+    if (!studentLessonCheck || studentLessonCheck.length === 0) {
+      setError('This lesson is not assigned to you or does not exist.');
+      return;
+    }
 
-      const studentLessonData = studentLessonCheck[0];
+    const studentLessonData = studentLessonCheck[0];
+    
+    // ✅ FIXED: Allow viewing history even if not completed (show progress)
+    if (studentLessonData.status !== 'completed') {
+      console.log('⚠️ Lesson not completed yet, showing current progress');
+      // You can still show the lesson but with a message that it's not completed yet
+    }
 
-      // Get lesson details with tutor info
-      const { data: lessonDetails, error: lessonError } = await supabase
-        .from('lessons')
-        .select(`
-          *,
-          users:tutor_id (
-            first_name,
-            last_name
-          )
-        `)
-        .eq('id', lessonId)
-        .single();
+    // Get lesson details with tutor info
+    const { data: lessonDetails, error: lessonError } = await supabase
+      .from('lessons')
+      .select(`
+        id,
+        title,
+        description,
+        users!lessons_tutor_id_fkey (
+          first_name,
+          last_name
+        )
+      `)
+      .eq('id', lessonId)
+      .single();
 
-      if (lessonError) {
-        console.error('❌ Error fetching lesson details:', lessonError);
-        throw lessonError;
-      }
+    if (lessonError) {
+      console.error('❌ Error loading lesson details:', lessonError);
+      throw lessonError;
+    }
 
-      console.log('📚 Lesson details:', lessonDetails);
+    console.log('📚 Lesson details:', lessonDetails);
 
-      // Get exercises for this lesson
-      const { data: exercises, error: exercisesError } = await supabase
-        .from('lesson_exercises')
+    // ✅ FIXED: Get exercises from correct table (try both tables for compatibility)
+    let exercises = [];
+    
+    // Try new table first
+    const { data: exercisesNew, error: exercisesNewError } = await supabase
+      .from('lesson_exercises')  // ✅ CORRECT TABLE NAME
+      .select('*')
+      .eq('lesson_id', lessonId)
+      .order('order_number');
+
+    if (!exercisesNewError && exercisesNew && exercisesNew.length > 0) {
+      exercises = exercisesNew;
+      console.log('✅ Found exercises in lesson_exercises:', exercises.length);
+    } else {
+      // Try old table as backup
+      const { data: exercisesOld, error: exercisesOldError } = await supabase
+        .from('lesson_exercises_old')
         .select('*')
         .eq('lesson_id', lessonId)
         .order('order_number');
 
-      if (exercisesError) {
-        console.error('❌ Error fetching exercises:', exercisesError);
-        throw exercisesError;
+      if (!exercisesOldError && exercisesOld) {
+        exercises = exercisesOld;
+        console.log('✅ Found exercises in lesson_exercises_old:', exercises.length);
+      } else {
+        console.log('⚠️ No exercises found in either table');
       }
+    }
 
-      console.log('🏃‍♂️ Exercises found:', exercises);
-
-      // Get student answers for these exercises
-      const exerciseIds = exercises.map(ex => ex.id);
-      const { data: studentAnswers, error: answersError } = await supabase
-        .from('student_answers')
+    // Get student's answers
+    let studentAnswers = [];
+    if (exercises.length > 0) {
+      const { data: answers, error: answersError } = await supabase
+        .from('student_exercise_answers')
         .select('*')
         .eq('student_id', session.user.id)
-        .in('exercise_id', exerciseIds);
+        .in('exercise_id', exercises.map(ex => ex.id));
 
-      if (answersError) {
-        console.error('❌ Error fetching student answers:', answersError);
-        throw answersError;
+      if (!answersError) {
+        studentAnswers = answers || [];
+        console.log('📝 Found student answers:', studentAnswers.length);
+      } else {
+        console.log('⚠️ Error loading answers (might be normal if no answers yet):', answersError);
       }
-
-      console.log('✏️ Student answers found:', studentAnswers);
-
-      // Create a map of exercise_id -> student_answer for easier lookup
-      const answersMap = new Map();
-      studentAnswers.forEach(answer => {
-        answersMap.set(answer.exercise_id, {
-          answer: answer.answer,
-          is_correct: answer.is_correct,
-          submitted_at: answer.submitted_at,
-          tutor_score: answer.tutor_score,
-          tutor_feedback: answer.tutor_feedback,
-          graded_by: answer.graded_by,
-          graded_at: answer.graded_at
-        });
-      });
-
-      const historyItem: LessonHistoryItem = {
-        id: studentLessonData.id,
-        lesson_id: studentLessonData.lesson_id,
-        completed_at: studentLessonData.completed_at || studentLessonData.updated_at || studentLessonData.assigned_at,
-        score: studentLessonData.score || 0,
-        time_spent: studentLessonData.time_spent || 0,
-        progress: studentLessonData.progress || 0,
-        lesson_title: lessonDetails.title,
-        lesson_description: lessonDetails.description || '',
-        tutor_name: `${lessonDetails.users.first_name} ${lessonDetails.users.last_name}`,
-        exercises_count: exercises.length,
-        exercises: exercises.map(exercise => {
-          const studentAnswer = answersMap.get(exercise.id);
-          
-          return {
-            id: exercise.id,
-            exercise_type: exercise.exercise_type,
-            title: exercise.title,
-            question: exercise.question,
-            correct_answer: exercise.correct_answer,
-            options: exercise.options ? 
-              (typeof exercise.options === 'string' ? JSON.parse(exercise.options) : exercise.options) : null,
-            explanation: exercise.explanation,
-            points: exercise.points || 1,
-            student_answer: studentAnswer?.answer || null,
-            is_correct: studentAnswer?.is_correct || false,
-            submitted_at: studentAnswer?.submitted_at || null,
-            tutor_score: studentAnswer?.tutor_score || null,
-            tutor_feedback: studentAnswer?.tutor_feedback || null,
-            graded_by: studentAnswer?.graded_by || null,
-            graded_at: studentAnswer?.graded_at || null
-          };
-        })
-      };
-
-      console.log('✅ Final lesson history:', historyItem);
-      setLessonHistory(historyItem);
-
-    } catch (err: any) {
-      console.error('❌ Error loading lesson history:', err);
-      setError(err.message || 'Failed to load lesson history');
-    } finally {
-      setIsLoading(false);
     }
-  };
+
+    // Create a map of exercise_id -> student answer
+    const answersMap = new Map();
+    studentAnswers.forEach(answer => {
+      answersMap.set(answer.exercise_id, {
+        answer: answer.answer,
+        is_correct: answer.is_correct,
+        submitted_at: answer.submitted_at,
+        tutor_score: answer.tutor_score,
+        tutor_feedback: answer.tutor_feedback,
+        graded_by: answer.graded_by,
+        graded_at: answer.graded_at
+      });
+    });
+
+    const historyItem: LessonHistoryItem = {
+      id: studentLessonData.id,
+      lesson_id: studentLessonData.lesson_id,
+      completed_at: studentLessonData.completed_at || studentLessonData.updated_at || studentLessonData.assigned_at,
+      score: studentLessonData.score || 0,
+      time_spent: studentLessonData.time_spent || 0,
+      progress: studentLessonData.progress || 0,
+      lesson_title: lessonDetails.title,
+      lesson_description: lessonDetails.description || '',
+      tutor_name: `${lessonDetails.users.first_name} ${lessonDetails.users.last_name}`,
+      exercises_count: exercises.length,
+      exercises: exercises.map(exercise => {
+        const studentAnswer = answersMap.get(exercise.id);
+        
+        return {
+          id: exercise.id,
+          exercise_type: exercise.exercise_type,
+          title: exercise.title,
+          question: exercise.question,
+          correct_answer: exercise.correct_answer,
+          options: exercise.options ? (typeof exercise.options === 'string' ? JSON.parse(exercise.options) : exercise.options) : null,
+          explanation: exercise.explanation,
+          points: exercise.points || 1,
+          student_answer: studentAnswer?.answer || null,
+          is_correct: studentAnswer?.is_correct || false,
+          submitted_at: studentAnswer?.submitted_at || null,
+          tutor_score: studentAnswer?.tutor_score || null,
+          tutor_feedback: studentAnswer?.tutor_feedback || null,
+          graded_by: studentAnswer?.graded_by || null,
+          graded_at: studentAnswer?.graded_at || null
+        };
+      })
+    };
+
+    console.log('✅ Final lesson history:', historyItem);
+    setLessonHistory(historyItem);
+
+  } catch (err: any) {
+    console.error('❌ Error loading lesson history:', err);
+    setError(err.message || 'Failed to load lesson history');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
