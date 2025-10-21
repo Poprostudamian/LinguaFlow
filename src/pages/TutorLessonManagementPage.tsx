@@ -34,6 +34,13 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useTutorStudents } from '../contexts/StudentsContext';
+import { 
+  LessonLockStatus, 
+  LessonEditPermissions,
+  LessonWithAssignments,
+  DatabaseLesson,
+  StudentLesson 
+} from '../types/lesson.types';
 
 // ============================================================================
 // TYPES
