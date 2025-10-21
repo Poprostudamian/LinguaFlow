@@ -44,7 +44,7 @@ export interface StudentStats {
   in_progress_lessons: number;
   total_study_time_minutes: number;
   average_progress: number;
-  average_score: number; // ✅ ADDED: Real average score from completed lessons
+  average_score: number;
   last_activity: string | null;
 }
 
