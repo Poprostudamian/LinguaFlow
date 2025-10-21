@@ -46,16 +46,7 @@ function App() {
                           <Routes>
                             <Route index element={<StudentDashboard />} />
                             <Route path="lessons" element={<StudentLessonsPage />} />
-                            {/* <Route path="lessons/:lessonId" element={<StudentLessonViewer />} />
-                            */}
-                            <Route path="lessons/:lessonId" element={
-  <div style={{padding: '50px', background: 'red', color: 'white', textAlign: 'center'}}>
-    <h1>🚨 DEBUG: Route działa!</h1>
-    <p>Lesson ID: {window.location.pathname.split('/').pop()}</p>
-    <p>Jeśli to widzisz, routing działa ale StudentLessonViewer nie</p>
-  </div>
-} />
-<Route path="lessons/:lessonId" element={<StudentLessonViewer />} />
+                            <Route path="lessons/:lessonId" element={<StudentLessonViewer />} />
                             <Route path="lessons/:lessonId/history" element={<StudentLessonHistory />} />
                             <Route path="schedule" element={<StudentSchedulePage />} />
                             <Route path="messages" element={<StudentMessagesPage />} />
