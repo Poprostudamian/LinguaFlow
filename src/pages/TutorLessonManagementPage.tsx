@@ -1073,6 +1073,17 @@ const unlockedLessons = filteredLessons.filter(lesson => !lesson.isLocked);
       return;
     }
 
+if (modalMode === 'edit' && currentLesson?.id) {
+    const permissions = await getLessonEditPermissions(currentLesson.id, session.user.id);
+    if (!permissions.canEdit) {
+      setToast({ 
+        type: 'error', 
+        message: permissions.reason || 'Cannot edit locked lesson' 
+      });
+      return;
+    }
+  }
+    
     setIsSubmitting(true);
 
     try {
