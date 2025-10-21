@@ -20,7 +20,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTutorStudents } from '../contexts/StudentsContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { TutorLessonCard } from '../components/TutorLessonCard';
-import { ExerciseBuilder } from '../components/ExerciseBuilder';
 import { 
   supabase, 
   getLessonsWithLockStatus,
