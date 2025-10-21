@@ -3182,7 +3182,6 @@ export const getLessonsWithLockStatus = async (tutorId: string): Promise<LessonW
           completedCount,
           assignedStudents,
           student_lessons: studentLessons,
-          // ✅ NEW: Lock status properties
           isLocked: lockStatus.isLocked,
           lockReason: lockStatus.lockReason,
           canEdit: lockStatus.canEdit,
