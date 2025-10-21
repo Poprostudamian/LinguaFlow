@@ -1,10 +1,7 @@
 // src/types/lesson.types.ts
-// ✅ NOWY PLIK: Definicje typów TypeScript dla systemu lekcji
 
 export type ExerciseType = 'multiple_choice' | 'flashcard' | 'text_answer';
-
 export type LessonStatus = 'draft' | 'published';
-
 export type StudentLessonStatus = 'assigned' | 'in_progress' | 'completed';
 
 // ============================================================================
