@@ -724,7 +724,7 @@ export function TutorLessonManagementPage() {
     setIsLoading(false);
   }
 };
-
+  
   // Load exercises for a lesson
   const loadExercises = async (lessonId: string) => {
     try {
@@ -776,6 +776,83 @@ export function TutorLessonManagementPage() {
       setExercises([]);
     }
   };
+
+  const handleEditLesson = async (lessonId: string) => {
+  if (!session?.user?.id) return;
+
+  try {
+    // Check if lesson is editable
+    const permissions = await getLessonEditPermissions(lessonId, session.user.id);
+    
+    if (!permissions.canEdit) {
+      setToast({ 
+        type: 'warning', 
+        message: permissions.reason || 'Cannot edit this lesson' 
+      });
+      return;
+    }
+
+    // Load lesson data for editing
+    const lesson = lessons.find(l => l.id === lessonId);
+    if (!lesson) {
+      setToast({ type: 'error', message: 'Lesson not found' });
+      return;
+    }
+
+    // Populate form and open modal
+    setLessonForm({
+      title: lesson.title,
+      description: lesson.description || '',
+      content: lesson.content || '',
+      status: lesson.status,
+      assignedStudentIds: lesson.assignedStudents || []
+    });
+
+    await loadExercises(lessonId);
+    setCurrentLesson(lesson);
+    setModalMode('edit');
+    setShowModal(true);
+
+  } catch (error) {
+    console.error('Error preparing lesson for edit:', error);
+    setToast({ type: 'error', message: 'Error loading lesson' });
+  }
+};
+
+// ✅ NOWA: Enhanced delete with lock check
+const handleDeleteLesson = async (lessonId: string) => {
+  if (!session?.user?.id) return;
+
+  try {
+    // Check if lesson can be deleted
+    const permissions = await getLessonEditPermissions(lessonId, session.user.id);
+    
+    if (!permissions.canDelete) {
+      setToast({ 
+        type: 'warning', 
+        message: permissions.reason || 'Cannot delete this lesson' 
+      });
+      return;
+    }
+
+    if (confirm('Are you sure you want to delete this lesson? This action cannot be undone.')) {
+      const { error } = await supabase
+        .from('lessons')
+        .delete()
+        .eq('id', lessonId)
+        .eq('tutor_id', session.user.id);
+
+      if (error) throw error;
+
+      setToast({ type: 'success', message: 'Lesson deleted successfully' });
+      loadLessons();
+    }
+
+  } catch (error) {
+    console.error('Error deleting lesson:', error);
+    setToast({ type: 'error', message: 'Error deleting lesson' });
+  }
+};
 
   // Filter lessons
   const filteredLessons = useMemo(() => {
