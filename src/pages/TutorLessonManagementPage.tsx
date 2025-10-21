@@ -854,6 +854,61 @@ const handleDeleteLesson = async (lessonId: string) => {
   }
 };
 
+const handleAssignStudents = async (lessonId: string, studentIds: string[]) => {
+  try {
+    // Check if lesson allows new assignments
+    const lesson = lessons.find(l => l.id === lessonId);
+    if (lesson?.isLocked) {
+      setToast({ 
+        type: 'warning', 
+        message: 'Cannot assign students to a locked lesson' 
+      });
+      return;
+    }
+
+    const assignments = studentIds.map(studentId => ({
+      lesson_id: lessonId,
+      student_id: studentId,
+      status: 'assigned' as const,
+      progress: 0,
+      score: null,
+      assigned_at: new Date().toISOString()
+    }));
+
+    const { error } = await supabase
+      .from('student_lessons')
+      .insert(assignments);
+
+    if (error) throw error;
+
+    setToast({ type: 'success', message: 'Students assigned successfully' });
+    loadLessons();
+
+  } catch (error) {
+    console.error('Error assigning students:', error);
+    setToast({ type: 'error', message: 'Error assigning students' });
+  }
+};
+
+const handleUnassignStudents = async (lessonId: string, studentIds: string[]) => {
+  try {
+    const { error } = await supabase
+      .from('student_lessons')
+      .delete()
+      .eq('lesson_id', lessonId)
+      .in('student_id', studentIds);
+
+    if (error) throw error;
+
+    setToast({ type: 'success', message: 'Students unassigned successfully' });
+    loadLessons();
+
+  } catch (error) {
+    console.error('Error unassigning students:', error);
+    setToast({ type: 'error', message: 'Error unassigning students' });
+  }
+};  
+  
   // Filter lessons
   const filteredLessons = useMemo(() => {
     let filtered = lessons;
