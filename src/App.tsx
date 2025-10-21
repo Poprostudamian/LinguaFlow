@@ -1,4 +1,6 @@
 // src/App.tsx
+// ✅ FIXED: Dodano routing dla TutorGradingPage
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -21,7 +23,7 @@ import { StudentLessonViewer } from './pages/StudentLessonViewer';
 import { StudentLessonHistory } from './pages/StudentLessonHistory';
 import { StudentSchedulePage } from './pages/StudentSchedulePage';
 import { StudentMessagesPage } from './pages/StudentMessagesPage';
-import { TutorGradingPage } from './pages/TutorGradingPage';
+import { TutorGradingPage } from './pages/TutorGradingPage'; // ✅ ADDED
 
 function App() {
   return (
@@ -36,7 +38,7 @@ function App() {
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<SignUp />} />
-                   
+                  
                   {/* Protected Routes with Layout */}
                   <Route path="/" element={<Layout />}>
                     <Route 
@@ -84,4 +86,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;
