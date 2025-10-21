@@ -2089,7 +2089,7 @@ export const translations = {
       footerAbout: 'O nas',
       footerBlog: 'Blog',
       footerContact: 'Kontakt',
-      
+       
       footerLegal: 'Prawne',
       footerPrivacy: 'Prywatność',
       footerTerms: 'Warunki',
