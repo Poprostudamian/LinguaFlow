@@ -709,48 +709,21 @@ export function TutorLessonManagementPage() {
   }, [session?.user?.id]);
 
   const loadLessons = async () => {
-    if (!session?.user?.id) return;
+  if (!session?.user?.id) return;
 
-    setIsLoading(true);
-    setError(null);
+  setIsLoading(true);
+  setError(null);
 
-    try {
-      const { data, error: lessonsError } = await supabase
-        .from('lessons')
-        .select('*')
-        .eq('tutor_id', session.user.id)
-        .order('updated_at', { ascending: false });
-
-      if (lessonsError) throw lessonsError;
-
-      const lessonsWithCounts = await Promise.all(
-        (data || []).map(async (lesson) => {
-          const { count: assignedCount } = await supabase
-            .from('student_lessons')
-            .select('*', { count: 'exact', head: true })
-            .eq('lesson_id', lesson.id);
-
-          const { count: completedCount } = await supabase
-            .from('student_lessons')
-            .select('*', { count: 'exact', head: true })
-            .eq('lesson_id', lesson.id)
-            .eq('status', 'completed');
-
-          return {
-            ...lesson,
-            assignedCount: assignedCount || 0,
-            completedCount: completedCount || 0
-          };
-        })
-      );
-
-      setLessons(lessonsWithCounts);
-    } catch (err: any) {
-      setError(err.message || t.tutorLessonManagementPage.errorLoading);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  try {
+    // ✅ NOWE: Użyj funkcji z lock status
+    const lessonsData = await getLessonsWithLockStatus(session.user.id);
+    setLessons(lessonsData);
+  } catch (err: any) {
+    setError(err.message || t.tutorLessonManagementPage.errorLoading);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Load exercises for a lesson
   const loadExercises = async (lessonId: string) => {
