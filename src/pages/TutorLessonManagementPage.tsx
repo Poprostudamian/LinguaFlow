@@ -10,6 +10,7 @@ import {
   Calendar,
   RefreshCw,
   AlertCircle,
+  AlertTriangle,
   Eye,
   Edit,
   Trash2,
@@ -29,7 +30,11 @@ import {
   Trash,
   ChevronDown,
   ChevronUp,
-  Save
+  Save,
+  Lock,
+  LockOpen,
+  Shield,
+  Info
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 // import { supabase } from '../lib/supabase';
