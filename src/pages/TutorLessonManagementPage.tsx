@@ -34,12 +34,12 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useTutorStudents } from '../contexts/StudentsContext';
-import {
-  getLessonsWithLockStatus,
-  checkLessonLockStatus
-  // getLessonEditPermissions
-} from '../lib/supabase';
-
+// import {
+//   getLessonsWithLockStatus,
+//   checkLessonLockStatus,
+//   getLessonEditPermissions
+// } from '../lib/supabase';
+ 
 // ============================================================================
 // TYPES
 // ============================================================================
