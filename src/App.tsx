@@ -44,15 +44,15 @@ function App() {
                       path="student/*" 
                       element={
                         <RouteGuard requiredRole="student">
-                          <Routes>
-                            <Route index element={<StudentDashboard />} />
-                            <Route path="lessons" element={<StudentLessonsPage />} />
-                            <Route path="lessons/:lessonId" element={<StudentLessonViewer />} />
-                            <Route path="lessons/:lessonId/history" element={<StudentLessonHistory />} />
-                            <Route path="schedule" element={<StudentSchedulePage />} />
-                            <Route path="messages" element={<StudentMessagesPage />} />
-                          </Routes>
-                        </RouteGuard>
+      <Routes>
+        <Route index element={<StudentDashboard />} />
+        <Route path="lessons" element={<StudentLessonsPage />} />
+        <Route path="lessons/:lessonId" element={<StudentLessonViewer />} />  {/* ← TA LINIA */}
+        <Route path="lessons/:lessonId/history" element={<StudentLessonHistory />} />
+        <Route path="schedule" element={<StudentSchedulePage />} />
+        <Route path="messages" element={<StudentMessagesPage />} />
+      </Routes>
+    </RouteGuard>
                       } 
                     />
                     
