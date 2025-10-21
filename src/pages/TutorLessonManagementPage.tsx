@@ -54,6 +54,10 @@ interface LessonWithAssignments {
   updated_at: string;
   assignedCount?: number;
   completedCount?: number;
+  isLocked?: boolean;
+  lockReason?: 'all_students_completed' | 'other';
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 type TabType = 'all' | 'published' | 'draft';
