@@ -955,6 +955,25 @@ const handleUnassignStudents = async (lessonId: string, studentIds: string[]) =>
     setShowModal(true);
   };
 
+const lockedLessons = filteredLessons.filter(lesson => lesson.isLocked);
+const unlockedLessons = filteredLessons.filter(lesson => !lesson.isLocked);
+
+{lockedLessons.length > 0 && (
+  <div className="mb-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+    <div className="flex items-start space-x-3">
+      <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+      <div>
+        <h3 className="text-sm font-medium text-amber-800 dark:text-amber-300">
+          Some lessons are locked
+        </h3>
+        <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">
+          Lessons become locked when all assigned students complete them. Unassign students to make changes.
+        </p>
+      </div>
+    </div>
+  </div>
+)}
+  
   const openViewModal = async (lesson: LessonWithAssignments) => {
     setModalMode('view');
     setCurrentLesson(lesson);
