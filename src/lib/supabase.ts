@@ -2994,36 +2994,19 @@ export const getTutorStudentsWithMetrics = async (tutorId: string) => {
 
 /**
  * Check if a lesson should be locked from editing
- * A lesson is locked when ALL assigned students have completed it
  */
-export const checkLessonLockStatus = async (lessonId: string): Promise<{
-  isLocked: boolean;
-  lockReason?: 'all_students_completed' | 'no_students_assigned';
-  canEdit: boolean;
-  canDelete: boolean;
-  totalAssigned: number;
-  totalCompleted: number;
-  completionRate: number;
-}> => {
+export const checkLessonLockStatus = async (lessonId: string) => {
   try {
-    console.log('🔒 Checking lock status for lesson:', lessonId);
-
-    // Get all student assignments for this lesson
     const { data: studentLessons, error } = await supabase
       .from('student_lessons')
-      .select('student_id, status, completed_at')
+      .select('student_id, status')
       .eq('lesson_id', lessonId);
 
-    if (error) {
-      console.error('Error fetching student lessons:', error);
-      throw error;
-    }
+    if (error) throw error;
 
     if (!studentLessons || studentLessons.length === 0) {
-      // No students assigned - not locked, but should mention this
       return {
         isLocked: false,
-        lockReason: 'no_students_assigned',
         canEdit: true,
         canDelete: true,
         totalAssigned: 0,
@@ -3033,34 +3016,20 @@ export const checkLessonLockStatus = async (lessonId: string): Promise<{
     }
 
     const totalAssigned = studentLessons.length;
-    const completedLessons = studentLessons.filter(sl => sl.status === 'completed');
-    const totalCompleted = completedLessons.length;
-    const completionRate = Math.round((totalCompleted / totalAssigned) * 100);
-
-    // Lesson is locked if ALL students have completed it
-    const allStudentsCompleted = totalCompleted === totalAssigned && totalAssigned > 0;
-
-    console.log('📊 Lesson stats:', {
-      lessonId,
-      totalAssigned,
-      totalCompleted,
-      completionRate,
-      allStudentsCompleted
-    });
+    const totalCompleted = studentLessons.filter(sl => sl.status === 'completed').length;
+    const allCompleted = totalCompleted === totalAssigned && totalAssigned > 0;
 
     return {
-      isLocked: allStudentsCompleted,
-      lockReason: allStudentsCompleted ? 'all_students_completed' : undefined,
-      canEdit: !allStudentsCompleted,
-      canDelete: !allStudentsCompleted,
+      isLocked: allCompleted,
+      lockReason: allCompleted ? 'all_students_completed' : undefined,
+      canEdit: !allCompleted,
+      canDelete: !allCompleted,
       totalAssigned,
       totalCompleted,
-      completionRate
+      completionRate: Math.round((totalCompleted / totalAssigned) * 100)
     };
-
   } catch (error) {
     console.error('Error checking lesson lock status:', error);
-    // On error, default to not locked to prevent blocking legitimate edits
     return {
       isLocked: false,
       canEdit: true,
@@ -3073,121 +3042,96 @@ export const checkLessonLockStatus = async (lessonId: string): Promise<{
 };
 
 /**
- * Get detailed edit permissions for a lesson
+ * Get lesson edit permissions
  */
-export const getLessonEditPermissions = async (
-  lessonId: string, 
-  tutorId: string
-): Promise<{
-  canEdit: boolean;
-  canDelete: boolean;
-  canAssignStudents: boolean;
-  canUnassignStudents: boolean;
-  reason?: string;
-}> => {
+export const getLessonEditPermissions = async (lessonId: string, tutorId: string) => {
   try {
-    // First check if tutor owns this lesson
-    const { data: lesson, error: lessonError } = await supabase
+    const { data: lesson, error } = await supabase
       .from('lessons')
-      .select('tutor_id, status')
+      .select('tutor_id')
       .eq('id', lessonId)
       .single();
 
-    if (lessonError || !lesson) {
+    if (error || !lesson || lesson.tutor_id !== tutorId) {
       return {
         canEdit: false,
         canDelete: false,
         canAssignStudents: false,
         canUnassignStudents: false,
-        reason: 'Lesson not found or access denied'
+        reason: 'Access denied'
       };
     }
 
-    // Check ownership
-    if (lesson.tutor_id !== tutorId) {
-      return {
-        canEdit: false,
-        canDelete: false,
-        canAssignStudents: false,
-        canUnassignStudents: false,
-        reason: 'You do not have permission to edit this lesson'
-      };
-    }
-
-    // Check lock status
     const lockStatus = await checkLessonLockStatus(lessonId);
 
     if (lockStatus.isLocked) {
       return {
         canEdit: false,
         canDelete: false,
-        canAssignStudents: false, // Don't allow new assignments when locked
-        canUnassignStudents: true, // Allow unassigning to "unlock" the lesson
-        reason: `All ${lockStatus.totalAssigned} assigned students have completed this lesson. Unassign students to make changes.`
+        canAssignStudents: false,
+        canUnassignStudents: true,
+        reason: `All ${lockStatus.totalAssigned} students have completed this lesson. Unassign students to make changes.`
       };
     }
 
-    // Not locked - full permissions
     return {
       canEdit: true,
       canDelete: true,
       canAssignStudents: true,
       canUnassignStudents: true
     };
-
   } catch (error) {
-    console.error('Error getting lesson edit permissions:', error);
+    console.error('Error getting lesson permissions:', error);
     return {
       canEdit: false,
       canDelete: false,
       canAssignStudents: false,
       canUnassignStudents: false,
-      reason: 'Error checking lesson permissions'
+      reason: 'Error checking permissions'
     };
   }
 };
 
 /**
- * Enhanced function to get lessons with lock status included
+ * Get lessons with lock status - GŁÓWNA FUNKCJA
  */
-export const getLessonsWithLockStatus = async (tutorId: string): Promise<LessonWithAssignments[]> => {
+export const getLessonsWithLockStatus = async (tutorId: string) => {
   try {
-    console.log('📚 Fetching lessons with lock status for tutor:', tutorId);
+    console.log('📚 Getting lessons with lock status for tutor:', tutorId);
 
-    // Get lessons with student assignments
-    const { data: lessonsData, error: lessonsError } = await supabase
+    // KROK 1: Pobierz lekcje tutora
+    const { data: lessons, error: lessonsError } = await supabase
       .from('lessons')
-      .select(`
-        *,
-        student_lessons (
-          student_id,
-          status,
-          progress,
-          completed_at,
-          assigned_at
-        )
-      `)
+      .select('*')
       .eq('tutor_id', tutorId)
       .order('updated_at', { ascending: false });
 
-    if (lessonsError) {
-      console.error('Error fetching lessons:', lessonsError);
-      throw lessonsError;
-    }
+    if (lessonsError) throw lessonsError;
 
-    if (!lessonsData) {
+    if (!lessons || lessons.length === 0) {
       return [];
     }
 
-    // Process each lesson to add lock status
-    const lessonsWithLockStatus = await Promise.all(
-      lessonsData.map(async (lesson): Promise<any> => {
-        const studentLessons = lesson.student_lessons || [];
-        const assignedStudents = studentLessons.map(sl => sl.student_id);
-        const completedCount = studentLessons.filter(sl => sl.status === 'completed').length;
-        const assignedCount = studentLessons.length;
+    // KROK 2: Pobierz wszystkie przypisania dla tych lekcji
+    const lessonIds = lessons.map(l => l.id);
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('student_lessons')
+      .select('lesson_id, student_id, status, completed_at')
+      .in('lesson_id', lessonIds);
 
-        // Get lock status
+    if (assignmentsError) {
+      console.warn('Warning: Could not fetch assignments', assignmentsError);
+    }
+
+    // KROK 3: Dla każdej lekcji sprawdź status blokady
+    const lessonsWithLockStatus = await Promise.all(
+      lessons.map(async (lesson) => {
+        const lessonAssignments = (assignments || []).filter(a => a.lesson_id === lesson.id);
+        const assignedCount = lessonAssignments.length;
+        const completedCount = lessonAssignments.filter(a => a.status === 'completed').length;
+        const assignedStudents = lessonAssignments.map(a => a.student_id);
+
+        // Sprawdź status blokady
         const lockStatus = await checkLessonLockStatus(lesson.id);
 
         return {
@@ -3195,8 +3139,8 @@ export const getLessonsWithLockStatus = async (tutorId: string): Promise<LessonW
           assignedCount,
           completedCount,
           assignedStudents,
-          student_lessons: studentLessons,
-          // ✅ NEW: Lock status properties
+          student_lessons: lessonAssignments,
+          // ✅ Lock status properties
           isLocked: lockStatus.isLocked,
           lockReason: lockStatus.lockReason,
           canEdit: lockStatus.canEdit,
@@ -3205,7 +3149,7 @@ export const getLessonsWithLockStatus = async (tutorId: string): Promise<LessonW
       })
     );
 
-    console.log('✅ Fetched lessons with lock status:', lessonsWithLockStatus.length);
+    console.log('✅ Fetched', lessonsWithLockStatus.length, 'lessons with lock status');
     return lessonsWithLockStatus;
 
   } catch (error) {
