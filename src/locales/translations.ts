@@ -1244,7 +1244,6 @@ export const translations = {
     lessonViewer: {
       backToLessons: 'Powrót do Lekcji',
       lessonOverview: 'Przegląd Lekcji',
-      exercises: 'Ćwiczenia',
       progress: 'Postęp',
       complete: 'Zakończ',
       checkAnswer: 'Sprawdź Odpowiedź',
