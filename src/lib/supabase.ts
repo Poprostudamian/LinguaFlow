@@ -2514,6 +2514,69 @@ export interface LessonScoreCalculation {
 }
 
 /**
+ * Calculate accurate average score for a student based on completed lessons
+ * ✅ NEW: Proper score calculation considering both auto and tutor grading
+ */
+export const calculateStudentAverageScore = async (studentId: string): Promise<number> => {
+  try {
+    console.log(`📊 Calculating average score for student: ${studentId}`);
+
+    // Get all completed lessons for the student
+    const { data: completedLessons, error } = await supabase
+      .from('student_lessons')
+      .select('lesson_id, score')
+      .eq('student_id', studentId)
+      .eq('status', 'completed');
+
+    if (error) {
+      console.error('Error fetching completed lessons:', error);
+      throw error;
+    }
+
+    if (!completedLessons || completedLessons.length === 0) {
+      console.log(`No completed lessons found for student ${studentId}`);
+      return 0; // Return 0 when no completed lessons
+    }
+
+    // Calculate score for each completed lesson
+    let totalScore = 0;
+    let scoredLessonsCount = 0;
+
+    for (const lesson of completedLessons) {
+      // If lesson already has a calculated score, use it
+      if (lesson.score !== null && lesson.score !== undefined) {
+        totalScore += lesson.score;
+        scoredLessonsCount++;
+        continue;
+      }
+
+      // Otherwise, calculate score from exercises
+      const scoreCalc = await calculateLessonScore(studentId, lesson.lesson_id);
+
+      // Only count lessons that have exercises
+      if (scoreCalc.total_exercises > 0) {
+        totalScore += scoreCalc.final_score;
+        scoredLessonsCount++;
+      }
+    }
+
+    // Return average score, or 0 if no lessons had exercises
+    if (scoredLessonsCount === 0) {
+      console.log(`Student ${studentId} has completed lessons but none have exercises`);
+      return 0;
+    }
+
+    const averageScore = Math.round(totalScore / scoredLessonsCount);
+    console.log(`✅ Calculated average score for student ${studentId}: ${averageScore}% (${scoredLessonsCount} lessons)`);
+    return averageScore;
+
+  } catch (error) {
+    console.error('Error calculating student average score:', error);
+    return 0; // Return 0 on error to indicate no data available
+  }
+};
+
+/**
  * Calculate accurate lesson score based on exercise performance
  * ✅ NEW: Proper score calculation considering both auto and tutor grading
  */
@@ -2716,198 +2779,7 @@ export const getStudentMetrics = async (studentId: string): Promise<StudentMetri
   }
 };
 
-/**
- * Calculate accurate average score for a student based on completed lessons
- * ✅ NEW: Proper score calculation considering both auto and tutor grading
- */
-export const calculateStudentAverageScore = async (studentId: string): Promise<number> => {
-  try {
-    console.log(`📊 Calculating average score for student: ${studentId}`);
 
-    // Get all completed lessons for the student
-    const { data: completedLessons, error } = await supabase
-      .from('student_lessons')
-      .select('lesson_id, score')
-      .eq('student_id', studentId)
-      .eq('status', 'completed');
-
-    if (error) {
-      console.error('Error fetching completed lessons:', error);
-      throw error;
-    }
-
-    if (!completedLessons || completedLessons.length === 0) {
-      console.log(`No completed lessons found for student ${studentId}`);
-      return 0; // Return 0 when no completed lessons
-    }
-
-    // Calculate score for each completed lesson
-    let totalScore = 0;
-    let scoredLessonsCount = 0;
-
-    for (const lesson of completedLessons) {
-      // If lesson already has a calculated score, use it
-      if (lesson.score !== null && lesson.score !== undefined) {
-        totalScore += lesson.score;
-        scoredLessonsCount++;
-        continue;
-      }
-
-      // Otherwise, calculate score from exercises
-      const scoreCalc = await calculateLessonScore(studentId, lesson.lesson_id);
-
-      // Only count lessons that have exercises
-      if (scoreCalc.total_exercises > 0) {
-        totalScore += scoreCalc.final_score;
-        scoredLessonsCount++;
-      }
-    }
-
-    // Return average score, or 0 if no lessons had exercises
-    if (scoredLessonsCount === 0) {
-      console.log(`Student ${studentId} has completed lessons but none have exercises`);
-      return 0;
-    }
-
-    const averageScore = Math.round(totalScore / scoredLessonsCount);
-    console.log(`✅ Calculated average score for student ${studentId}: ${averageScore}% (${scoredLessonsCount} lessons)`);
-    return averageScore;
-
-  } catch (error) {
-    console.error('Error calculating student average score:', error);
-    return 0; // Return 0 on error to indicate no data available
-  }
-};
-
-/**
- * Calculate accurate lesson score based on exercise performance
- * ✅ Helper function for calculateStudentAverageScore
- */
-export const calculateLessonScore = async (studentId: string, lessonId: string): Promise<{
-  lesson_id: string;
-  total_exercises: number;
-  completed_exercises: number;
-  auto_graded_score: number;
-  tutor_graded_score: number;
-  final_score: number;
-  progress_percentage: number;
-}> => {
-  try {
-    // Get all exercises for this lesson
-    const { data: exercises, error: exercisesError } = await supabase
-      .from('lesson_exercises')
-      .select('*')
-      .eq('lesson_id', lessonId)
-      .order('order_number');
-
-    if (exercisesError) throw exercisesError;
-
-    const totalExercises = exercises?.length || 0;
-    
-    if (totalExercises === 0) {
-      return {
-        lesson_id: lessonId,
-        total_exercises: 0,
-        completed_exercises: 0,
-        auto_graded_score: 0,
-        tutor_graded_score: 0,
-        final_score: 0,
-        progress_percentage: 0
-      };
-    }
-
-    // Get student's answers for these exercises
-    const { data: answers, error: answersError } = await supabase
-      .from('student_exercise_answers')
-      .select('*')
-      .eq('student_id', studentId)
-      .in('exercise_id', exercises.map(ex => ex.id));
-
-    if (answersError) throw answersError;
-
-    const studentAnswers = answers || [];
-    const completedExercises = studentAnswers.length;
-
-    // Calculate scores
-    let autoGradedPoints = 0;
-    let autoGradedMaxPoints = 0;
-    let tutorGradedPoints = 0;
-    let tutorGradedMaxPoints = 0;
-
-    for (const exercise of exercises) {
-      const answer = studentAnswers.find(a => a.exercise_id === exercise.id);
-      const exercisePoints = exercise.points || 10;
-
-      if (!answer) {
-        // No answer submitted - counts as 0 points
-        if (exercise.exercise_type === 'text_answer') {
-          tutorGradedMaxPoints += exercisePoints;
-        } else {
-          autoGradedMaxPoints += exercisePoints;
-        }
-        continue;
-      }
-
-      if (exercise.exercise_type === 'text_answer') {
-        // Text answers: use tutor score if available, otherwise 0
-        tutorGradedMaxPoints += exercisePoints;
-        if (answer.tutor_score !== null && answer.tutor_score !== undefined) {
-          tutorGradedPoints += (answer.tutor_score / 100) * exercisePoints;
-        }
-      } else {
-        // Auto-graded exercises (multiple choice, flashcards)
-        autoGradedMaxPoints += exercisePoints;
-        if (answer.is_correct) {
-          autoGradedPoints += exercisePoints;
-        }
-      }
-    }
-
-    // Calculate percentage scores
-    const autoGradedScore = autoGradedMaxPoints > 0 ? (autoGradedPoints / autoGradedMaxPoints) * 100 : 0;
-    const tutorGradedScore = tutorGradedMaxPoints > 0 ? (tutorGradedPoints / tutorGradedMaxPoints) * 100 : 0;
-
-    // Calculate weighted final score
-    let finalScore = 0;
-    if (autoGradedMaxPoints > 0 && tutorGradedMaxPoints > 0) {
-      // Mixed: weight by points
-      const totalMaxPoints = autoGradedMaxPoints + tutorGradedMaxPoints;
-      const autoWeight = autoGradedMaxPoints / totalMaxPoints;
-      const tutorWeight = tutorGradedMaxPoints / totalMaxPoints;
-      finalScore = (autoGradedScore * autoWeight) + (tutorGradedScore * tutorWeight);
-    } else if (autoGradedMaxPoints > 0) {
-      // Only auto-graded
-      finalScore = autoGradedScore;
-    } else if (tutorGradedMaxPoints > 0) {
-      // Only tutor-graded
-      finalScore = tutorGradedScore;
-    }
-
-    const progressPercentage = (completedExercises / totalExercises) * 100;
-
-    return {
-      lesson_id: lessonId,
-      total_exercises: totalExercises,
-      completed_exercises: completedExercises,
-      auto_graded_score: Math.round(autoGradedScore),
-      tutor_graded_score: Math.round(tutorGradedScore),
-      final_score: Math.round(finalScore),
-      progress_percentage: Math.round(progressPercentage)
-    };
-
-  } catch (error) {
-    console.error('Error calculating lesson score:', error);
-    return {
-      lesson_id: lessonId,
-      total_exercises: 0,
-      completed_exercises: 0,
-      auto_graded_score: 0,
-      tutor_graded_score: 0,
-      final_score: 0,
-      progress_percentage: 0
-    };
-  }
-};
 
 /**
  * Update lesson progress and score when student completes exercises
