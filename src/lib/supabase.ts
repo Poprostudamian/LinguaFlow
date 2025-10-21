@@ -40,7 +40,6 @@ export interface StudentStats {
   in_progress_lessons: number;
   total_study_time_minutes: number;
   average_progress: number;
-  average_score: number; // ✅ ADDED: Real average score from completed lessons
   last_activity: string | null;
 }
 
@@ -1189,18 +1188,14 @@ export interface StudentStats {
   in_progress_lessons: number;
   total_study_time_minutes: number;
   average_progress: number;
-  average_score: number; // ✅ ADDED: Average score from completed lessons with exercises
   last_activity: string | null;
 }
 
 /**
  * Get comprehensive stats for a student
- * ✅ UPDATED: Now includes average_score using centralized calculation
  */
 export const getStudentStats = async (studentId: string): Promise<StudentStats> => {
   try {
-    console.log('📊 Calculating student stats for:', studentId);
-
     // Get lesson assignments and progress
     const { data: studentLessons, error } = await supabase
       .from('student_lessons')
@@ -1208,8 +1203,6 @@ export const getStudentStats = async (studentId: string): Promise<StudentStats> 
         lesson_id,
         status,
         progress,
-        score,
-        time_spent,
         assigned_at,
         completed_at,
         updated_at
@@ -1220,54 +1213,36 @@ export const getStudentStats = async (studentId: string): Promise<StudentStats> 
 
     const lessons = studentLessons || [];
     
-    // Calculate basic stats
+    // Calculate stats
     const totalLessons = lessons.length;
     const completedLessons = lessons.filter(l => l.status === 'completed').length;
     const inProgressLessons = lessons.filter(l => l.status === 'in_progress').length;
     
-    // Calculate average progress (percentage of lesson completion)
+    // Calculate average progress
     const averageProgress = totalLessons > 0 
-      ? Math.round(lessons.reduce((sum, l) => sum + (l.progress || 0), 0) / totalLessons)
+      ? Math.round(lessons.reduce((sum, l) => sum + l.progress, 0) / totalLessons)
       : 0;
 
-    // ✅ FIXED: Calculate REAL average score from completed lessons with actual scores
-    let averageScore = 0;
-    const completedLessonsWithScores = lessons.filter(l => 
-      l.status === 'completed' && l.score !== null && l.score !== undefined
-    );
-    
-    if (completedLessonsWithScores.length > 0) {
-      const totalScore = completedLessonsWithScores.reduce((sum, l) => sum + (l.score || 0), 0);
-      averageScore = Math.round(totalScore / completedLessonsWithScores.length);
-      console.log(`📈 Average Score calculation: ${totalScore} / ${completedLessonsWithScores.length} = ${averageScore}%`);
-    } else {
-      console.log('⚠️ No completed lessons with scores found');
-    }
-
-    // Calculate study time from time_spent field (in seconds, convert to minutes)
-    const totalStudyTimeMinutes = lessons.reduce((sum, l) => sum + Math.round((l.time_spent || 0) / 60), 0);
+    // Calculate study time (estimate: 1% progress = 1 minute)
+    const totalStudyTimeMinutes = lessons.reduce((sum, l) => sum + l.progress, 0);
 
     // Find last activity
     const lastActivity = lessons.length > 0 
       ? lessons
-          .map(l => l.updated_at || l.assigned_at)
+          .map(l => l.updated_at)
           .sort()
           .reverse()[0]
       : null;
 
-    const stats = {
+    return {
       student_id: studentId,
       total_lessons: totalLessons,
       completed_lessons: completedLessons,
       in_progress_lessons: inProgressLessons,
       total_study_time_minutes: totalStudyTimeMinutes,
       average_progress: averageProgress,
-      average_score: averageScore, // ✅ NOW USES REAL SCORES
       last_activity: lastActivity
     };
-
-    console.log('✅ Final student stats:', stats);
-    return stats;
 
   } catch (error) {
     console.error('Error fetching student stats:', error);
@@ -2642,63 +2617,6 @@ export const calculateLessonScore = async (studentId: string, lessonId: string):
 };
 
 /**
- * Calculate student's average score across all completed lessons
- * ✅ CENTRALIZED: Single source of truth for average score calculation
- * This function uses calculateLessonScore() to ensure consistency across the app
- *
- * @param studentId - The student's UUID
- * @returns Average score (0-100), or 0 if no data available (no completed lessons or no exercises)
- */
-export const calculateStudentAverageScore = async (studentId: string): Promise<number> => {
-  try {
-    // Get all completed lessons for the student
-    const { data: completedLessons, error } = await supabase
-      .from('student_lessons')
-      .select('lesson_id')
-      .eq('student_id', studentId)
-      .eq('status', 'completed');
-
-    if (error) {
-      console.error('Error fetching completed lessons:', error);
-      throw error;
-    }
-
-    if (!completedLessons || completedLessons.length === 0) {
-      console.log(`No completed lessons found for student ${studentId}`);
-      return 0; // Return 0 when no completed lessons
-    }
-
-    // Calculate score for each completed lesson
-    let totalScore = 0;
-    let scoredLessonsCount = 0;
-
-    for (const lesson of completedLessons) {
-      const scoreCalc = await calculateLessonScore(studentId, lesson.lesson_id);
-
-      // Only count lessons that have exercises
-      if (scoreCalc.total_exercises > 0) {
-        totalScore += scoreCalc.final_score;
-        scoredLessonsCount++;
-      }
-    }
-
-    // Return average score, or 0 if no lessons had exercises (no data available)
-    if (scoredLessonsCount === 0) {
-      console.log(`Student ${studentId} has completed lessons but none have exercises`);
-      return 0;
-    }
-
-    const averageScore = Math.round(totalScore / scoredLessonsCount);
-    console.log(`Calculated average score for student ${studentId}: ${averageScore}% (${scoredLessonsCount} lessons)`);
-    return averageScore;
-
-  } catch (error) {
-    console.error('Error calculating student average score:', error);
-    return 0; // Return 0 on error to indicate no data available
-  }
-};
-
-/**
  * Get comprehensive and accurate student metrics
  * ✅ ENHANCED: Unified calculation for all student statistics
  */
@@ -2737,8 +2655,19 @@ export const getStudentMetrics = async (studentId: string): Promise<StudentMetri
       ? Math.round(lessons.reduce((sum, l) => sum + (l.progress || 0), 0) / totalLessons)
       : 0;
 
-    // ✅ Calculate accurate average score using centralized function
-    const averageScore = await calculateStudentAverageScore(studentId);
+    // Calculate accurate average score for completed lessons
+    let totalScore = 0;
+    let scoredLessonsCount = 0;
+
+    for (const lesson of lessons.filter(l => l.status === 'completed')) {
+      const scoreCalc = await calculateLessonScore(studentId, lesson.lesson_id);
+      if (scoreCalc.total_exercises > 0) {
+        totalScore += scoreCalc.final_score;
+        scoredLessonsCount++;
+      }
+    }
+
+    const averageScore = scoredLessonsCount > 0 ? Math.round(totalScore / scoredLessonsCount) : 0;
 
     // Study time calculation
     const totalTimeMinutes = lessons.reduce((sum, l) => sum + (l.time_spent || 0), 0);
@@ -2753,9 +2682,8 @@ export const getStudentMetrics = async (studentId: string): Promise<StudentMetri
       : null;
 
     // Determine level based on average score (not progress)
-    // If averageScore is 0, treat as Beginner (no data available)
-    const currentLevel: 'Beginner' | 'Intermediate' | 'Advanced' =
-      averageScore >= 80 ? 'Advanced' :
+    const currentLevel: 'Beginner' | 'Intermediate' | 'Advanced' = 
+      averageScore >= 80 ? 'Advanced' : 
       averageScore >= 60 ? 'Intermediate' : 'Beginner';
 
     return {
