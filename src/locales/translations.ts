@@ -303,56 +303,56 @@ export const translations = {
 
     studentLessonViewer: {
       // Loading & Errors
-      loading: 'Loading lesson...',
-      error: 'Error',
-      lessonNotFound: 'Lesson not found',
-      backToLessons: 'Back to Lessons',
-      
-      // Header
-      byTutor: 'by',
-      exercises: 'exercises',
-      
-      // Status labels
-      statusNotStarted: 'Not Started',
-      statusInProgress: 'In Progress',
-      statusCompleted: 'Completed',
-      
-      // Start Lesson Card
-      readyToStart: 'Ready to start this lesson?',
-      beginJourney: 'Begin your learning journey now',
-      startLesson: 'Start Lesson',
-      starting: 'Starting...',
-      
-      // Progress Stats
-      yourProgress: 'Your Progress',
-      timeSpent: 'Time Spent',
-      minutes: 'min',
-      startedOn: 'Started on',
-      
-      // Lesson Content
-      lessonContent: 'Lesson Content',
-      
-      // Interactive Exercises
-      exercises: 'Interactive Exercises',
-      exercisesDescription: 'Complete all exercises to finish the lesson',
-      noExercises: 'No exercises available',
-      noExercisesDescription: 'This lesson doesn\'t have any exercises yet',
-      
-      // Completion
-      completing: 'Completing lesson...',
-      
-      // Completed Lesson
-      lessonCompleted: 'Lesson Completed!',
-      completedMessage: 'You\'ve already completed this lesson with a score of',
-      viewDetailsHistory: 'View your detailed results and answers in the lesson history',
-      viewHistory: 'View History & Results',
-      viewLessonHistory: 'View Lesson History',
-      
-      // Errors
-      errorLoadingLesson: 'Failed to load lesson details. Please try again.',
-      errorStartingLesson: 'Failed to start lesson. Please try again.',
-      errorCompletingLesson: 'Failed to complete lesson. Please try again.',
-    },
+  loading: 'Ładowanie lekcji...',
+  error: 'Błąd',
+  lessonNotFound: 'Nie znaleziono lekcji',
+  backToLessons: 'Powrót do lekcji',
+  
+  // Header
+  byTutor: 'prowadzący',
+  exercises: 'ćwiczenia',
+  
+  // Status labels
+  statusNotStarted: 'Nie rozpoczęta',
+  statusInProgress: 'W trakcie',
+  statusCompleted: 'Ukończona',
+  
+  // Start Lesson Card
+  readyToStart: 'Gotowy na rozpoczęcie tej lekcji?',
+  beginJourney: 'Rozpocznij swoją edukacyjną podróż już teraz',
+  startLesson: 'Rozpocznij lekcję',
+  starting: 'Rozpoczynanie...',
+  
+  // Progress Stats
+  yourProgress: 'Twój postęp',
+  timeSpent: 'Spędzony czas',
+  minutes: 'min',
+  startedOn: 'Rozpoczęto',
+  
+  // Lesson Content
+  lessonContent: 'Treść lekcji',
+  
+  // Interactive Exercises
+  exercises: 'Interaktywne ćwiczenia',
+  exercisesDescription: 'Ukończ wszystkie ćwiczenia aby zakończyć lekcję',
+  noExercises: 'Brak dostępnych ćwiczeń',
+  noExercisesDescription: 'Ta lekcja nie ma jeszcze żadnych ćwiczeń',
+  
+  // Completion
+  completing: 'Kończenie lekcji...',
+  
+  // Completed Lesson
+  lessonCompleted: 'Lekcja ukończona!',
+  completedMessage: 'Już ukończyłeś tę lekcję z wynikiem',
+  viewDetailsHistory: 'Zobacz szczegółowe wyniki i odpowiedzi w historii lekcji',
+  viewHistory: 'Zobacz historię i wyniki',
+  viewLessonHistory: 'Zobacz historię lekcji',
+  
+  // Errors
+  errorLoadingLesson: 'Nie udało się załadować szczegółów lekcji. Spróbuj ponownie.',
+  errorStartingLesson: 'Nie udało się rozpocząć lekcji. Spróbuj ponownie.',
+  errorCompletingLesson: 'Nie udało się ukończyć lekcji. Spróbuj ponownie.',
+},
 
     // Student Messages Page
     studentMessagesPage: {
