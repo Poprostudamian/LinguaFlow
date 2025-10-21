@@ -53,6 +53,7 @@ interface Exercise {
 }
 
 export function StudentLessonViewer() {
+  console.log('🔥 COMPONENT STARTED - THIS SHOULD ALWAYS SHOW');
   const { lessonId } = useParams();
   const navigate = useNavigate();
   const { session } = useAuth();
