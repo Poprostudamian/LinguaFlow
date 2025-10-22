@@ -854,102 +854,86 @@ const handleEditLesson = async (lessonId: string) => {
   }
 };
 
-const handleDeleteLesson = async (lessonId: string) => {
-  if (!session?.user?.id) return;
+/**
+ * ✅ NOWA: Bezpieczne przypisywanie studentów
+ */
+const handleAssignStudents = async (lessonId: string, studentIds: string[]) => {
+  if (!session?.user?.id || studentIds.length === 0) return;
 
   try {
-    console.log('🗑️ Attempting to delete lesson:', lessonId);
+    console.log('👥 Assigning students to lesson:', lessonId);
     
-    // ✅ KROK 1: Sprawdź uprawnienia
-    const permissions = await getLessonEditPermissions(lessonId, session.user.id);
-    
-    if (!permissions.canDelete) {
-      setToast({ 
-        type: 'error', 
-        message: permissions.reason || 'Cannot delete this lesson - all students have completed it.' 
-      });
-      return;
-    }
-
-    // ✅ KROK 2: Double-check z validateLessonOperation
-    const validation = await validateLessonOperation(lessonId, session.user.id, 'delete');
+    // ✅ Walidacja przed przypisaniem
+    const validation = await validateLessonOperation(lessonId, session.user.id, 'assign');
     if (!validation.allowed) {
       setToast({ 
         type: 'error', 
-        message: validation.reason || 'Cannot delete this lesson' 
+        message: validation.reason || 'Cannot assign students to this lesson' 
       });
-      return;
-    }
-
-    // ✅ KROK 3: Potwierdź z użytkownikiem
-    const lesson = lessons.find(l => l.id === lessonId);
-    const confirmMessage = lesson?.assignedCount 
-      ? `Delete "${lesson.title}"?\n\n⚠️ Warning: This lesson has ${lesson.assignedCount} student(s) assigned. All progress will be lost.\n\nThis action cannot be undone.`
-      : `Delete "${lesson?.title || 'this lesson'}"?\n\nThis action cannot be undone.`;
-    
-    if (!confirm(confirmMessage)) {
       return;
     }
 
     setIsLoading(true);
-    console.log('🔄 Deleting lesson...');
-
-    // ✅ KROK 4: Użyj bezpiecznej funkcji deleteLesson
-    await deleteLesson(lessonId, session.user.id);
-
-    // ✅ KROK 5: Odśwież listę
+    
+    // Użyj bezpiecznej funkcji z supabase.ts
+    await assignStudentsToLesson(lessonId, session.user.id, studentIds);
+    
     setToast({ 
       type: 'success', 
-      message: 'Lesson deleted successfully' 
+      message: `Successfully assigned ${studentIds.length} student(s)` 
     });
     
+    // Odśwież listę lekcji
     await loadLessons();
-    console.log('✅ Lesson deleted and list refreshed');
+    console.log('✅ Students assigned successfully');
 
   } catch (error: any) {
-    console.error('❌ Error deleting lesson:', error);
+    console.error('❌ Error assigning students:', error);
     setToast({ 
       type: 'error', 
-      message: error.message || 'Failed to delete lesson' 
+      message: error.message || 'Failed to assign students' 
     });
   } finally {
     setIsLoading(false);
   }
 };
 
-const handleAssignStudents = async (lessonId: string, studentIds: string[]) => {
+/**
+ * ✅ NOWA: Bezpieczne odpisywanie studentów (zawsze dozwolone - do odblokowania lekcji)
+ */
+const handleUnassignStudents = async (lessonId: string, studentIds: string[]) => {
+  if (!session?.user?.id || studentIds.length === 0) return;
+
   try {
-    // Check if lesson allows new assignments
-    const lesson = lessons.find(l => l.id === lessonId);
-    if (lesson?.isLocked) {
-      setToast({ 
-        type: 'warning', 
-        message: 'Cannot assign students to a locked lesson' 
-      });
+    console.log('🚫 Unassigning students from lesson:', lessonId);
+    
+    const confirmMessage = `Unassign ${studentIds.length} student(s) from this lesson?\n\n⚠️ All their progress will be lost.`;
+    if (!confirm(confirmMessage)) {
       return;
     }
 
-    const assignments = studentIds.map(studentId => ({
-      lesson_id: lessonId,
-      student_id: studentId,
-      status: 'assigned' as const,
-      progress: 0,
-      score: null,
-      assigned_at: new Date().toISOString()
-    }));
+    setIsLoading(true);
+    
+    // Użyj bezpiecznej funkcji (unassign zawsze dozwolone)
+    await unassignStudentsFromLesson(lessonId, session.user.id, studentIds);
+    
+    setToast({ 
+      type: 'success', 
+      message: `Successfully unassigned ${studentIds.length} student(s)` 
+    });
+    
+    // Odśwież listę
+    await loadLessons();
+    console.log('✅ Students unassigned successfully');
 
-    const { error } = await supabase
-      .from('student_lessons')
-      .insert(assignments);
-
-    if (error) throw error;
-
-    setToast({ type: 'success', message: 'Students assigned successfully' });
-    loadLessons();
-
-  } catch (error) {
-    console.error('Error assigning students:', error);
-    setToast({ type: 'error', message: 'Error assigning students' });
+  } catch (error: any) {
+    console.error('❌ Error unassigning students:', error);
+    setToast({ 
+      type: 'error', 
+      message: error.message || 'Failed to unassign students' 
+    });
+  } finally {
+    setIsLoading(false);
   }
 };
 
