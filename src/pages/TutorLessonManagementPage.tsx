@@ -1494,13 +1494,14 @@ if (modalMode === 'edit' && currentLesson?.id) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
           {filteredLessons.map(lesson => (
-  <EnhancedLessonCard
+  <TutorLessonCard
     key={lesson.id}
     lesson={lesson}
-    onView={handleViewLesson}
-    onEdit={handleEditLesson}
+    onEdit={() => handleEditLesson(lesson.id)}
+    onView={() => handleViewLesson(lesson)}
     onDelete={handleDeleteLesson}  // ✅ UPEWNIJ SIĘ ŻE TO JEST handleDeleteLesson
-    t={t}
+    onAssignStudents={handleAssignStudents}
+    onUnassignStudents={handleUnassignStudents}
   />
 ))}
         </div>
