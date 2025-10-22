@@ -743,7 +743,8 @@ export const updateLesson = async (
       ...lessonData,
       updated_at: new Date().toISOString()
     };
-
+  }
+};
 /**
  * Complete a lesson with score
  */
