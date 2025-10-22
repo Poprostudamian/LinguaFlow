@@ -3294,7 +3294,11 @@ console.log(`📊 Lesson ${lessonId} status:`, {
       canDelete: !allCompleted,
       totalAssigned,
       totalCompleted,
-      completionRate: Math.round((totalCompleted / totalAssigned) * 100)
+      completionRate: Math.round((totalCompleted / totalAssigned) * 100),
+      assignedStudents: studentLessons.map(sl => sl.student_id),
+      completedStudents: studentLessons
+        .filter(sl => sl.status === 'completed')
+        .map(sl => sl.student_id)
     };
   } catch (error) {
     console.error('Error checking lesson lock status:', error);
