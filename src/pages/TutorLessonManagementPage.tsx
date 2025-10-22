@@ -1516,10 +1516,10 @@ if (modalMode === 'edit' && currentLesson?.id) {
     key={lesson.id}
     lesson={lesson}
     onView={openViewModal}
-    onEdit={handleEditLesson}              // ✅ ZMIEŃ na handleEditLesson
-    onDelete={handleDeleteLesson}          // ✅ ZMIEŃ na handleDeleteLesson
-    onAssignStudents={handleAssignStudents}        // ✅ DODAJ
-    onUnassignStudents={handleUnassignStudents}    // ✅ DODAJ
+    onEdit={handleEditLesson}              
+    onDelete={handleDeleteLesson}          
+    onAssignStudents={handleAssignStudents}       
+    onUnassignStudents={handleUnassignStudents}   
     t={tPage}
   />
 ))}
