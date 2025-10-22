@@ -744,6 +744,7 @@ export const updateLesson = async (
       updated_at: new Date().toISOString()
     };
 }
+};
 /**
  * Complete a lesson with score
  */
