@@ -727,23 +727,47 @@ export const createLesson = async (tutorId: string, lessonData: CreateLessonData
 //   }
 // };
 
+/**
+ * Update an existing lesson with lock validation
+ */
 export const updateLesson = async (
   lessonId: string, 
-  tutorId: string,  // ✅ DODAJ ten parametr
+  tutorId: string,  // ✅ Parametr do walidacji uprawnień
   lessonData: UpdateLessonData
 ): Promise<Lesson> => {
   try {
-    // ✅ DODAJ walidację PRZED aktualizacją
+    // ✅ Walidacja PRZED aktualizacją - sprawdź czy lekcja nie jest zablokowana
     const validation = await validateLessonOperation(lessonId, tutorId, 'edit');
     if (!validation.allowed) {
       throw new Error(validation.reason || 'Cannot edit this lesson');
     }
-}
+
+    // Przygotuj dane do aktualizacji
     const updateData: any = {
       ...lessonData,
       updated_at: new Date().toISOString()
     };
 
+    // Aktualizuj status publikacji na podstawie pola status
+    if (lessonData.status) {
+      updateData.is_published = lessonData.status === 'published';
+    }
+
+    // Wykonaj aktualizację w bazie danych
+    const { data: lesson, error } = await supabase
+      .from('lessons')
+      .update(updateData)
+      .eq('id', lessonId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    return lesson;
+  } catch (error) {
+    console.error('Error updating lesson:', error);
+    throw error;
+  }
 };
 /**
  * Complete a lesson with score
