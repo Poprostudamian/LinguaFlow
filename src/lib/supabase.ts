@@ -738,12 +738,12 @@ export const updateLesson = async (
     if (!validation.allowed) {
       throw new Error(validation.reason || 'Cannot edit this lesson');
     }
-
+}
     const updateData: any = {
       ...lessonData,
       updated_at: new Date().toISOString()
     };
-}
+
 };
 /**
  * Complete a lesson with score
