@@ -38,7 +38,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 // import { supabase } from '../lib/supabase';
-import { TutorLessonCard } from '../components/TutorLessonCard';
 import { useTutorStudents } from '../contexts/StudentsContext';
 import { 
   supabase, 
@@ -50,6 +49,7 @@ import {
   assignStudentsToLesson,       
   unassignStudentsFromLesson
 } from '../lib/supabase';
+import { TutorLessonCard } from '../components/TutorLessonCard';
  
 // ============================================================================
 // TYPES
