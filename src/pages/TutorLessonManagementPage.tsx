@@ -43,7 +43,11 @@ import {
   supabase, 
   getLessonsWithLockStatus,
   checkLessonLockStatus,
-  getLessonEditPermissions
+  getLessonEditPermissions,
+  validateLessonOperation,     
+  deleteLesson,                 
+  assignStudentsToLesson,       
+  unassignStudentsFromLesson
 } from '../lib/supabase';
  
 // ============================================================================
@@ -716,16 +720,24 @@ export function TutorLessonManagementPage() {
 
   const loadLessons = async () => {
   if (!session?.user?.id) return;
-
+  
   setIsLoading(true);
   setError(null);
-
+  
   try {
-    // ✅ NOWE: Użyj funkcji z lock status
-    const lessonsData = await getLessonsWithLockStatus(session.user.id);
-    setLessons(lessonsData);
+    console.log('📚 Loading lessons with lock status...');
+    const data = await getLessonsWithLockStatus(session.user.id);
+    
+    // ✅ DODAJ: Logowanie zablokowanych lekcji
+    const lockedCount = data.filter(l => l.isLocked).length;
+    if (lockedCount > 0) {
+      console.log(`🔒 Found ${lockedCount} locked lessons`);
+    }
+    
+    setLessons(data);
   } catch (err: any) {
-    setError(err.message || t.tutorLessonManagementPage.errorLoading);
+    console.error('❌ Error loading lessons:', err);
+    setError(err.message || 'Failed to load lessons');
   } finally {
     setIsLoading(false);
   }
