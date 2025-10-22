@@ -3260,7 +3260,7 @@ export const checkLessonLockStatus = async (lessonId: string) => {
   try {
     const { data: studentLessons, error } = await supabase
       .from('student_lessons')
-      .select('student_id, status')
+      .select('student_id, status, completed_at, started_at')
       .eq('lesson_id', lessonId);
 
     if (error) throw error;
