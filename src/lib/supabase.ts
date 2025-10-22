@@ -859,6 +859,77 @@ export const assignLessonToStudents = async (lessonId: string, studentIds: strin
     throw error
   }
 };
+
+/**
+ * ✅ MIDDLEWARE: Prevent any modification if lesson is locked
+ * Call this BEFORE any UPDATE/DELETE/ASSIGN operation
+ */
+export const validateLessonOperation = async (
+  lessonId: string, 
+  tutorId: string,
+  operation: 'edit' | 'delete' | 'assign' | 'unassign'
+): Promise<{ allowed: boolean; reason?: string }> => {
+  try {
+    console.log(`🔒 Validating ${operation} operation for lesson:`, lessonId);
+
+    // 1. Check ownership
+    const { data: lesson, error } = await supabase
+      .from('lessons')
+      .select('tutor_id')
+      .eq('id', lessonId)
+      .single();
+
+    if (error || !lesson) {
+      return { 
+        allowed: false, 
+        reason: 'Lesson not found' 
+      };
+    }
+
+    if (lesson.tutor_id !== tutorId) {
+      return { 
+        allowed: false, 
+        reason: 'Access denied - not your lesson' 
+      };
+    }
+
+    // 2. Check lock status
+    const lockStatus = await checkLessonLockStatus(lessonId);
+
+    if (!lockStatus.isLocked) {
+      return { allowed: true };
+    }
+
+    // 3. Operation-specific rules
+    switch (operation) {
+      case 'edit':
+      case 'delete':
+      case 'assign':
+        return {
+          allowed: false,
+          reason: `Cannot ${operation} - all ${lockStatus.totalAssigned} students have completed this lesson. Unassign completed students first.`
+        };
+
+      case 'unassign':
+        // ✅ Unassign is ALWAYS allowed (to unlock the lesson)
+        return { allowed: true };
+
+      default:
+        return { 
+          allowed: false, 
+          reason: 'Unknown operation' 
+        };
+    }
+
+  } catch (error) {
+    console.error('Error validating lesson operation:', error);
+    return { 
+      allowed: false, 
+      reason: 'Validation error occurred' 
+    };
+  }
+};
+
 /**
  * Remove lesson assignment from students
  */
