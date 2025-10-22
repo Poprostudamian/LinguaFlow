@@ -790,29 +790,100 @@ export const completeStudentLesson = async (
 /**
  * Delete a lesson (and all its assignments)
  */
-export const deleteLesson = async (lessonId: string): Promise<void> => {
+// export const deleteLesson = async (lessonId: string): Promise<void> => {
+//   try {
+//     // First delete all student_lessons assignments
+//     const { error: assignmentsError } = await supabase
+//       .from('student_lessons')
+//       .delete()
+//       .eq('lesson_id', lessonId);
+
+//     if (assignmentsError) throw assignmentsError;
+
+//     // Then delete the lesson
+//     const { error: lessonError } = await supabase
+//       .from('lessons')
+//       .delete()
+//       .eq('id', lessonId);
+
+//     if (lessonError) throw lessonError;
+//   } catch (error) {
+//     console.error('Error deleting lesson:', error);
+//     throw error;
+//   }
+// };
+
+/**
+ * ✅ DELETE lesson with lock validation
+ */
+export const deleteLesson = async (
+  lessonId: string, 
+  tutorId: string
+): Promise<void> => {
   try {
-    // First delete all student_lessons assignments
+    console.log('🗑️ Attempting to delete lesson:', lessonId);
+
+    // 1. Validate operation
+    const validation = await validateLessonOperation(lessonId, tutorId, 'delete');
+    if (!validation.allowed) {
+      throw new Error(validation.reason || 'Cannot delete this lesson');
+    }
+
+    // 2. Check if any student has started (additional safety)
+    const { data: assignments } = await supabase
+      .from('student_lessons')
+      .select('student_id, status, started_at, completed_at')
+      .eq('lesson_id', lessonId);
+
+    const hasStartedStudents = assignments?.some(
+      a => a.started_at || a.status !== 'assigned'
+    );
+
+    if (hasStartedStudents) {
+      throw new Error(
+        'Cannot delete lesson - some students have already started it. ' +
+        'Unassign all students first.'
+      );
+    }
+
+    // 3. Delete exercises first (cascade)
+    const { error: exercisesError } = await supabase
+      .from('lesson_exercises')
+      .delete()
+      .eq('lesson_id', lessonId);
+
+    if (exercisesError) {
+      console.error('Warning: Error deleting exercises:', exercisesError);
+    }
+
+    // 4. Delete student assignments
     const { error: assignmentsError } = await supabase
       .from('student_lessons')
       .delete()
       .eq('lesson_id', lessonId);
 
-    if (assignmentsError) throw assignmentsError;
+    if (assignmentsError) {
+      throw new Error(`Failed to delete assignments: ${assignmentsError.message}`);
+    }
 
-    // Then delete the lesson
+    // 5. Finally, delete the lesson itself
     const { error: lessonError } = await supabase
       .from('lessons')
       .delete()
-      .eq('id', lessonId);
+      .eq('id', lessonId)
+      .eq('tutor_id', tutorId); // ✅ Double-check ownership
 
-    if (lessonError) throw lessonError;
-  } catch (error) {
-    console.error('Error deleting lesson:', error);
+    if (lessonError) {
+      throw new Error(`Failed to delete lesson: ${lessonError.message}`);
+    }
+
+    console.log('✅ Lesson deleted successfully');
+  } catch (error: any) {
+    console.error('❌ Error deleting lesson:', error);
     throw error;
   }
 };
-
+    
 /**
  * Assign lesson to additional students
  */
