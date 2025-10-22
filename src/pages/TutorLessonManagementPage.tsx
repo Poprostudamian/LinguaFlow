@@ -1136,12 +1136,26 @@ const unlockedLessons = filteredLessons.filter(lesson => !lesson.isLocked);
       return;
     }
 
+// ✅ WZMOCNIONA WALIDACJA przy zapisie edycji
 if (modalMode === 'edit' && currentLesson?.id) {
+    console.log('💾 Saving lesson changes...');
+    
+    // Sprawdź uprawnienia
     const permissions = await getLessonEditPermissions(currentLesson.id, session.user.id);
     if (!permissions.canEdit) {
       setToast({ 
         type: 'error', 
-        message: permissions.reason || 'Cannot edit locked lesson' 
+        message: permissions.reason || 'Cannot edit locked lesson - all students have completed it.' 
+      });
+      return;
+    }
+    
+    // Double-check przed zapisem
+    const validation = await validateLessonOperation(currentLesson.id, session.user.id, 'edit');
+    if (!validation.allowed) {
+      setToast({ 
+        type: 'error', 
+        message: validation.reason || 'Cannot save changes to this lesson' 
       });
       return;
     }
