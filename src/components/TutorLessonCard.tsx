@@ -23,8 +23,32 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTutorStudents } from '../contexts/StudentsContext';
-import { LessonWithAssignments } from '../types/lesson.types';
 import { useLanguage } from '../contexts/LanguageContext';
+
+// ✅ ENHANCED: Extended lesson interface
+interface LessonWithAssignments {
+  id: string;
+  tutor_id: string;
+  title: string;
+  description?: string;
+  content?: string;
+  status: 'draft' | 'published';
+  created_at: string;
+  updated_at: string;
+  assignedCount: number;
+  completedCount: number;
+  assignedStudents?: string[];
+  student_lessons: Array<{
+    student_id: string;
+    status: 'assigned' | 'in_progress' | 'completed';
+    completed_at?: string | null;
+  }>;
+  // ✅ Lock properties
+  isLocked?: boolean;
+  lockReason?: 'all_students_completed' | 'other';
+  canEdit?: boolean;
+  canDelete?: boolean;
+}
 
 interface TutorLessonCardProps {
   lesson: LessonWithAssignments;
@@ -61,8 +85,9 @@ export function TutorLessonCard({
     status: lesson.status
   });
 
+  // ✅ Handle save edit (only if unlocked)
   const handleSaveEdit = async () => {
-    if (!onEdit || !editData.title.trim()) return;
+    if (!onEdit || !editData.title.trim() || lesson.isLocked) return;
     
     setIsLoading(true);
     try {
@@ -70,38 +95,52 @@ export function TutorLessonCard({
       setIsEditing(false);
     } catch (error) {
       console.error('Error saving lesson:', error);
+      alert('Failed to save changes. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ✅ Handle delete (blocked if locked)
   const handleDelete = async () => {
     if (!onDelete) return;
     
-    // ✅ ENHANCED: Check lock status before confirming deletion
     if (lesson.isLocked) {
-      alert(t.tutorLessonManagementPage.cannotDeleteLockedLesson);
+      alert(
+        `🔒 Cannot delete locked lesson\n\n` +
+        `This lesson is locked because all ${lesson.assignedCount} students have completed it.\n\n` +
+        `To delete this lesson, first unassign completed students.`
+      );
       return;
     }
     
-    if (confirm(`${t.tutorLessonManagementPage.deleteConfirmation}\n\n${t.tutorLessonManagementPage.deleteWarning}`)) {
-      setIsLoading(true);
-      try {
-        await onDelete(lesson.id);
-      } catch (error) {
-        console.error('Error deleting lesson:', error);
-      } finally {
-        setIsLoading(false);
-      }
+    const confirmMessage = lesson.assignedCount > 0
+      ? `Delete "${lesson.title}"?\n\n⚠️ Warning: ${lesson.assignedCount} student(s) are assigned. All progress will be lost.\n\nThis cannot be undone.`
+      : `Delete "${lesson.title}"?\n\nThis cannot be undone.`;
+    
+    if (!confirm(confirmMessage)) return;
+
+    setIsLoading(true);
+    try {
+      await onDelete(lesson.id);
+    } catch (error) {
+      console.error('Error deleting lesson:', error);
+      alert('Failed to delete lesson. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // ✅ Handle assign students (blocked if locked)
   const handleAssignStudents = async () => {
     if (!onAssignStudents || selectedStudents.length === 0) return;
     
-    // ✅ ENHANCED: Check if lesson allows new assignments
     if (lesson.isLocked) {
-      alert(t.tutorLessonManagementPage.cannotAssignToLockedLesson);
+      alert(
+        `🔒 Cannot assign students to locked lesson\n\n` +
+        `This lesson is locked because all assigned students have completed it.\n\n` +
+        `To assign new students, first unassign some completed students.`
+      );
       return;
     }
     
@@ -112,24 +151,34 @@ export function TutorLessonCard({
       setShowStudentManagement(false);
     } catch (error) {
       console.error('Error assigning students:', error);
+      alert('Failed to assign students. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ✅ Handle unassign student (ALWAYS allowed - to unlock lesson)
   const handleUnassignStudent = async (studentId: string) => {
     if (!onUnassignStudents) return;
+    
+    const confirmMessage = lesson.isLocked
+      ? `Unassign this student?\n\n💡 This will unlock the lesson for editing.`
+      : `Unassign this student?\n\n⚠️ Their progress will be lost.`;
+    
+    if (!confirm(confirmMessage)) return;
     
     setIsLoading(true);
     try {
       await onUnassignStudents(lesson.id, [studentId]);
     } catch (error) {
       console.error('Error unassigning student:', error);
+      alert('Failed to unassign student. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Toggle student selection
   const toggleStudentSelection = (studentId: string) => {
     setSelectedStudents(prev => 
       prev.includes(studentId) 
@@ -147,195 +196,180 @@ export function TutorLessonCard({
     (lesson.assignedStudents || []).includes(student.student_id)
   );
 
-  // ✅ NEW: Format lock status message
+  // ✅ Format lock status message
   const getLockStatusMessage = () => {
     if (!lesson.isLocked) return null;
     
-    switch (lesson.lockReason) {
-      case 'all_students_completed':
-        return t.tutorLessonManagementPage.lessonLockedAllCompleted
-          .replace('{count}', lesson.assignedCount.toString());
-      default:
-        return t.tutorLessonManagementPage.lessonLockedGeneric;
-    }
-  };
-
-  // ✅ NEW: Get appropriate lock icon and color
-  const getLockIcon = () => {
-    if (lesson.isLocked) {
-      return <Lock className="h-4 w-4 text-red-500" />;
-    }
-    return <LockOpen className="h-4 w-4 text-green-500" />;
+    return `All ${lesson.assignedCount} assigned student(s) have completed this lesson. To edit or delete, first unassign completed students.`;
   };
 
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border transition-all duration-200 ${
       lesson.isLocked 
-        ? 'border-red-200 dark:border-red-800 bg-red-50/30 dark:bg-red-900/10' 
-        : 'border-gray-200 dark:border-gray-700 hover:shadow-md'
+        ? 'border-red-300 dark:border-red-700 ring-2 ring-red-100 dark:ring-red-900/30' 
+        : 'border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700'
     }`}>
-      {/* ✅ NEW: Lock Status Banner */}
+      
+      {/* ✅ LOCK STATUS BANNER */}
       {lesson.isLocked && (
-        <div className="bg-red-100 dark:bg-red-900/30 border-b border-red-200 dark:border-red-800 px-4 py-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Shield className="h-4 w-4 text-red-600 dark:text-red-400" />
-              <span className="text-sm font-medium text-red-800 dark:text-red-300">
-                {t.tutorLessonManagementPage.lessonLocked}
-              </span>
+        <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border-b border-red-200 dark:border-red-800 px-4 py-3">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-3">
+              <div className="bg-red-100 dark:bg-red-900/50 p-1.5 rounded-lg">
+                <Lock className="h-4 w-4 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-1">
+                  <h4 className="text-sm font-semibold text-red-800 dark:text-red-300">
+                    🔒 Lesson Locked
+                  </h4>
+                </div>
+                {showLockInfo ? (
+                  <div className="text-xs text-red-700 dark:text-red-300 space-y-1">
+                    <p>{getLockStatusMessage()}</p>
+                    <p className="flex items-center space-x-1 mt-2 font-medium">
+                      <UserMinus className="h-3 w-3" />
+                      <span>Click the minus icon below to unassign students and unlock</span>
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-red-600 dark:text-red-400">
+                    Click info button to learn more
+                  </p>
+                )}
+              </div>
             </div>
             <button
               onClick={() => setShowLockInfo(!showLockInfo)}
-              className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200"
+              className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 transition-colors"
+              title="Show lock details"
             >
               <Info className="h-4 w-4" />
             </button>
           </div>
-          
-          {showLockInfo && (
-            <div className="mt-2 text-sm text-red-700 dark:text-red-300">
-              {getLockStatusMessage()}
-              <div className="mt-1 text-xs text-red-600 dark:text-red-400">
-                {t.tutorLessonManagementPage.unlockHint}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+      {/* HEADER */}
+      <div className="p-4">
         {isEditing && !lesson.isLocked ? (
+          // Edit Mode
           <div className="space-y-3">
             <input
               type="text"
               value={editData.title}
               onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder={t.tutorLessonManagementPage.lessonTitle}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+              placeholder="Lesson title"
             />
             <textarea
               value={editData.description}
               onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder={t.tutorLessonManagementPage.description}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white resize-none"
+              placeholder="Description (optional)"
               rows={2}
             />
-            <div className="flex items-center justify-between">
-              <select
-                value={editData.status}
-                onChange={(e) => setEditData({ ...editData, status: e.target.value as 'draft' | 'published' })}
-                className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleSaveEdit}
+                disabled={isLoading || !editData.title.trim()}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 text-sm font-medium"
               >
-                <option value="draft">{t.tutorLessonManagementPage.draft}</option>
-                <option value="published">{t.tutorLessonManagementPage.published}</option>
-              </select>
-              
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="flex items-center space-x-1 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 px-3 py-1.5 rounded text-sm"
-                >
-                  <X className="h-4 w-4" />
-                  <span>{t.tutorLessonManagementPage.cancel}</span>
-                </button>
-                <button
-                  onClick={handleSaveEdit}
-                  disabled={isLoading || !editData.title.trim()}
-                  className="flex items-center space-x-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-sm"
-                >
-                  <Save className="h-4 w-4" />
-                  <span>{t.tutorLessonManagementPage.save}</span>
-                </button>
-              </div>
+                <Save className="h-3 w-3" />
+                <span>Save</span>
+              </button>
+              <button
+                onClick={() => setIsEditing(false)}
+                disabled={isLoading}
+                className="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm"
+              >
+                <X className="h-3 w-3" />
+                <span>Cancel</span>
+              </button>
             </div>
           </div>
         ) : (
+          // View Mode
           <div className="flex items-start justify-between">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0 pr-4">
               <div className="flex items-center space-x-2 mb-2">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
                   {lesson.title}
                 </h3>
-                {getLockIcon()}
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                   lesson.status === 'published' 
                     ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
                     : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
                 }`}>
-                  {lesson.status === 'published' ? t.tutorLessonManagementPage.published : t.tutorLessonManagementPage.draft}
+                  {lesson.status === 'published' ? 'Published' : 'Draft'}
                 </span>
               </div>
               
               {lesson.description && (
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">
                   {lesson.description}
                 </p>
               )}
               
-              <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex items-center flex-wrap gap-3 text-sm text-gray-500 dark:text-gray-400">
                 <div className="flex items-center space-x-1">
                   <Users className="h-4 w-4" />
-                  <span>
-                    {lesson.assignedCount} {t.tutorLessonManagementPage.assigned}
-                  </span>
+                  <span>{lesson.assignedCount} assigned</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <CheckCircle2 className="h-4 w-4" />
-                  <span>
-                    {lesson.completedCount} {t.tutorLessonManagementPage.completed}
-                  </span>
+                  <span>{lesson.completedCount} completed</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <Calendar className="h-4 w-4" />
-                  <span>
-                    {t.tutorLessonManagementPage.created}: {new Date(lesson.created_at).toLocaleDateString()}
-                  </span>
+                  <span>{new Date(lesson.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
             </div>
             
-            {/* Action Buttons */}
-            <div className="flex items-center space-x-2 ml-4">
+            {/* ACTION BUTTONS */}
+            <div className="flex items-center space-x-1 flex-shrink-0">
+              {/* View */}
               <button
                 onClick={() => onView?.(lesson.id)}
-                className="flex items-center space-x-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 px-2 py-1 rounded text-sm"
-                title={t.tutorLessonManagementPage.view}
+                className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                title="View lesson"
               >
                 <Eye className="h-4 w-4" />
               </button>
               
-              {/* ✅ ENHANCED: Edit button disabled for locked lessons */}
+              {/* Edit - disabled if locked */}
               <button
-                onClick={() => lesson.canEdit ? setIsEditing(true) : null}
-                disabled={!lesson.canEdit}
-                className={`flex items-center space-x-1 px-2 py-1 rounded text-sm transition-colors ${
-                  lesson.canEdit 
-                    ? 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200' 
-                    : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                onClick={() => lesson.canEdit !== false ? setIsEditing(true) : null}
+                disabled={lesson.canEdit === false}
+                className={`p-2 rounded-lg transition-colors ${
+                  lesson.canEdit !== false
+                    ? 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' 
+                    : 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
                 }`}
-                title={lesson.canEdit ? t.tutorLessonManagementPage.edit : t.tutorLessonManagementPage.cannotEditLocked}
+                title={lesson.canEdit !== false ? 'Edit lesson' : '🔒 Cannot edit locked lesson'}
               >
-                <Edit3 className="h-4 w-4" />
+                {lesson.isLocked ? <Lock className="h-4 w-4" /> : <Edit3 className="h-4 w-4" />}
               </button>
               
-              {/* ✅ ENHANCED: Delete button disabled for locked lessons */}
+              {/* Delete - disabled if locked */}
               <button
-                onClick={lesson.canDelete ? handleDelete : undefined}
-                disabled={isLoading || !lesson.canDelete}
-                className={`flex items-center space-x-1 px-2 py-1 rounded text-sm transition-colors ${
-                  lesson.canDelete 
-                    ? 'text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300' 
-                    : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                onClick={lesson.canDelete !== false ? handleDelete : undefined}
+                disabled={isLoading || lesson.canDelete === false}
+                className={`p-2 rounded-lg transition-colors ${
+                  lesson.canDelete !== false
+                    ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20' 
+                    : 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
                 }`}
-                title={lesson.canDelete ? t.tutorLessonManagementPage.delete : t.tutorLessonManagementPage.cannotDeleteLocked}
+                title={lesson.canDelete !== false ? 'Delete lesson' : '🔒 Cannot delete locked lesson'}
               >
                 <Trash2 className="h-4 w-4" />
               </button>
               
+              {/* Toggle Details */}
               <button
                 onClick={() => setShowDetails(!showDetails)}
-                className="flex items-center space-x-1 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 px-2 py-1 rounded text-sm"
+                className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
                 {showDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </button>
@@ -344,21 +378,24 @@ export function TutorLessonCard({
         )}
       </div>
 
-      {/* ✅ ENHANCED: Completion Progress Bar */}
+      {/* ✅ COMPLETION PROGRESS BAR */}
       {lesson.assignedCount > 0 && (
-        <div className="px-4 py-2 bg-gray-50 dark:bg-gray-900/50">
-          <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
-            <span>{t.tutorLessonManagementPage.completionProgress}</span>
-            <span>{lesson.completedCount}/{lesson.assignedCount} ({Math.round((lesson.completedCount / lesson.assignedCount) * 100)}%)</span>
+        <div className="px-4 pb-3">
+          <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1.5">
+            <span className="font-medium">Completion Progress</span>
+            <span>
+              {lesson.completedCount}/{lesson.assignedCount} 
+              ({Math.round((lesson.completedCount / lesson.assignedCount) * 100)}%)
+            </span>
           </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
             <div
-              className={`h-2 rounded-full transition-all duration-300 ${
+              className={`h-2 rounded-full transition-all duration-500 ${
                 lesson.isLocked 
-                  ? 'bg-red-500' 
+                  ? 'bg-gradient-to-r from-red-500 to-orange-500' 
                   : lesson.completedCount === lesson.assignedCount 
-                    ? 'bg-green-500' 
-                    : 'bg-blue-500'
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-500' 
+                    : 'bg-gradient-to-r from-blue-500 to-purple-500'
               }`}
               style={{ width: `${(lesson.completedCount / lesson.assignedCount) * 100}%` }}
             />
@@ -366,116 +403,123 @@ export function TutorLessonCard({
         </div>
       )}
 
-      {/* Details Section */}
+      {/* DETAILS SECTION */}
       {showDetails && (
-        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
-          <div className="space-y-3">
-            {/* Student Management */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t.tutorLessonManagementPage.assignedStudents} ({lesson.assignedCount})
-                </h4>
-                {/* ✅ ENHANCED: Assignment button considers lock status */}
-                <button
-                  onClick={() => setShowStudentManagement(!showStudentManagement)}
-                  disabled={lesson.isLocked}
-                  className={`flex items-center space-x-1 text-xs px-2 py-1 rounded transition-colors ${
-                    lesson.isLocked
-                      ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
-                      : 'text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300'
-                  }`}
-                  title={lesson.isLocked ? t.tutorLessonManagementPage.cannotAssignToLocked : undefined}
-                >
-                  <UserPlus className="h-3 w-3" />
-                  <span>{t.tutorLessonManagementPage.manageStudents}</span>
-                </button>
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4 space-y-4 bg-gray-50 dark:bg-gray-900/30">
+          
+          {/* Assigned Students */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                Assigned Students ({lesson.assignedCount})
+              </h4>
+              {/* Assign button - disabled if locked */}
+              <button
+                onClick={() => !lesson.isLocked && setShowStudentManagement(!showStudentManagement)}
+                disabled={lesson.isLocked}
+                className={`flex items-center space-x-1 text-xs px-2 py-1 rounded-lg font-medium transition-colors ${
+                  lesson.isLocked
+                    ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
+                    : 'text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                }`}
+                title={lesson.isLocked ? '🔒 Cannot assign to locked lesson' : 'Manage students'}
+              >
+                <UserPlus className="h-3 w-3" />
+                <span>Manage</span>
+              </button>
+            </div>
+            
+            {assignedStudentDetails.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                No students assigned yet
+              </p>
+            ) : (
+              <div className="space-y-1.5">
+                {assignedStudentDetails.map((student) => {
+                  const studentLesson = lesson.student_lessons.find(
+                    sl => sl.student_id === student.student_id
+                  );
+                  return (
+                    <div key={student.student_id} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-900 dark:text-white font-medium">
+                          {student.student_first_name} {student.student_last_name}
+                        </span>
+                        {studentLesson && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                            studentLesson.status === 'completed' 
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                              : studentLesson.status === 'in_progress'
+                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
+                          }`}>
+                            {studentLesson.status === 'completed' ? '✓ Completed' 
+                             : studentLesson.status === 'in_progress' ? '⏳ In Progress' 
+                             : '📋 Assigned'}
+                          </span>
+                        )}
+                      </div>
+                      {/* ✅ Unassign button - ALWAYS enabled (to unlock) */}
+                      <button
+                        onClick={() => handleUnassignStudent(student.student_id)}
+                        disabled={isLoading}
+                        className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
+                        title={lesson.isLocked ? '💡 Unassign to unlock lesson' : 'Remove student'}
+                      >
+                        <UserMinus className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
+            )}
+          </div>
+
+          {/* Student Management Panel */}
+          {showStudentManagement && !lesson.isLocked && (
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                Assign New Students
+              </h4>
               
-              {assignedStudentDetails.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {t.tutorLessonManagementPage.noStudentsAssigned}
+              {unassignedStudents.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                  All students are already assigned
                 </p>
               ) : (
-                <div className="space-y-1">
-                  {assignedStudentDetails.map((student) => {
-                    const studentLesson = lesson.student_lessons.find(sl => sl.student_id === student.student_id);
-                    return (
-                      <div key={student.student_id} className="flex items-center justify-between py-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
-                            {student.student_first_name} {student.student_last_name}
-                          </span>
-                          {studentLesson && (
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${
-                              studentLesson.status === 'completed' 
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                                : studentLesson.status === 'in_progress'
-                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
-                            }`}>
-                              {studentLesson.status === 'completed' ? t.tutorLessonManagementPage.completed 
-                               : studentLesson.status === 'in_progress' ? t.tutorLessonManagementPage.inProgress 
-                               : t.tutorLessonManagementPage.assigned}
-                            </span>
-                          )}
-                        </div>
-                        {/* ✅ Allow unassigning even for locked lessons (to unlock them) */}
-                        <button
-                          onClick={() => handleUnassignStudent(student.student_id)}
-                          disabled={isLoading}
-                          className="text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 disabled:opacity-50"
-                          title={lesson.isLocked ? t.tutorLessonManagementPage.unassignToUnlock : t.tutorLessonManagementPage.removeStudent}
-                        >
-                          <UserMinus className="h-3 w-3" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
+                <>
+                  <div className="space-y-1.5 mb-3 max-h-40 overflow-y-auto">
+                    {unassignedStudents.map((student) => (
+                      <label
+                        key={student.student_id}
+                        className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedStudents.includes(student.student_id)}
+                          onChange={() => toggleStudentSelection(student.student_id)}
+                          className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                        />
+                        <span className="text-sm text-gray-900 dark:text-white">
+                          {student.student_first_name} {student.student_last_name}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  
+                  <button
+                    onClick={handleAssignStudents}
+                    disabled={isLoading || selectedStudents.length === 0}
+                    className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm transition-colors"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    <span>
+                      Assign {selectedStudents.length > 0 && `(${selectedStudents.length})`}
+                    </span>
+                  </button>
+                </>
               )}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Student Management Panel */}
-      {showStudentManagement && !isEditing && !lesson.isLocked && (
-        <div className="px-4 pb-4 border-t border-gray-200 dark:border-gray-700 pt-4">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-            {t.tutorLessonManagementPage.assignStudents}
-          </h4>
-          
-          {unassignedStudents.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {t.tutorLessonManagementPage.allStudentsAssigned}
-            </p>
-          ) : (
-            <>
-              <div className="space-y-2 mb-3">
-                {unassignedStudents.map((student) => (
-                  <label key={student.student_id} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedStudents.includes(student.student_id)}
-                      onChange={() => toggleStudentSelection(student.student_id)}
-                      className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                    />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      {student.student_first_name} {student.student_last_name}
-                    </span>
-                  </label>
-                ))}
-              </div>
-              
-              <button
-                onClick={handleAssignStudents}
-                disabled={selectedStudents.length === 0 || isLoading}
-                className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-sm"
-              >
-                {t.tutorLessonManagementPage.assignSelected} ({selectedStudents.length})
-              </button>
-            </>
           )}
         </div>
       )}
