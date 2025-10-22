@@ -747,7 +747,7 @@ export const updateLesson = async (
       ...lessonData,
       updated_at: new Date().toISOString()
     };
-  }
+  //linia 750
     // Aktualizuj status publikacji na podstawie pola status
     if (lessonData.status) {
       updateData.is_published = lessonData.status === 'published';
