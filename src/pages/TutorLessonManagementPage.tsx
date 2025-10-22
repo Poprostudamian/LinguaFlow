@@ -855,6 +855,40 @@ const handleEditLesson = async (lessonId: string) => {
   }
 };
 
+  const handleDeleteLesson = async (lessonId: string) => {
+  if (!session?.user?.id) return;
+
+  try {
+    // Check if lesson can be deleted
+    const permissions = await getLessonEditPermissions(lessonId, session.user.id);
+    
+    if (!permissions.canDelete) {
+      setToast({ 
+        type: 'warning', 
+        message: permissions.reason || 'Cannot delete this lesson' 
+      });
+      return;
+    }
+
+    if (confirm('Are you sure you want to delete this lesson? This action cannot be undone.')) {
+      const { error } = await supabase
+        .from('lessons')
+        .delete()
+        .eq('id', lessonId)
+        .eq('tutor_id', session.user.id);
+
+      if (error) throw error;
+
+      setToast({ type: 'success', message: 'Lesson deleted successfully' });
+      loadLessons();
+    }
+
+  } catch (error) {
+    console.error('Error deleting lesson:', error);
+    setToast({ type: 'error', message: 'Error deleting lesson' });
+  }
+};
+
 /**
  * ✅ NOWA: Bezpieczne przypisywanie studentów
  */
