@@ -3280,6 +3280,13 @@ export const checkLessonLockStatus = async (lessonId: string) => {
     const totalCompleted = studentLessons.filter(sl => sl.status === 'completed').length;
     const allCompleted = totalCompleted === totalAssigned && totalAssigned > 0;
 
+console.log(`📊 Lesson ${lessonId} status:`, {
+      totalAssigned,
+      totalCompleted,
+      allCompleted,
+      lockStatus: allCompleted ? '🔒 LOCKED' : '🔓 UNLOCKED'
+    });
+    
     return {
       isLocked: allCompleted,
       lockReason: allCompleted ? 'all_students_completed' : undefined,
