@@ -889,6 +889,40 @@ const handleEditLesson = async (lessonId: string) => {
   }
 };
 
+  const handleViewLesson = async (lessonId: string) => {
+  if (!session?.user?.id) return;
+
+  try {
+    // Load lesson data for viewing
+    const lesson = lessons.find(l => l.id === lessonId);
+    if (!lesson) {
+      setToast({ type: 'error', message: 'Lesson not found' });
+      return;
+    }
+
+    // Populate form with lesson data
+    setLessonForm({
+      title: lesson.title,
+      description: lesson.description || '',
+      content: lesson.content || '',
+      status: lesson.status,
+      assignedStudentIds: lesson.assignedStudents || []
+    });
+
+    // Load exercises
+    await loadExercises(lessonId);
+    
+    // Set current lesson and open modal in VIEW mode
+    setCurrentLesson(lesson);
+    setModalMode('view');
+    setShowModal(true);
+
+  } catch (error) {
+    console.error('Error loading lesson for view:', error);
+    setToast({ type: 'error', message: 'Error loading lesson' });
+  }
+};
+
 /**
  * ✅ NOWA: Bezpieczne przypisywanie studentów
  */
