@@ -1013,67 +1013,67 @@ export const unassignStudentsFromLesson = async (
   }
 };
     
-// /**
+// /** 
 //  * Assign lesson to additional students
 //  */
-// export const assignLessonToStudents = async (lessonId: string, studentIds: string[]) => {
-//   try {
-//     // 1. Najpierw sprawdź które studenci już są przypisani do tej lekcji
-//     const { data: existingAssignments, error: checkError } = await supabase
-//       .from('student_lessons')
-//       .select('student_id')
-//       .eq('lesson_id', lessonId)
-//       .in('student_id', studentIds)
+export const assignLessonToStudents = async (lessonId: string, studentIds: string[]) => {
+  try {
+    // 1. Najpierw sprawdź które studenci już są przypisani do tej lekcji
+    const { data: existingAssignments, error: checkError } = await supabase
+      .from('student_lessons')
+      .select('student_id')
+      .eq('lesson_id', lessonId)
+      .in('student_id', studentIds)
 
-//     if (checkError) {
-//       console.error('Error checking existing assignments:', checkError)
-//       throw checkError
-//     }
+    if (checkError) {
+      console.error('Error checking existing assignments:', checkError)
+      throw checkError
+    }
 
-//     // 2. Odfiltruj studentów, którzy już są przypisani
-//     const existingStudentIds = existingAssignments?.map(row => row.student_id) || []
-//     const newStudentIds = studentIds.filter(id => !existingStudentIds.includes(id))
+    // 2. Odfiltruj studentów, którzy już są przypisani
+    const existingStudentIds = existingAssignments?.map(row => row.student_id) || []
+    const newStudentIds = studentIds.filter(id => !existingStudentIds.includes(id))
 
-//     // 3. Jeśli są nowi studenci do przypisania, dodaj ich
-//     if (newStudentIds.length > 0) {
-//       const assignmentsToCreate = newStudentIds.map(studentId => ({
-//         lesson_id: lessonId,
-//         student_id: studentId,
-//         assigned_at: new Date().toISOString(),
-//         status: 'assigned' as const
-//       }))
+    // 3. Jeśli są nowi studenci do przypisania, dodaj ich
+    if (newStudentIds.length > 0) {
+      const assignmentsToCreate = newStudentIds.map(studentId => ({
+        lesson_id: lessonId,
+        student_id: studentId,
+        assigned_at: new Date().toISOString(),
+        status: 'assigned' as const
+      }))
 
-//       const { data, error } = await supabase
-//         .from('student_lessons')
-//         .insert(assignmentsToCreate)
-//         .select()
+      const { data, error } = await supabase
+        .from('student_lessons')
+        .insert(assignmentsToCreate)
+        .select()
 
-//       if (error) {
-//         console.error('Error assigning lesson to students:', error)
-//         throw error
-//       }
+      if (error) {
+        console.error('Error assigning lesson to students:', error)
+        throw error
+      }
 
-//       return { 
-//         data, 
-//         newAssignments: newStudentIds.length, 
-//         skipped: existingStudentIds.length,
-//         assignedStudents: newStudentIds,
-//         skippedStudents: existingStudentIds
-//       }
-//     }
+      return { 
+        data, 
+        newAssignments: newStudentIds.length, 
+        skipped: existingStudentIds.length,
+        assignedStudents: newStudentIds,
+        skippedStudents: existingStudentIds
+      }
+    }
 
-//     return { 
-//       data: null, 
-//       newAssignments: 0, 
-//       skipped: existingStudentIds.length,
-//       assignedStudents: [],
-//       skippedStudents: existingStudentIds
-//     }
-//   } catch (error) {
-//     console.error('Error in assignLessonToStudents:', error)
-//     throw error
-//   }
-// };
+    return { 
+      data: null, 
+      newAssignments: 0, 
+      skipped: existingStudentIds.length,
+      assignedStudents: [],
+      skippedStudents: existingStudentIds
+    }
+  } catch (error) {
+    console.error('Error in assignLessonToStudents:', error)
+    throw error
+  }
+};
 
 /**
  * ✅ MIDDLEWARE: Prevent any modification if lesson is locked
