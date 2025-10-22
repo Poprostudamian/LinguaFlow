@@ -1498,9 +1498,9 @@ if (modalMode === 'edit' && currentLesson?.id) {
   <TutorLessonCard
     key={lesson.id}
     lesson={lesson}
-    onEdit={() => handleEditLesson(lesson.id)}
-    onView={() => handleViewLesson(lesson)}
-    onDelete={handleDeleteLesson}  // ✅ UPEWNIJ SIĘ ŻE TO JEST handleDeleteLesson
+    onEdit={handleEditLesson}
+    onView={handleViewLesson}
+    onDelete={handleDeleteLesson}
     onAssignStudents={handleAssignStudents}
     onUnassignStudents={handleUnassignStudents}
   />
