@@ -795,29 +795,41 @@ export function TutorLessonManagementPage() {
     }
   };
 
-  const handleEditLesson = async (lessonId: string) => {
+const handleEditLesson = async (lessonId: string) => {
   if (!session?.user?.id) return;
 
   try {
-    // Check if lesson is editable
+    console.log('📝 Attempting to edit lesson:', lessonId);
+    
+    // ✅ WZMOCNIONA WALIDACJA: Sprawdź uprawnienia
     const permissions = await getLessonEditPermissions(lessonId, session.user.id);
     
     if (!permissions.canEdit) {
       setToast({ 
-        type: 'warning', 
-        message: permissions.reason || 'Cannot edit this lesson' 
+        type: 'error', 
+        message: permissions.reason || 'Cannot edit this lesson - all students have completed it.' 
       });
       return;
     }
 
-    // Load lesson data for editing
+    // ✅ DODATKOWA WALIDACJA: Double-check z validateLessonOperation
+    const validation = await validateLessonOperation(lessonId, session.user.id, 'edit');
+    if (!validation.allowed) {
+      setToast({ 
+        type: 'error', 
+        message: validation.reason || 'Cannot edit this lesson' 
+      });
+      return;
+    }
+
+    // Załaduj dane lekcji
     const lesson = lessons.find(l => l.id === lessonId);
     if (!lesson) {
       setToast({ type: 'error', message: 'Lesson not found' });
       return;
     }
 
-    // Populate form and open modal
+    // Wypełnij formularz
     setLessonForm({
       title: lesson.title,
       description: lesson.description || '',
@@ -830,10 +842,15 @@ export function TutorLessonManagementPage() {
     setCurrentLesson(lesson);
     setModalMode('edit');
     setShowModal(true);
+    
+    console.log('✅ Lesson loaded for editing');
 
-  } catch (error) {
-    console.error('Error preparing lesson for edit:', error);
-    setToast({ type: 'error', message: 'Error loading lesson' });
+  } catch (error: any) {
+    console.error('❌ Error preparing lesson for edit:', error);
+    setToast({ 
+      type: 'error', 
+      message: error.message || 'Error loading lesson' 
+    });
   }
 };
 
