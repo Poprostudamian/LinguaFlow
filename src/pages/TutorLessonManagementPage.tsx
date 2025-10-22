@@ -937,24 +937,6 @@ const handleUnassignStudents = async (lessonId: string, studentIds: string[]) =>
   }
 };
 
-const handleUnassignStudents = async (lessonId: string, studentIds: string[]) => {
-  try {
-    const { error } = await supabase
-      .from('student_lessons')
-      .delete()
-      .eq('lesson_id', lessonId)
-      .in('student_id', studentIds);
-
-    if (error) throw error;
-
-    setToast({ type: 'success', message: 'Students unassigned successfully' });
-    loadLessons();
-
-  } catch (error) {
-    console.error('Error unassigning students:', error);
-    setToast({ type: 'error', message: 'Error unassigning students' });
-  }
-};  
   
   // Filter lessons
   const filteredLessons = useMemo(() => {
