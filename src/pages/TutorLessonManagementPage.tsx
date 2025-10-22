@@ -1497,12 +1497,10 @@ if (modalMode === 'edit' && currentLesson?.id) {
   <EnhancedLessonCard
     key={lesson.id}
     lesson={lesson}
-    onView={openViewModal}
-    onEdit={handleEditLesson}              
-    onDelete={handleDeleteLesson}          
-    onAssignStudents={handleAssignStudents}       
-    onUnassignStudents={handleUnassignStudents}   
-    t={tPage}
+    onView={handleViewLesson}
+    onEdit={handleEditLesson}
+    onDelete={handleDeleteLesson}  // ✅ UPEWNIJ SIĘ ŻE TO JEST handleDeleteLesson
+    t={t}
   />
 ))}
         </div>
