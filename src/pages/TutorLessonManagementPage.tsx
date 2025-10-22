@@ -854,38 +854,66 @@ const handleEditLesson = async (lessonId: string) => {
   }
 };
 
-// ✅ NOWA: Enhanced delete with lock check
 const handleDeleteLesson = async (lessonId: string) => {
   if (!session?.user?.id) return;
 
   try {
-    // Check if lesson can be deleted
+    console.log('🗑️ Attempting to delete lesson:', lessonId);
+    
+    // ✅ KROK 1: Sprawdź uprawnienia
     const permissions = await getLessonEditPermissions(lessonId, session.user.id);
     
     if (!permissions.canDelete) {
       setToast({ 
-        type: 'warning', 
-        message: permissions.reason || 'Cannot delete this lesson' 
+        type: 'error', 
+        message: permissions.reason || 'Cannot delete this lesson - all students have completed it.' 
       });
       return;
     }
 
-    if (confirm('Are you sure you want to delete this lesson? This action cannot be undone.')) {
-      const { error } = await supabase
-        .from('lessons')
-        .delete()
-        .eq('id', lessonId)
-        .eq('tutor_id', session.user.id);
-
-      if (error) throw error;
-
-      setToast({ type: 'success', message: 'Lesson deleted successfully' });
-      loadLessons();
+    // ✅ KROK 2: Double-check z validateLessonOperation
+    const validation = await validateLessonOperation(lessonId, session.user.id, 'delete');
+    if (!validation.allowed) {
+      setToast({ 
+        type: 'error', 
+        message: validation.reason || 'Cannot delete this lesson' 
+      });
+      return;
     }
 
-  } catch (error) {
-    console.error('Error deleting lesson:', error);
-    setToast({ type: 'error', message: 'Error deleting lesson' });
+    // ✅ KROK 3: Potwierdź z użytkownikiem
+    const lesson = lessons.find(l => l.id === lessonId);
+    const confirmMessage = lesson?.assignedCount 
+      ? `Delete "${lesson.title}"?\n\n⚠️ Warning: This lesson has ${lesson.assignedCount} student(s) assigned. All progress will be lost.\n\nThis action cannot be undone.`
+      : `Delete "${lesson?.title || 'this lesson'}"?\n\nThis action cannot be undone.`;
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setIsLoading(true);
+    console.log('🔄 Deleting lesson...');
+
+    // ✅ KROK 4: Użyj bezpiecznej funkcji deleteLesson
+    await deleteLesson(lessonId, session.user.id);
+
+    // ✅ KROK 5: Odśwież listę
+    setToast({ 
+      type: 'success', 
+      message: 'Lesson deleted successfully' 
+    });
+    
+    await loadLessons();
+    console.log('✅ Lesson deleted and list refreshed');
+
+  } catch (error: any) {
+    console.error('❌ Error deleting lesson:', error);
+    setToast({ 
+      type: 'error', 
+      message: error.message || 'Failed to delete lesson' 
+    });
+  } finally {
+    setIsLoading(false);
   }
 };
 
