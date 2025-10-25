@@ -1,264 +1,379 @@
-// src/components/settings/ProfileSectionTutor.tsx
+// src/pages/settings/ProfileSectionTutor.tsx
+import React, { useState, useEffect } from 'react';
+import { User, Briefcase, GraduationCap, Globe, BookOpen, Sun, Moon, X, Mail, Phone } from 'lucide-react';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { User, Camera, Upload, Loader2 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+interface TutorProfile {
+  bio?: string;
+  expertise?: string[];
+  teachingExperience?: string;
+  specializations?: string[];
+  education?: string;
+  languages?: string[];
+  hourlyRate?: number;
+}
 
-interface ProfileSectionProps {
-  firstName: string;
-  lastName: string;
-  email: string;
-  avatarUrl: string | null;
-  onUpdate: (updates: {
-    first_name?: string;
-    last_name?: string;
-    avatar_url?: string;
-  }) => void;
-  translations: any;
+interface ProfileSectionTutorProps {
+  profile: TutorProfile;
+  onUpdateProfile: (updates: Partial<TutorProfile>) => void;
+  theme: 'light' | 'dark';
+  onUpdateTheme: (theme: 'light' | 'dark') => void;
 }
 
 export function ProfileSectionTutor({
-  firstName,
-  lastName,
-  email,
-  avatarUrl,
-  onUpdate,
-  translations
-}: ProfileSectionProps) {
-  const [localFirstName, setLocalFirstName] = useState(firstName);
-  const [localLastName, setLocalLastName] = useState(lastName);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(avatarUrl);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  profile,
+  onUpdateProfile,
+  theme,
+  onUpdateTheme
+}: ProfileSectionTutorProps) {
+  const { t } = useLanguage();
 
-  // Update preview when avatarUrl changes
+  // Local state
+  const [bio, setBio] = useState(profile.bio || '');
+  const [teachingExperience, setTeachingExperience] = useState(profile.teachingExperience || '');
+  const [education, setEducation] = useState(profile.education || '');
+  const [hourlyRate, setHourlyRate] = useState(profile.hourlyRate?.toString() || '');
+  
+  // Teaching Interests/Expertise - MAX 8
+  const [newExpertise, setNewExpertise] = useState('');
+  const [expertise, setExpertise] = useState<string[]>(profile.expertise || []);
+
+  // Specializations
+  const [newSpecialization, setNewSpecialization] = useState('');
+  const [specializations, setSpecializations] = useState<string[]>(profile.specializations || []);
+
+  // Languages
+  const [newLanguage, setNewLanguage] = useState('');
+  const [languages, setLanguages] = useState<string[]>(profile.languages || []);
+
+  // Sync with props
   useEffect(() => {
-    setPreviewUrl(avatarUrl);
-  }, [avatarUrl]);
+    setBio(profile.bio || '');
+    setTeachingExperience(profile.teachingExperience || '');
+    setEducation(profile.education || '');
+    setHourlyRate(profile.hourlyRate?.toString() || '');
+    setExpertise(profile.expertise || []);
+    setSpecializations(profile.specializations || []);
+    setLanguages(profile.languages || []);
+  }, [profile]);
 
-  // Update local state when props change
-  useEffect(() => {
-    setLocalFirstName(firstName);
-    setLocalLastName(lastName);
-  }, [firstName, lastName]);
+  // ============================================================================
+  // HANDLERS
+  // ============================================================================
 
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
+  const handleBioChange = (value: string) => {
+    setBio(value);
+    onUpdateProfile({ bio: value });
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleTeachingExperienceChange = (value: string) => {
+    setTeachingExperience(value);
+    onUpdateProfile({ teachingExperience: value });
+  };
 
-    // Reset error
-    setUploadError(null);
+  const handleEducationChange = (value: string) => {
+    setEducation(value);
+    onUpdateProfile({ education: value });
+  };
 
-    // Validate file type
-    if (!['image/jpeg', 'image/png', 'image/webp', 'image/jpg'].includes(file.type)) {
-      setUploadError(translations.invalidFileType || 'Invalid file type. Only JPG, PNG, and WEBP are allowed.');
-      return;
-    }
-
-    // Validate file size (10MB max)
-    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
-    if (file.size > maxSize) {
-      setUploadError(translations.fileTooLarge || 'File is too large. Maximum size is 10MB.');
-      return;
-    }
-
-    setIsUploading(true);
-    setUploadError(null);
-
-    try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      // Create unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
-
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      // Update preview immediately
-      setPreviewUrl(publicUrl);
-
-      // Update database through parent component
-      onUpdate({ avatar_url: publicUrl });
-
-    } catch (error: any) {
-      console.error('Error uploading avatar:', error);
-      setUploadError(error.message || translations.uploadFailed || 'Failed to upload image.');
-    } finally {
-      setIsUploading(false);
+  const handleHourlyRateChange = (value: string) => {
+    setHourlyRate(value);
+    const rate = parseFloat(value);
+    if (!isNaN(rate) && rate >= 0) {
+      onUpdateProfile({ hourlyRate: rate });
     }
   };
 
-  const handleRemoveAvatar = async () => {
-    try {
-      setPreviewUrl(null);
-      onUpdate({ avatar_url: '' });
-    } catch (error) {
-      console.error('Error removing avatar:', error);
+  // ✅ FIXED: Theme Toggle (jak w innych komponentach projektu)
+  const handleThemeChange = (newTheme: 'light' | 'dark') => {
+    onUpdateTheme(newTheme);
+  };
+
+  // Teaching Interests (MAX 8)
+  const handleAddExpertise = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && newExpertise.trim()) {
+      e.preventDefault();
+      
+      if (expertise.length >= 8) {
+        return;
+      }
+
+      const trimmed = newExpertise.trim();
+      if (!expertise.includes(trimmed)) {
+        const updated = [...expertise, trimmed];
+        setExpertise(updated);
+        onUpdateProfile({ expertise: updated });
+      }
+      setNewExpertise('');
     }
   };
 
-  const handleSave = () => {
-    onUpdate({
-      first_name: localFirstName,
-      last_name: localLastName
-    });
+  const handleRemoveExpertise = (item: string) => {
+    const updated = expertise.filter(i => i !== item);
+    setExpertise(updated);
+    onUpdateProfile({ expertise: updated });
+  };
+
+  // Specializations
+  const handleAddSpecialization = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && newSpecialization.trim()) {
+      e.preventDefault();
+      const trimmed = newSpecialization.trim();
+      if (!specializations.includes(trimmed)) {
+        const updated = [...specializations, trimmed];
+        setSpecializations(updated);
+        onUpdateProfile({ specializations: updated });
+      }
+      setNewSpecialization('');
+    }
+  };
+
+  const handleRemoveSpecialization = (item: string) => {
+    const updated = specializations.filter(i => i !== item);
+    setSpecializations(updated);
+    onUpdateProfile({ specializations: updated });
+  };
+
+  // Languages
+  const handleAddLanguage = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && newLanguage.trim()) {
+      e.preventDefault();
+      const trimmed = newLanguage.trim();
+      if (!languages.includes(trimmed)) {
+        const updated = [...languages, trimmed];
+        setLanguages(updated);
+        onUpdateProfile({ languages: updated });
+      }
+      setNewLanguage('');
+    }
+  };
+
+  const handleRemoveLanguage = (item: string) => {
+    const updated = languages.filter(i => i !== item);
+    setLanguages(updated);
+    onUpdateProfile({ languages: updated });
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-      <div className="flex items-center space-x-2 mb-6">
-        <User className="h-5 w-5 text-purple-600" />
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-          {translations.profileInfo || 'Profile Information'}
-        </h2>
+    <div className="space-y-6">
+      {/* Professional Bio */}
+      <div>
+        <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <User className="h-4 w-4" />
+          <span>{t.settings?.tutorBio || 'Professional Bio'}</span>
+        </label>
+        <textarea
+          value={bio}
+          onChange={(e) => handleBioChange(e.target.value)}
+          placeholder="Tell students about your teaching philosophy and experience..."
+          rows={4}
+          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+          maxLength={500}
+        />
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          {bio.length}/500 characters
+        </p>
       </div>
 
-      <div className="space-y-6">
-        {/* Avatar Upload */}
-        <div className="flex items-center space-x-6">
-          <div className="relative">
-            {previewUrl ? (
-              <img
-                src={previewUrl}
-                alt="Profile"
-                className="w-24 h-24 rounded-full object-cover border-4 border-purple-200 dark:border-purple-700"
-              />
-            ) : (
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-3xl font-bold">
-                {localFirstName?.[0]}{localLastName?.[0]}
-              </div>
-            )}
-            <button
-              type="button"
-              onClick={handleAvatarClick}
-              disabled={isUploading}
-              className="absolute bottom-0 right-0 w-10 h-10 bg-white dark:bg-gray-700 rounded-full border-2 border-purple-600 dark:border-purple-400 flex items-center justify-center hover:bg-purple-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 shadow-lg"
-              title={translations.uploadAvatar || 'Upload Avatar'}
-            >
-              {isUploading ? (
-                <Loader2 className="h-5 w-5 text-purple-600 dark:text-purple-400 animate-spin" />
-              ) : (
-                <Camera className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-              )}
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/jpg"
-              onChange={handleFileChange}
-              className="hidden"
-            />
+      {/* ✅ Teaching Interests & Expertise - MAX 8 */}
+      <div>
+        <label className="flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <div className="flex items-center space-x-2">
+            <BookOpen className="h-4 w-4" />
+            <span>{t.settings?.teachingExpertise || 'Teaching Interests & Expertise'}</span>
           </div>
-
-          <div className="flex-1">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-              {translations.profilePicture || 'Profile Picture'}
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-              {translations.profilePictureDesc || 'JPG, PNG or WEBP. Max 10MB.'}
-            </p>
-            <div className="flex space-x-2">
-              <button
-                type="button"
-                onClick={handleAvatarClick}
-                disabled={isUploading}
-                className="px-4 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 disabled:opacity-50 flex items-center space-x-2"
+          <span className="text-xs font-medium text-purple-600 dark:text-purple-400">
+            ({expertise.length}/8)
+          </span>
+        </label>
+        <input
+          type="text"
+          value={newExpertise}
+          onChange={(e) => setNewExpertise(e.target.value)}
+          onKeyDown={handleAddExpertise}
+          placeholder="Type and press Enter (max 8)"
+          disabled={expertise.length >= 8}
+          className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+        />
+        
+        {expertise.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            {expertise.map((item, index) => (
+              <span
+                key={index}
+                className="inline-flex items-center px-3 py-1.5 rounded-full text-sm bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700"
               >
-                <Upload className="h-4 w-4" />
-                <span>{isUploading ? (translations.uploading || 'Uploading...') : (previewUrl ? (translations.changePhoto || 'Change Photo') : (translations.uploadPhoto || 'Upload Photo'))}</span>
-              </button>
-              {previewUrl && (
+                {item}
                 <button
+                  onClick={() => handleRemoveExpertise(item)}
+                  className="ml-2 hover:text-purple-900 dark:hover:text-purple-100"
                   type="button"
-                  onClick={handleRemoveAvatar}
-                  disabled={isUploading}
-                  className="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 disabled:opacity-50"
                 >
-                  {translations.removePhoto || 'Remove'}
+                  <X className="h-3.5 w-3.5" />
                 </button>
-              )}
-            </div>
-            {uploadError && (
-              <p className="text-xs text-red-600 dark:text-red-400 mt-2">
-                {uploadError}
-              </p>
-            )}
+              </span>
+            ))}
           </div>
-        </div>
+        )}
 
-        {/* First Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {translations.firstName || 'First Name'}
-          </label>
-          <input
-            type="text"
-            value={localFirstName}
-            onChange={(e) => setLocalFirstName(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-            placeholder={translations.firstNamePlaceholder || 'Enter your first name'}
-          />
-        </div>
-
-        {/* Last Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {translations.lastName || 'Last Name'}
-          </label>
-          <input
-            type="text"
-            value={localLastName}
-            onChange={(e) => setLocalLastName(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-            placeholder={translations.lastNamePlaceholder || 'Enter your last name'}
-          />
-        </div>
-
-        {/* Email (Read-only) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {translations.email || 'Email'}
-          </label>
-          <input
-            type="email"
-            value={email}
-            readOnly
-            disabled
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-          />
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {translations.emailReadOnly || 'Email cannot be changed'}
+        {expertise.length >= 8 && (
+          <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center space-x-1">
+            <span>⚠️</span>
+            <span>Maximum 8 areas of expertise reached</span>
           </p>
-        </div>
+        )}
+      </div>
 
-        {/* Save Button */}
-        <div className="flex justify-end">
+      {/* Teaching Experience */}
+      <div>
+        <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <Briefcase className="h-4 w-4" />
+          <span>{t.settings?.teachingExperience || 'Teaching Experience'}</span>
+        </label>
+        <textarea
+          value={teachingExperience}
+          onChange={(e) => handleTeachingExperienceChange(e.target.value)}
+          placeholder="Describe your teaching background, years of experience..."
+          rows={3}
+          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+        />
+      </div>
+
+      {/* Specializations */}
+      <div>
+        <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <GraduationCap className="h-4 w-4" />
+          <span>{t.settings?.specializations || 'Specializations'}</span>
+        </label>
+        <input
+          type="text"
+          value={newSpecialization}
+          onChange={(e) => setNewSpecialization(e.target.value)}
+          onKeyDown={handleAddSpecialization}
+          placeholder="e.g., Business English, IELTS Prep (press Enter)"
+          className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+        />
+        
+        {specializations.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            {specializations.map((item, index) => (
+              <span
+                key={index}
+                className="inline-flex items-center px-3 py-1.5 rounded-full text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700"
+              >
+                {item}
+                <button
+                  onClick={() => handleRemoveSpecialization(item)}
+                  className="ml-2 hover:text-blue-900 dark:hover:text-blue-100"
+                  type="button"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Education */}
+      <div>
+        <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <GraduationCap className="h-4 w-4" />
+          <span>{t.settings?.education || 'Education'}</span>
+        </label>
+        <input
+          type="text"
+          value={education}
+          onChange={(e) => handleEducationChange(e.target.value)}
+          placeholder="e.g., MA in Education, TEFL Certified, PhD in Linguistics"
+          className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+        />
+      </div>
+
+      {/* Languages Taught */}
+      <div>
+        <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <Globe className="h-4 w-4" />
+          <span>{t.settings?.languagesTaught || 'Languages Taught'}</span>
+        </label>
+        <input
+          type="text"
+          value={newLanguage}
+          onChange={(e) => setNewLanguage(e.target.value)}
+          onKeyDown={handleAddLanguage}
+          placeholder="e.g., English, Spanish, French (press Enter)"
+          className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+        />
+        
+        {languages.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            {languages.map((item, index) => (
+              <span
+                key={index}
+                className="inline-flex items-center px-3 py-1.5 rounded-full text-sm bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-700"
+              >
+                {item}
+                <button
+                  onClick={() => handleRemoveLanguage(item)}
+                  className="ml-2 hover:text-green-900 dark:hover:text-green-100"
+                  type="button"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Hourly Rate */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          {t.settings?.hourlyRate || 'Hourly Rate'} (USD)
+        </label>
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          value={hourlyRate}
+          onChange={(e) => handleHourlyRateChange(e.target.value)}
+          placeholder="50.00"
+          className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+        />
+      </div>
+
+      {/* ✅ FIXED: Theme Toggle - TAK JAK U STUDENTA */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          {t.settings?.theme || 'Theme'}
+        </label>
+        <div className="flex space-x-4">
+          {/* Light Button */}
           <button
-            onClick={handleSave}
-            className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+            type="button"
+            onClick={() => handleThemeChange('light')}
+            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg border-2 transition-all ${
+              theme === 'light'
+                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                : 'border-gray-300 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-700'
+            }`}
           >
-            {translations.saveChanges || 'Save Changes'}
+            <Sun className="h-4 w-4" />
+            <span className="font-medium">{t.settings?.light || 'Light'}</span>
+          </button>
+          
+          {/* Dark Button */}
+          <button
+            type="button"
+            onClick={() => handleThemeChange('dark')}
+            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg border-2 transition-all ${
+              theme === 'dark'
+                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                : 'border-gray-300 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-700'
+            }`}
+          >
+            <Moon className="h-4 w-4" />
+            <span className="font-medium">{t.settings?.dark || 'Dark'}</span>
           </button>
         </div>
       </div>
