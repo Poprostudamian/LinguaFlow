@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
-import { ProfileSectionTutor } from '../../../settings/ProfileSection';
+import { ProfileSection } from '../settings/ProfileSection.tsx';
 
 interface TutorProfile {
   bio?: string;
