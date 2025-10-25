@@ -1132,6 +1132,106 @@ studentSettings: {
     cancel: 'Cancel',
     confirmDelete: 'Yes, Delete Account',
   },
+  // Tutor Settings
+    tutorSettings: {
+      title: 'Tutor Settings',
+      subtitle: 'Manage your professional profile and teaching preferences',
+      saveChanges: 'Save Changes',
+      saving: 'Saving...',
+      changesSaved: 'Settings saved successfully!',
+      errorSaving: 'Failed to save settings',
+      errorLoading: 'Failed to load settings',
+
+      // Profile Section
+      profileSection: {
+        title: 'Professional Profile',
+        description: 'Showcase your teaching expertise and experience',
+        profilePhoto: 'Profile Photo',
+        uploadHint: 'JPG, PNG or WEBP (max 5MB)',
+        uploading: 'Uploading...',
+        removePhoto: 'Remove photo',
+        firstName: 'First Name',
+        lastName: 'Last Name',
+        email: 'Email Address',
+        emailReadonly: 'Email cannot be changed',
+        phone: 'Phone Number (Optional)',
+        bio: 'Professional Bio',
+        bioPlaceholder: 'Tell students about your teaching philosophy and experience...',
+        teachingExperience: 'Teaching Experience',
+        experiencePlaceholder: 'e.g., 5 years of teaching English to high school students...',
+        education: 'Education',
+        educationPlaceholder: 'e.g., M.A. in English Literature, University of Warsaw',
+        hourlyRate: 'Hourly Rate (PLN)',
+        rateHint: 'Your suggested hourly rate for lessons (optional)',
+        characters: 'characters',
+      },
+
+      // Languages Section
+      languagesSection: {
+        title: 'Teaching Languages',
+        description: 'Languages you teach or offer lessons in',
+        addLanguage: 'Add Language',
+        languagePlaceholder: 'Type and press Enter',
+        popularLanguages: 'Popular Languages',
+        yourLanguages: 'Your Teaching Languages',
+        noLanguages: 'No teaching languages added yet',
+      },
+
+      // Expertise Section
+      expertiseSection: {
+        title: 'Teaching Expertise & Specializations',
+        description: 'Your areas of specialization and teaching strengths',
+        addExpertise: 'Add Expertise Area',
+        expertisePlaceholder: 'Type and press Enter (max 8)',
+        popularExpertise: 'Popular Specializations',
+        yourExpertise: 'Your Expertise Areas',
+        noExpertise: 'No expertise areas added yet',
+      },
+
+      // Students Section
+      studentsSection: {
+        title: 'My Students',
+        description: 'Students you are currently teaching',
+        noStudents: "You don't have any students yet",
+        noStudentsDescription: 'Students will appear here once they accept your invitation',
+        active: 'Active',
+        inactive: 'Inactive',
+        assigned: 'assigned',
+        inProgress: 'in progress',
+        completed: 'completed',
+        message: 'Message',
+        totalStudents: 'Total Students',
+        activeStudents: 'Active Students',
+        totalCompletedLessons: 'Lessons Completed',
+      },
+
+      // Account Section
+      accountSection: {
+        title: 'Account & Platform Settings',
+        description: 'Manage your account preferences and platform settings',
+        accountType: 'Account Type',
+        tutorAccount: 'Tutor Account',
+        tutorAccountDescription: 'You can create lessons and manage students',
+        language: 'Language',
+        theme: 'Theme',
+        light: 'Light',
+        dark: 'Dark',
+        notifications: 'Notifications',
+        emailNotifications: 'Email Notifications',
+        emailNotificationsDesc: 'Receive updates about lessons and student progress',
+        pushNotifications: 'Push Notifications',
+        pushNotificationsDesc: 'Get notified about new messages and meetings',
+        dangerZone: 'Danger Zone',
+        deleteAccount: 'Delete Account',
+        deleteAccountDesc: 'Permanently delete your account and all data',
+        delete: 'Delete',
+        deleteAccountConfirm: 'Are you sure?',
+        deleteAccountWarning: 'This action cannot be undone. All your data, lessons, and student connections will be permanently deleted.',
+        cancel: 'Cancel',
+        deleteConfirm: 'Yes, delete my account',
+        deleting: 'Deleting...',
+      },
+    },
 },
   },
   //--------------------------------------------------PL-------------------------------------------------------------------------------------------------------------------------
@@ -1636,7 +1736,7 @@ studentSettings: {
       // Time Formatting
       at: 'o',
     },
-// TUTOR ---------------------------------------------------------------------------
+// TUTOR ---------------------------------------------------------------------------------------------------------------------
      // Tutor Dashboard
     tutorDashboard: {
       welcome: 'Witaj ponownie',
