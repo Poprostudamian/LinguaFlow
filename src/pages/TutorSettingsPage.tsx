@@ -1,143 +1,410 @@
 // src/pages/TutorSettingsPage.tsx
-// Main settings page for Tutor with all sections
 
 import React, { useState, useEffect } from 'react';
-import { Save, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
+import { 
+  User, 
+  Save, 
+  Bell, 
+  Sun, 
+  Moon, 
+  Globe,
+  Mail,
+  Smartphone,
+  AlertCircle,
+  Check,
+  Tag,
+  FileText,
+  Trash2
+} from 'lucide-react';
+import { ProfileSectionTutor } from '../components/settings/ProfileSectionTutor';
 import { supabase } from '../lib/supabase';
-import { ProfileSection } from '../components/settings/ProfileSection';
-import { InterestsSection } from '../components/settings/InterestsSection';
-import { AboutSection } from '../components/settings/AboutSection';
-import { AccountSettingsSection } from '../components/settings/AccountSettingsSection';
 
-interface UserSettings {
-  first_name: string;
-  last_name: string;
-  email: string;
-  avatar_url: string | null;
+// Import or create other sections (they can be similar to student version)
+interface InterestsSectionProps {
   interests: string[];
-  about_me: string;
-  email_notifications: boolean;
-  push_notifications: boolean;
+  onUpdate: (interests: string[]) => void;
+  translations: any;
 }
 
-interface Toast {
-  type: 'success' | 'error';
-  message: string;
+function InterestsSection({ interests, onUpdate, translations }: InterestsSectionProps) {
+  const [localInterests, setLocalInterests] = useState<string[]>(interests);
+  const [newInterest, setNewInterest] = useState('');
+
+  const predefinedInterests = [
+    'Languages', 'Mathematics', 'Science', 'History', 'Literature',
+    'Programming', 'Music', 'Art', 'Sports', 'Business'
+  ];
+
+  const addInterest = (interest: string) => {
+    if (!localInterests.includes(interest) && localInterests.length < 10) {
+      const updated = [...localInterests, interest];
+      setLocalInterests(updated);
+      onUpdate(updated);
+    }
+    setNewInterest('');
+  };
+
+  const removeInterest = (interest: string) => {
+    const updated = localInterests.filter(i => i !== interest);
+    setLocalInterests(updated);
+    onUpdate(updated);
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="flex items-center space-x-2 mb-6">
+        <Tag className="h-5 w-5 text-purple-600" />
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          {translations.interestsTitle || 'Teaching Interests & Expertise'}
+        </h2>
+      </div>
+
+      <div className="space-y-4">
+        {/* Current Interests */}
+        {localInterests.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {localInterests.map((interest, idx) => (
+              <span
+                key={idx}
+                className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-sm font-medium flex items-center space-x-2"
+              >
+                <span>{interest}</span>
+                <button
+                  onClick={() => removeInterest(interest)}
+                  className="hover:text-purple-900 dark:hover:text-purple-100"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Predefined Interests */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            {translations.selectInterests || 'Select Your Expertise Areas'}
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {predefinedInterests.map((interest) => (
+              <button
+                key={interest}
+                onClick={() => addInterest(interest)}
+                disabled={localInterests.includes(interest) || localInterests.length >= 10}
+                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                  localInterests.includes(interest)
+                    ? 'bg-purple-600 text-white cursor-not-allowed'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-purple-100 dark:hover:bg-purple-900/30'
+                } disabled:opacity-50`}
+              >
+                {interest}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Custom Interest */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            {translations.addCustom || 'Add Custom Interest'}
+          </label>
+          <div className="flex space-x-2">
+            <input
+              type="text"
+              value={newInterest}
+              onChange={(e) => setNewInterest(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && addInterest(newInterest)}
+              placeholder={translations.customInterestPlaceholder || 'E.g., Web Development'}
+              maxLength={30}
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            />
+            <button
+              onClick={() => addInterest(newInterest)}
+              disabled={!newInterest.trim() || localInterests.length >= 10}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {translations.add || 'Add'}
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {translations.interestsLimit || `Max 10 interests (${localInterests.length}/10)`}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
+interface AboutSectionProps {
+  aboutMe: string;
+  onUpdate: (about: string) => void;
+  translations: any;
+}
+
+function AboutSection({ aboutMe, onUpdate, translations }: AboutSectionProps) {
+  const [localAbout, setLocalAbout] = useState(aboutMe);
+  const maxLength = 500;
+
+  const handleSave = () => {
+    onUpdate(localAbout);
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="flex items-center space-x-2 mb-6">
+        <FileText className="h-5 w-5 text-purple-600" />
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          {translations.aboutTitle || 'About Me'}
+        </h2>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            {translations.aboutDescription || 'Tell your students about yourself'}
+          </label>
+          <textarea
+            value={localAbout}
+            onChange={(e) => setLocalAbout(e.target.value.slice(0, maxLength))}
+            placeholder={translations.aboutPlaceholder || 'Share your teaching experience, qualifications, and approach...'}
+            rows={6}
+            maxLength={maxLength}
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+          />
+          <div className="flex justify-between items-center mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {translations.aboutHint || 'This will be visible to your students'}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {localAbout.length}/{maxLength}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            onClick={handleSave}
+            className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+          >
+            {translations.saveChanges || 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface AccountSettingsSectionProps {
+  accountType: string;
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  onUpdateNotifications: (updates: { emailNotifications?: boolean; pushNotifications?: boolean }) => void;
+  onDeleteAccount: () => void;
+  translations: any;
+}
+
+function AccountSettingsSection({
+  accountType,
+  emailNotifications,
+  pushNotifications,
+  onUpdateNotifications,
+  onDeleteAccount,
+  translations
+}: AccountSettingsSectionProps) {
+  const { theme, setTheme, language, setLanguage } = useLanguage();
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <div className="flex items-center space-x-2 mb-6">
+        <User className="h-5 w-5 text-purple-600" />
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          {translations.accountSettings || 'Account & Platform Settings'}
+        </h2>
+      </div>
+
+      <div className="space-y-6">
+        {/* Account Type */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            {translations.accountType || 'Account Type'}
+          </label>
+          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+            <p className="text-sm font-medium text-gray-900 dark:text-white">
+              {accountType === 'tutor' ? (translations.tutor || 'Tutor') : (translations.student || 'Student')}
+            </p>
+          </div>
+        </div>
+
+        {/* Language */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            {translations.language || 'Language'}
+          </label>
+          <div className="flex space-x-3">
+            <button
+              onClick={() => setLanguage('pl')}
+              className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                language === 'pl'
+                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                  : 'border-gray-300 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-700'
+              }`}
+            >
+              <Globe className="h-4 w-4" />
+              <span className="font-medium">Polski</span>
+            </button>
+            <button
+              onClick={() => setLanguage('en')}
+              className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                language === 'en'
+                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                  : 'border-gray-300 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-700'
+              }`}
+            >
+              <Globe className="h-4 w-4" />
+              <span className="font-medium">English</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Theme */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            {translations.theme || 'Theme'}
+          </label>
+          <div className="flex space-x-3">
+            <button
+              onClick={() => setTheme('light')}
+              className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                theme === 'light'
+                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                  : 'border-gray-300 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-700'
+              }`}
+            >
+              <Sun className="h-4 w-4" />
+              <span className="font-medium">{translations.light || 'Light'}</span>
+            </button>
+            <button
+              onClick={() => setTheme('dark')}
+              className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                theme === 'dark'
+                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                  : 'border-gray-300 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-700'
+              }`}
+            >
+              <Moon className="h-4 w-4" />
+              <span className="font-medium">{translations.dark || 'Dark'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Notifications */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            {translations.notifications || 'Notifications'}
+          </label>
+          <div className="space-y-3">
+            {/* Email Notifications */}
+            <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors">
+              <div className="flex items-center space-x-3">
+                <Mail className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {translations.emailNotifications || 'Email Notifications'}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {translations.emailNotificationsDesc || 'Receive updates via email'}
+                  </p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={emailNotifications}
+                onChange={(e) => onUpdateNotifications({ emailNotifications: e.target.checked })}
+                className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 focus:ring-offset-0"
+              />
+            </label>
+
+            {/* Push Notifications */}
+            <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors">
+              <div className="flex items-center space-x-3">
+                <Smartphone className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {translations.pushNotifications || 'Push Notifications'}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {translations.pushNotificationsDesc || 'Get notified on your device'}
+                  </p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={pushNotifications}
+                onChange={(e) => onUpdateNotifications({ pushNotifications: e.target.checked })}
+                className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 focus:ring-offset-0"
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* Danger Zone */}
+        <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+          <h3 className="text-sm font-medium text-red-600 dark:text-red-400 mb-3 flex items-center space-x-2">
+            <AlertCircle className="h-4 w-4" />
+            <span>{translations.dangerZone || 'Danger Zone'}</span>
+          </h3>
+          <button
+            onClick={onDeleteAccount}
+            className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="font-medium">{translations.deleteAccount || 'Delete Account'}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main TutorSettingsPage Component
 export function TutorSettingsPage() {
-  const { session } = useAuth();
   const { t } = useLanguage();
-  
-  const [settings, setSettings] = useState<UserSettings>({
+  const { session } = useAuth();
+  const [settings, setSettings] = useState({
     first_name: '',
     last_name: '',
     email: '',
-    avatar_url: null,
-    interests: [],
+    avatar_url: '',
+    interests: [] as string[],
     about_me: '',
     email_notifications: true,
     push_notifications: true
   });
-
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [toast, setToast] = useState<Toast | null>(null);
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Translations object for Settings page
-  const settingsT = {
-    // Page
-    title: t.language === 'pl' ? 'Ustawienia' : 'Settings',
-    subtitle: t.language === 'pl' ? 'Zarządzaj swoim profilem i preferencjami' : 'Manage your profile and preferences',
-    saveChanges: t.language === 'pl' ? 'Zapisz zmiany' : 'Save Changes',
-    saving: t.language === 'pl' ? 'Zapisywanie...' : 'Saving...',
-    refresh: t.language === 'pl' ? 'Odśwież' : 'Refresh',
-    loading: t.language === 'pl' ? 'Ładowanie ustawień...' : 'Loading settings...',
-    
-    // Success/Error
-    saveSuccess: t.language === 'pl' ? 'Zmiany zostały zapisane pomyślnie!' : 'Changes saved successfully!',
-    saveError: t.language === 'pl' ? 'Błąd podczas zapisywania zmian' : 'Error saving changes',
-    loadError: t.language === 'pl' ? 'Błąd podczas ładowania ustawień' : 'Error loading settings',
-    
-    // Profile Section
-    profileInfo: t.language === 'pl' ? 'Informacje profilowe' : 'Profile Information',
-    profilePhoto: t.language === 'pl' ? 'Zdjęcie profilowe' : 'Profile Photo',
-    photoDescription: t.language === 'pl' ? 'JPG lub PNG. Maksymalny rozmiar 10MB.' : 'JPG or PNG. Max size 10MB.',
-    firstName: t.language === 'pl' ? 'Imię' : 'First Name',
-    lastName: t.language === 'pl' ? 'Nazwisko' : 'Last Name',
-    email: t.language === 'pl' ? 'Adres email' : 'Email Address',
-    readonly: t.language === 'pl' ? 'Tylko do odczytu' : 'Read-only',
-    emailNote: t.language === 'pl' ? 'Email nie może być zmieniony. Skontaktuj się z supportem jeśli potrzebne.' : 'Email cannot be changed. Contact support if needed.',
-    firstNamePlaceholder: t.language === 'pl' ? 'Wpisz swoje imię' : 'Enter your first name',
-    lastNamePlaceholder: t.language === 'pl' ? 'Wpisz swoje nazwisko' : 'Enter your last name',
-    invalidFileType: t.language === 'pl' ? 'Nieprawidłowy typ pliku. Dozwolone tylko JPG i PNG.' : 'Invalid file type. Only JPG and PNG are allowed.',
-    fileTooLarge: t.language === 'pl' ? 'Plik jest za duży. Maksymalny rozmiar to 10MB.' : 'File is too large. Maximum size is 10MB.',
-    uploadFailed: t.language === 'pl' ? 'Nie udało się przesłać zdjęcia.' : 'Failed to upload image.',
-    
-    // Interests Section
-    interestsTitle: t.language === 'pl' ? 'Zainteresowania i Specjalizacje' : 'Interests & Specializations',
-    interestsDescription: t.language === 'pl' ? 'Dodaj maksymalnie 3 przedmioty lub umiejętności w których się specjalizujesz.' : 'Add up to 3 subjects or skills you specialize in.',
-    noInterestsYet: t.language === 'pl' ? 'Nie dodano jeszcze żadnych zainteresowań' : 'No interests added yet',
-    addInterest: t.language === 'pl' ? 'Dodaj zainteresowanie' : 'Add Interest',
-    maxInterestsReached: t.language === 'pl' ? 'Maksymalnie 3 zainteresowania. Usuń jedno aby dodać kolejne.' : 'Maximum 3 interests reached. Remove one to add another.',
-    addInterestTitle: t.language === 'pl' ? 'Dodaj zainteresowanie lub specjalizację' : 'Add Interest or Specialization',
-    customInterest: t.language === 'pl' ? 'Własne zainteresowanie' : 'Custom Interest',
-    customInterestPlaceholder: t.language === 'pl' ? 'Wpisz własne zainteresowanie...' : 'Enter custom interest...',
-    add: t.language === 'pl' ? 'Dodaj' : 'Add',
-    popularInterests: t.language === 'pl' ? 'Popularne zainteresowania' : 'Popular Interests',
-    
-    // About Section
-    aboutTitle: t.language === 'pl' ? 'O mnie' : 'About Me',
-    optional: t.language === 'pl' ? 'Opcjonalne' : 'Optional',
-    aboutDescription: t.language === 'pl' ? 'Napisz krótki opis o sobie, swoim doświadczeniu nauczania lub podejściu do korepetycji.' : 'Write a brief description about yourself, your teaching experience, or your approach to tutoring.',
-    aboutPlaceholder: t.language === 'pl' ? 'Opowiedz uczniom trochę o sobie...' : 'Tell students a bit about yourself...',
-    charactersUsed: t.language === 'pl' ? 'Użyte znaki' : 'Characters used',
-    remaining: t.language === 'pl' ? 'pozostało' : 'remaining',
-    preview: t.language === 'pl' ? 'Podgląd' : 'Preview',
-    
-    // Account Settings Section
-    accountSettingsTitle: t.language === 'pl' ? 'Ustawienia konta i platformy' : 'Account & Platform Settings',
-    accountType: t.language === 'pl' ? 'Typ konta' : 'Account Type',
-    tutorAccount: t.language === 'pl' ? 'Konto korepetytora' : 'Tutor Account',
-    studentAccount: t.language === 'pl' ? 'Konto ucznia' : 'Student Account',
-    tutorAccountDescription: t.language === 'pl' ? 'Możesz tworzyć lekcje i zarządzać uczniami' : 'You can create lessons and manage students',
-    studentAccountDescription: t.language === 'pl' ? 'Możesz uzyskać dostęp do lekcji przypisanych przez korepetytorów' : 'You can access lessons assigned by your tutors',
-    language: t.language === 'pl' ? 'Język' : 'Language',
-    theme: t.language === 'pl' ? 'Motyw' : 'Theme',
-    light: t.language === 'pl' ? 'Jasny' : 'Light',
-    dark: t.language === 'pl' ? 'Ciemny' : 'Dark',
-    notifications: t.language === 'pl' ? 'Powiadomienia' : 'Notifications',
-    emailNotifications: t.language === 'pl' ? 'Powiadomienia Email' : 'Email Notifications',
-    emailNotificationsDesc: t.language === 'pl' ? 'Otrzymuj aktualizacje przez email' : 'Receive updates via email',
-    pushNotifications: t.language === 'pl' ? 'Powiadomienia Push' : 'Push Notifications',
-    pushNotificationsDesc: t.language === 'pl' ? 'Otrzymuj powiadomienia push w przeglądarce' : 'Receive push notifications in browser',
-    dangerZone: t.language === 'pl' ? 'Strefa niebezpieczna' : 'Danger Zone',
-    deleteAccount: t.language === 'pl' ? 'Usuń konto' : 'Delete Account',
-    deleteAccountWarning: t.language === 'pl' ? 'Ta akcja nie może być cofnięta. Wszystkie Twoje dane zostaną trwale usunięte.' : 'This action cannot be undone. All your data will be permanently deleted.',
-    deleteAccountConfirm: t.language === 'pl' ? 'Czy na pewno chcesz usunąć swoje konto?' : 'Are you sure you want to delete your account?',
-    cancel: t.language === 'pl' ? 'Anuluj' : 'Cancel',
-    confirmDelete: t.language === 'pl' ? 'Tak, usuń konto' : 'Yes, Delete Account',
-  };
+  const settingsT = t.settings || {};
 
   // Load user settings
   useEffect(() => {
     loadSettings();
-  }, [session]);
+  }, [session.user?.id]);
 
   const loadSettings = async () => {
-    if (!session?.user?.id) return;
-
-    setIsLoading(true);
     try {
+      setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       // Get user data
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
-        .eq('id', session.user.id)
+        .eq('id', user.id)
         .single();
 
       if (userError) throw userError;
@@ -146,185 +413,179 @@ export function TutorSettingsPage() {
       const { data: settingsData, error: settingsError } = await supabase
         .from('user_settings')
         .select('*')
-        .eq('user_id', session.user.id)
+        .eq('user_id', user.id)
         .single();
 
-      // If no settings exist, create default ones
-      if (settingsError && settingsError.code === 'PGRST116') {
-        const { data: newSettings } = await supabase
-          .from('user_settings')
-          .insert({
-            user_id: session.user.id,
-            email_notifications: true,
-            push_notifications: true,
-            theme: 'light',
-            language: 'pl'
-          })
-          .select()
-          .single();
-
-        settingsData = newSettings;
+      if (settingsError && settingsError.code !== 'PGRST116') {
+        console.warn('Settings not found, using defaults');
       }
 
       setSettings({
         first_name: userData.first_name || '',
         last_name: userData.last_name || '',
         email: userData.email || '',
-        avatar_url: userData.avatar_url || null,
+        avatar_url: userData.avatar_url || '',
         interests: userData.interests || [],
         about_me: userData.about_me || '',
         email_notifications: settingsData?.email_notifications ?? true,
         push_notifications: settingsData?.push_notifications ?? true
       });
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error loading settings:', error);
-      setToast({ type: 'error', message: settingsT.loadError });
+      showSaveMessage('error', settingsT.loadError || 'Failed to load settings');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const saveSettings = async () => {
-    if (!session?.user?.id) return;
-
-    setIsSaving(true);
+  const updateProfile = async (updates: {
+    first_name?: string;
+    last_name?: string;
+    avatar_url?: string;
+  }) => {
     try {
-      // Update users table
-      const { error: userError } = await supabase
+      setIsSaving(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
         .from('users')
-        .update({
-          first_name: settings.first_name,
-          last_name: settings.last_name,
-          avatar_url: settings.avatar_url,
-          interests: settings.interests,
-          about_me: settings.about_me
-        })
-        .eq('id', session.user.id);
+        .update(updates)
+        .eq('id', user.id);
 
-      if (userError) throw userError;
+      if (error) throw error;
 
-      // Update user_settings table
-      const { error: settingsError } = await supabase
-        .from('user_settings')
-        .update({
-          email_notifications: settings.email_notifications,
-          push_notifications: settings.push_notifications
-        })
-        .eq('user_id', session.user.id);
+      setSettings(prev => ({ ...prev, ...updates }));
+      showSaveMessage('success', settingsT.changesSaved || 'Profile updated successfully');
 
-      if (settingsError) throw settingsError;
-
-      setToast({ type: 'success', message: settingsT.saveSuccess });
-      setHasChanges(false);
-
-    } catch (error: any) {
-      console.error('Error saving settings:', error);
-      setToast({ type: 'error', message: `${settingsT.saveError}: ${error.message}` });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      showSaveMessage('error', settingsT.saveError || 'Failed to save changes');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleDeleteAccount = async () => {
-    // In production, this should be handled by a secure backend endpoint
-    console.warn('Delete account requested');
-    setShowDeleteModal(false);
-    // TODO: Implement secure account deletion
+  const updateInterests = async (interests: string[]) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('users')
+        .update({ interests })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setSettings(prev => ({ ...prev, interests }));
+      showSaveMessage('success', settingsT.changesSaved || 'Interests updated successfully');
+
+    } catch (error) {
+      console.error('Error updating interests:', error);
+      showSaveMessage('error', settingsT.saveError || 'Failed to save interests');
+    }
   };
 
-  // Update handlers
-  const updateProfile = (data: any) => {
-    setSettings(prev => ({ ...prev, ...data }));
-    setHasChanges(true);
+  const updateAbout = async (about_me: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('users')
+        .update({ about_me })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setSettings(prev => ({ ...prev, about_me }));
+      showSaveMessage('success', settingsT.changesSaved || 'About section updated successfully');
+
+    } catch (error) {
+      console.error('Error updating about:', error);
+      showSaveMessage('error', settingsT.saveError || 'Failed to save about section');
+    }
   };
 
-  const updateInterests = (interests: string[]) => {
-    setSettings(prev => ({ ...prev, interests }));
-    setHasChanges(true);
+  const updateNotifications = async (updates: {
+    emailNotifications?: boolean;
+    pushNotifications?: boolean;
+  }) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert({
+          user_id: user.id,
+          email_notifications: updates.emailNotifications ?? settings.email_notifications,
+          push_notifications: updates.pushNotifications ?? settings.push_notifications
+        }, { onConflict: 'user_id' });
+
+      if (error) throw error;
+
+      setSettings(prev => ({
+        ...prev,
+        email_notifications: updates.emailNotifications ?? prev.email_notifications,
+        push_notifications: updates.pushNotifications ?? prev.push_notifications
+      }));
+      showSaveMessage('success', settingsT.changesSaved || 'Notifications updated successfully');
+
+    } catch (error) {
+      console.error('Error updating notifications:', error);
+      showSaveMessage('error', settingsT.saveError || 'Failed to save notification settings');
+    }
   };
 
-  const updateAbout = (about_me: string) => {
-    setSettings(prev => ({ ...prev, about_me }));
-    setHasChanges(true);
+  const showSaveMessage = (type: 'success' | 'error', text: string) => {
+    setSaveMessage({ type, text });
+    setTimeout(() => setSaveMessage(null), 3000);
   };
 
-  const updateNotifications = (notifSettings: any) => {
-    setSettings(prev => ({ ...prev, ...notifSettings }));
-    setHasChanges(true);
-  };
-
-  // Loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <RefreshCw className="h-12 w-12 animate-spin text-purple-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">{settingsT.loading}</p>
+          <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">{settingsT.loading || 'Loading settings...'}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
-      {/* Toast Notification */}
-      {toast && (
-        <div className={`fixed top-6 right-6 z-50 flex items-center space-x-2 px-4 py-3 rounded-lg shadow-lg ${
-          toast.type === 'success'
-            ? 'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200'
-            : 'bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200'
-        }`}>
-          {toast.type === 'success' ? (
-            <CheckCircle className="h-5 w-5" />
-          ) : (
-            <AlertCircle className="h-5 w-5" />
-          )}
-          <span className="font-medium">{toast.message}</span>
-          <button
-            onClick={() => setToast(null)}
-            className="ml-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          >
-            ×
-          </button>
-        </div>
-      )}
-
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {settingsT.title}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {settingsT.subtitle}
-          </p>
+      <div className="max-w-4xl mx-auto mb-6">
+        <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-6 text-white">
+          <h1 className="text-3xl font-bold mb-2">{settingsT.title || 'Settings'}</h1>
+          <p className="text-purple-100">{settingsT.description || 'Manage your account and preferences'}</p>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={loadSettings}
-            className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          >
-            <RefreshCw className="h-4 w-4" />
-            <span>{settingsT.refresh}</span>
-          </button>
-
-          <button
-            onClick={saveSettings}
-            disabled={!hasChanges || isSaving}
-            className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
-          >
-            <Save className="h-4 w-4" />
-            <span>{isSaving ? settingsT.saving : settingsT.saveChanges}</span>
-          </button>
-        </div>
+        {/* Save Message */}
+        {saveMessage && (
+          <div className={`mt-4 p-4 rounded-lg flex items-center space-x-3 ${
+            saveMessage.type === 'success'
+              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200'
+              : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200'
+          }`}>
+            {saveMessage.type === 'success' ? (
+              <Check className="h-5 w-5 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            )}
+            <p className="font-medium">{saveMessage.text}</p>
+          </div>
+        )}
       </div>
 
       {/* Settings Sections */}
-      <div className="space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Profile Section */}
-        <ProfileSection
+        <ProfileSectionTutor
           firstName={settings.first_name}
           lastName={settings.last_name}
           email={settings.email}
@@ -358,33 +619,37 @@ export function TutorSettingsPage() {
         />
       </div>
 
-      {/* Delete Account Confirmation Modal */}
+      {/* Delete Account Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center space-x-3 mb-4">
               <AlertCircle className="h-6 w-6 text-red-600" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {settingsT.deleteAccount}
+                {settingsT.deleteAccount || 'Delete Account'}
               </h3>
             </div>
             
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {settingsT.deleteAccountConfirm}
+              {settingsT.deleteAccountConfirm || 'Are you sure you want to delete your account? This action cannot be undone.'}
             </p>
 
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium"
               >
-                {settingsT.cancel}
+                {settingsT.cancel || 'Cancel'}
               </button>
               <button
-                onClick={handleDeleteAccount}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                onClick={() => {
+                  // Implement delete account logic here
+                  console.log('Delete account');
+                  setShowDeleteModal(false);
+                }}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
               >
-                {settingsT.confirmDelete}
+                {settingsT.delete || 'Delete'}
               </button>
             </div>
           </div>
