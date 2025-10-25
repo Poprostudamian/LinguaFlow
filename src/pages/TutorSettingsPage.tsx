@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
-import { ProfileSectionTutor } from './settings/ProfileSectionTutor';
+import { ProfileSectionTutor } from './settings/ProfileSection';
 
 interface TutorProfile {
   bio?: string;
