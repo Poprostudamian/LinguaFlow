@@ -520,9 +520,18 @@ export function TutorStudentsPage() {
                   key={student.id}
                   student={student}
                   onSendMessage={(id) => console.log('Send message to:', id)}
+                  onViewProfile={handleViewProfile}
                 />
               ))}
             </div>
+          
+          {/* NOWY - Student Profile Modal */}
+      {showProfileModal && selectedStudentId && (
+        <StudentProfileModal
+          studentId={selectedStudentId}
+          onClose={handleCloseProfile}
+        />
+      )}
           )}
         </div>
       ) : (
