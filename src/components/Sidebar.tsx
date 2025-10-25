@@ -57,7 +57,7 @@ export function Sidebar() {
     { path: '/tutor', label: 'Dashboard', icon: Home },
     { path: '/tutor/students', label: 'Students', icon: Users },
     { path: '/tutor/lessons', label: 'Create Lesson', icon: PlusCircle },
-    { path: '/tutor/grading', label: 'Grading', icon: Award, badge: pendingGradingsCount }, // ✅ ADDED
+    { path: '/tutor/grading', label: 'Grading', icon: Award, badge: pendingGradingsCount },
     { path: '/tutor/schedule', label: 'Schedule', icon: Calendar },
     { path: '/tutor/messages', label: 'Messages', icon: MessageCircle },
   ];
