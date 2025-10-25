@@ -1,5 +1,4 @@
 // src/components/Sidebar.tsx
-// ✅ UPDATED: Dodano link do Grading dla tutorów
 
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
