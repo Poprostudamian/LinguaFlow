@@ -525,7 +525,6 @@ export function TutorStudentsPage() {
               ))}
             </div>
           
-          {/* NOWY - Student Profile Modal */}
       {showProfileModal && selectedStudentId && (
         <StudentProfileModal
           studentId={selectedStudentId}
