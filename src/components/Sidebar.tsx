@@ -14,11 +14,11 @@ import {
   Settings
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase'; // ✅ ADDED
+import { supabase } from '../lib/supabase';
 
 export function Sidebar() {
   const { session } = useAuth();
-  const [pendingGradingsCount, setPendingGradingsCount] = useState(0); // ✅ ADDED
+  const [pendingGradingsCount, setPendingGradingsCount] = useState(0);
 
   // ✅ ADDED: Fetch pending gradings count
   useEffect(() => {
