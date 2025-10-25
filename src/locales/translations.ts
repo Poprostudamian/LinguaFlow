@@ -2183,6 +2183,91 @@ studentSettings: {
       
       footerCopyright: '© 2025 LectorMe. Wszelkie prawa zastrzeżone.',
     },
+    // Student Settings (dodaj przed końcem sekcji 'pl')
+studentSettings: {
+  title: 'Ustawienia',
+  saveChanges: 'Zapisz Zmiany',
+  saving: 'Zapisywanie...',
+  changesSaved: 'Ustawienia zapisane pomyślnie!',
+  errorSaving: 'Nie udało się zapisać ustawień',
+  
+  // Profile Section
+  profileSection: {
+    title: 'Informacje o Profilu',
+    description: 'Zaktualizuj swoje dane osobowe i zdjęcie profilowe',
+    firstName: 'Imię',
+    lastName: 'Nazwisko',
+    email: 'Adres Email',
+    emailReadonly: 'Email nie może być zmieniony',
+    phone: 'Numer Telefonu (Opcjonalnie)',
+    phonePlaceholder: '+48 123 456 789',
+    uploadAvatar: 'Prześlij Zdjęcie',
+    changeAvatar: 'Zmień Zdjęcie',
+    removeAvatar: 'Usuń Zdjęcie',
+  },
+  
+  // Learning Goals Section
+  learningGoalsSection: {
+    title: 'Cele Nauki i Zainteresowania',
+    description: 'Dodaj swoje cele nauki, aby pomóc swoim nauczycielom',
+    addGoal: 'Dodaj Cel',
+    maxGoals: 'Maksymalnie 8 celów',
+    goalPlaceholder: 'np. Przygotowanie do matury z Angielskiego',
+    popularGoals: 'Popularne Cele',
+    yourGoals: 'Twoje Cele',
+    noGoals: 'Brak celów nauki',
+    removeGoal: 'Usuń cel',
+  },
+  
+  // About Section
+  aboutSection: {
+    title: 'O Mnie',
+    description: 'Opowiedz swoim nauczycielom o sobie (opcjonalnie)',
+    placeholder: 'Opisz swoje cele nauki, zainteresowania lub czego oczekujesz od zajęć...',
+    charactersLeft: 'Pozostało {count} znaków',
+    maxLength: 'Maksymalnie 500 znaków',
+  },
+  
+  // My Tutors Section
+  myTutorsSection: {
+    title: 'Moi Nauczyciele',
+    description: 'Twoi aktywni nauczyciele i połączenia edukacyjne',
+    noTutors: 'Nie masz jeszcze żadnych nauczycieli',
+    noTutorsDescription: 'Poproś swojego nauczyciela, aby dodał Cię jako ucznia',
+    lessonsCompleted: 'ukończone lekcje',
+    active: 'Aktywny',
+    inactive: 'Nieaktywny',
+    message: 'Wiadomość',
+    viewProfile: 'Zobacz Profil',
+  },
+  
+  // Account Settings Section
+  accountSettingsSection: {
+    title: 'Ustawienia Konta i Platformy',
+    description: 'Zarządzaj preferencjami konta i ustawieniami platformy',
+    accountType: 'Typ Konta',
+    studentAccount: 'Konto Studenta',
+    language: 'Język',
+    selectLanguage: 'Wybierz język',
+    polish: 'Polski',
+    english: 'English (Angielski)',
+    theme: 'Motyw',
+    lightMode: 'Tryb Jasny',
+    darkMode: 'Tryb Ciemny',
+    notifications: 'Powiadomienia',
+    emailNotifications: 'Powiadomienia Email',
+    emailNotificationsDesc: 'Otrzymuj aktualizacje lekcji i wiadomości przez email',
+    pushNotifications: 'Powiadomienia Push',
+    pushNotificationsDesc: 'Otrzymuj powiadomienia o nowych wiadomościach i spotkaniach',
+    timezone: 'Strefa Czasowa',
+    dangerZone: 'Strefa Niebezpieczna',
+    deleteAccount: 'Usuń Konto',
+    deleteAccountDesc: 'Trwale usuń swoje konto i wszystkie dane',
+    deleteAccountConfirm: 'Czy na pewno chcesz usunąć swoje konto? Ta operacja jest nieodwracalna.',
+    cancel: 'Anuluj',
+    confirmDelete: 'Tak, Usuń Konto',
+  },
+},
   },
 } as const;
 
