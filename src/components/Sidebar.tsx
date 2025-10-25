@@ -61,6 +61,7 @@ export function Sidebar() {
     { path: '/tutor/grading', label: 'Grading', icon: Award, badge: pendingGradingsCount },
     { path: '/tutor/schedule', label: 'Schedule', icon: Calendar },
     { path: '/tutor/messages', label: 'Messages', icon: MessageCircle },
+    { path: '/tutor/settings', label: 'Settings', icon: Settings },
   ];
 
   const navItems = session?.user?.role === 'student' ? studentNavItems : tutorNavItems;
