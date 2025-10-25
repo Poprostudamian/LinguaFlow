@@ -1,7 +1,7 @@
 // src/pages/settings/ProfileSection.tsx
 import React, { useState, useEffect } from 'react';
 import { User, Briefcase, GraduationCap, Globe, BookOpen, Sun, Moon, X, Mail, Phone } from 'lucide-react';
-import { useLanguage } from '../../../contexts/LanguageContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface TutorProfile {
   bio?: string;
