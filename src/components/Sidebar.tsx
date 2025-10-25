@@ -72,7 +72,7 @@ export function Sidebar() {
             <BookOpen className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">LinguaFlow</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">LectorMe</h2>
             <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
               {session?.user?.role} Portal
             </p>
