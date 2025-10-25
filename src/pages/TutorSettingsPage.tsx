@@ -18,7 +18,7 @@ import {
   FileText,
   Trash2
 } from 'lucide-react';
-import { ProfileSectionTutor } from '../components/settings/ProfileSection';
+import { ProfileSectionTutor } from '../components/settings/ProfileSectionTutor';
 import { supabase } from '../lib/supabase';
 
 // Import or create other sections (they can be similar to student version)
@@ -268,35 +268,43 @@ function AccountSettingsSection({
           </div>
         </div>
 
-        {/* Theme */}
+        {/* Theme Toggle */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-            {translations.theme || 'Theme'}
+            {translations.themeToggle || 'Tryb Ciemny'}
           </label>
-          <div className="flex space-x-3">
-            <button
-              onClick={() => setTheme('light')}
-              className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg border-2 transition-all ${
-                theme === 'light'
-                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-                  : 'border-gray-300 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-700'
+          
+          {/* Toggle Switch */}
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="relative inline-flex items-center h-12 w-24 rounded-full transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-purple-500/20"
+            style={{
+              background: theme === 'dark' 
+                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                : '#e5e7eb'
+            }}
+          >
+            {/* Sliding Circle */}
+            <span
+              className={`absolute inline-flex items-center justify-center h-10 w-10 rounded-full bg-white shadow-lg transform transition-all duration-300 ${
+                theme === 'dark' ? 'translate-x-[3.25rem]' : 'translate-x-1'
               }`}
             >
-              <Sun className="h-4 w-4" />
-              <span className="font-medium">{translations.light || 'Light'}</span>
-            </button>
-            <button
-              onClick={() => setTheme('dark')}
-              className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg border-2 transition-all ${
-                theme === 'dark'
-                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-                  : 'border-gray-300 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-700'
-              }`}
-            >
-              <Moon className="h-4 w-4" />
-              <span className="font-medium">{translations.dark || 'Dark'}</span>
-            </button>
-          </div>
+              {/* Icon */}
+              {theme === 'dark' ? (
+                <Moon className="h-5 w-5 text-purple-600" />
+              ) : (
+                <Sun className="h-5 w-5 text-gray-600" />
+              )}
+            </span>
+          </button>
+          
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            {theme === 'dark' 
+              ? (translations.darkModeEnabled || 'Tryb ciemny włączony')
+              : (translations.lightModeEnabled || 'Tryb jasny włączony')
+            }
+          </p>
         </div>
 
         {/* Notifications */}
