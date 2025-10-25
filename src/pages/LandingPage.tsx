@@ -89,7 +89,7 @@ export function LandingPage() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
               <BookOpen className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-              <span className="text-xl font-bold text-gray-900 dark:text-white">LinguaFlow</span>
+              <span className="text-xl font-bold text-gray-900 dark:text-white">LectorMe</span>
             </div>
 
             {/* Desktop Navigation */}
@@ -388,7 +388,7 @@ export function LandingPage() {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <BookOpen className="h-6 w-6 text-purple-400" />
-                <span className="text-xl font-bold text-white">LinguaFlow</span>
+                <span className="text-xl font-bold text-white">LectorMe</span>
               </div>
               <p className="text-sm text-gray-400">
                 {t.landingPage.footerTagline}
