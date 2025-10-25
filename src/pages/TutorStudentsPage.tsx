@@ -530,7 +530,6 @@ export function TutorStudentsPage() {
           studentId={selectedStudentId}
           onClose={handleCloseProfile}
         />
-      )}
           )}
         </div>
       ) : (
