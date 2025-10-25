@@ -943,6 +943,16 @@ export const translations = {
       viewProgress: 'View Progress',
       assignLesson: 'Assign Lesson',
       removeStudent: 'Remove Student',
+
+      viewProfile: 'View Profile',
+      studentProfile: 'Student Profile',
+      errorLoadingProfile: 'Failed to load student profile',
+      retry: 'Retry',
+      close: 'Close',
+      lastActive: 'Last active',
+      avgScore: 'Avg Score',
+      lessonHistory: 'Lesson History',
+      noLessonHistory: 'No lesson history yet',
     },
 
     // Landing Page
