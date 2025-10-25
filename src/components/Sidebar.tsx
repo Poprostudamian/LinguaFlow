@@ -52,6 +52,7 @@ export function Sidebar() {
     { path: '/student/lessons', label: 'My Lessons', icon: BookOpen },
     { path: '/student/schedule', label: 'Schedule', icon: Calendar },
     { path: '/student/messages', label: 'Messages', icon: MessageCircle },
+    { path: '/student/settings', label: 'Settings', icon: Settings }
   ];
 
   const tutorNavItems = [
