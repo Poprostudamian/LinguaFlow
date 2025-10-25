@@ -53,6 +53,7 @@ function App() {
                             <Route path="lessons/:lessonId/history" element={<StudentLessonHistory />} />
                             <Route path="schedule" element={<StudentSchedulePage />} />
                             <Route path="messages" element={<StudentMessagesPage />} />
+                            <Route path="settings" element={<StudentSettingsPage />} />
                           </Routes>
                         </RouteGuard>
                       } 
