@@ -25,6 +25,7 @@ import { StudentSchedulePage } from './pages/StudentSchedulePage';
 import { StudentMessagesPage } from './pages/StudentMessagesPage';
 import { TutorGradingPage } from './pages/TutorGradingPage';
 import { TutorSettingsPage } from './pages/TutorSettingsPage';
+import { StudentSettingsPage } from './pages/StudentSettingsPage';
 
 function App() {
   return (
