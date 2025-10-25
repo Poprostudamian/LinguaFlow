@@ -1,376 +1,295 @@
 // src/pages/TutorSettingsPage.tsx
 import React, { useState, useEffect } from 'react';
-import { User, Settings, Bell, Mail, Lock } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { Save } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { ProfileSection } from '../components/settings/ProfileSection.tsx';
+import { TutorProfileSection } from '../components/settings/tutor/TutorProfileSection';
+import { TeachingLanguagesSection } from '../components/settings/tutor/TeachingLanguagesSection';
+import { TeachingExpertiseSection } from '../components/settings/tutor/TeachingExpertiseSection';
+import { MyStudentsSection } from '../components/settings/tutor/MyStudentsSection';
+import { TutorAccountSettingsSection } from '../components/settings/tutor/TutorAccountSettingsSection';
 
-interface TutorProfile {
-  bio?: string;
-  expertise?: string[];
-  teachingExperience?: string;
-  specializations?: string[];
-  education?: string;
-  languages?: string[];
-  hourlyRate?: number;
-}
-
-interface UserSettings {
-  theme: 'light' | 'dark';
-  language: 'en' | 'pl';
+interface FormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  avatarUrl: string;
+  bio: string;
+  teachingExperience: string;
+  education: string;
+  hourlyRate: string;
+  teachingLanguages: string[];
+  expertise: string[];
   emailNotifications: boolean;
   pushNotifications: boolean;
+  language: 'pl' | 'en';
+  theme: 'light' | 'dark';
 }
 
 export function TutorSettingsPage() {
-  const { session } = useAuth();
   const { t } = useLanguage();
-  const { isDark, toggleTheme } = useTheme();
-  
-  const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'notifications'>('profile');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-
-  // ✅ FIXED: Inicjalizacja z domyślnymi wartościami
-  const [tutorProfile, setTutorProfile] = useState<TutorProfile>({
+  const { session } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
+  const [formData, setFormData] = useState<FormData>({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    avatarUrl: '',
     bio: '',
-    expertise: [],
     teachingExperience: '',
-    specializations: [],
     education: '',
-    languages: [],
-    hourlyRate: 0
-  });
-
-  const [settings, setSettings] = useState<UserSettings>({
-    theme: isDark ? 'dark' : 'light',
-    language: 'en',
+    hourlyRate: '',
+    teachingLanguages: [],
+    expertise: [],
     emailNotifications: true,
-    pushNotifications: true
+    pushNotifications: true,
+    language: 'pl',
+    theme: 'light',
   });
 
-  // ============================================================================
-  // LOAD DATA
-  // ============================================================================
-  
   useEffect(() => {
     if (session?.user?.id) {
-      loadSettings();
+      fetchUserData();
     }
-  }, [session?.user?.id]);
+  }, [session]);
 
-  const loadSettings = async () => {
+  const fetchUserData = async () => {
     if (!session?.user?.id) return;
 
     try {
-      setIsLoading(true);
+      setLoading(true);
 
-      // Load user settings from database
-      const { data: userSettings, error: settingsError } = await supabase
-        .from('user_settings')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (settingsError) {
-        console.error('Error loading settings:', settingsError);
-      } else if (userSettings) {
-        setSettings({
-          theme: userSettings.theme || 'light',
-          language: userSettings.language || 'en',
-          emailNotifications: userSettings.email_notifications ?? true,
-          pushNotifications: userSettings.push_notifications ?? true
-        });
-      }
-
-      // ✅ Load tutor profile (może być w users lub osobnej tabeli)
+      // Fetch user data
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('id', session.user.id)
         .single();
 
-      if (userError) {
-        console.error('Error loading user data:', userError);
-      } else if (userData) {
-        // ✅ Jeśli masz dodatkowe pola w tabeli users lub osobnej tabeli tutor_profiles
-        setTutorProfile({
-          bio: userData.bio || '',
-          expertise: userData.expertise || [],
-          teachingExperience: userData.teaching_experience || '',
-          specializations: userData.specializations || [],
-          education: userData.education || '',
-          languages: userData.languages || [],
-          hourlyRate: userData.hourly_rate || 0
-        });
+      if (userError) throw userError;
+
+      // Fetch user settings
+      const { data: settingsData, error: settingsError } = await supabase
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (settingsError && settingsError.code !== 'PGRST116') {
+        throw settingsError;
       }
 
+      // Parse interests and learning_goals as teaching data
+      const teachingLanguages = Array.isArray(userData.interests) 
+        ? userData.interests.filter((item: string) => item && typeof item === 'string')
+        : [];
+      
+      const expertise = Array.isArray(userData.learning_goals) 
+        ? userData.learning_goals.filter((item: string) => item && typeof item === 'string')
+        : [];
+
+      setFormData({
+        firstName: userData.first_name || '',
+        lastName: userData.last_name || '',
+        email: userData.email || '',
+        phone: userData.phone || '',
+        avatarUrl: userData.avatar_url || '',
+        bio: userData.about_me || '',
+        teachingExperience: '', // You can add this field to users table if needed
+        education: '', // You can add this field to users table if needed
+        hourlyRate: '', // You can add this field to users table if needed
+        teachingLanguages: teachingLanguages,
+        expertise: expertise,
+        emailNotifications: settingsData?.email_notifications ?? true,
+        pushNotifications: settingsData?.push_notifications ?? true,
+        language: settingsData?.language || 'pl',
+        theme: settingsData?.theme || 'light',
+      });
     } catch (error) {
-      console.error('Error in loadSettings:', error);
+      console.error('Error fetching user data:', error);
+      setSaveMessage(t.tutorSettings?.errorLoading || 'Failed to load settings');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  // ============================================================================
-  // HANDLERS
-  // ============================================================================
+  const handleChange = (field: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
-  const handleUpdateProfile = async (updates: Partial<TutorProfile>) => {
+  const handleSave = async () => {
     if (!session?.user?.id) return;
 
     try {
-      setTutorProfile(prev => ({ ...prev, ...updates }));
+      setSaving(true);
+      setSaveMessage('');
 
-      // ✅ Save to database
-      const { error } = await supabase
+      // Update users table
+      const { error: userError } = await supabase
         .from('users')
         .update({
-          bio: updates.bio,
-          expertise: updates.expertise,
-          teaching_experience: updates.teachingExperience,
-          specializations: updates.specializations,
-          education: updates.education,
-          languages: updates.languages,
-          hourly_rate: updates.hourlyRate
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          phone: formData.phone,
+          about_me: formData.bio,
+          interests: formData.teachingLanguages, // Store teaching languages in interests
+          learning_goals: formData.expertise, // Store expertise in learning_goals
         })
         .eq('id', session.user.id);
 
-      if (error) {
-        console.error('Error updating profile:', error);
-      } else {
-        showSuccess('Profile updated successfully!');
-      }
-    } catch (error) {
-      console.error('Error in handleUpdateProfile:', error);
-    }
-  };
+      if (userError) throw userError;
 
-  const handleUpdateTheme = async (newTheme: 'light' | 'dark') => {
-    if (!session?.user?.id) return;
-
-    try {
-      setSettings(prev => ({ ...prev, theme: newTheme }));
-
-      // Toggle global theme
-      if ((newTheme === 'dark' && !isDark) || (newTheme === 'light' && isDark)) {
-        toggleTheme();
-      }
-
-      // Save to database
-      const { error } = await supabase
+      // Update or insert user_settings
+      const { error: settingsError } = await supabase
         .from('user_settings')
-        .update({ theme: newTheme })
-        .eq('user_id', session.user.id);
+        .upsert({
+          user_id: session.user.id,
+          email_notifications: formData.emailNotifications,
+          push_notifications: formData.pushNotifications,
+          language: formData.language,
+          theme: formData.theme,
+        }, {
+          onConflict: 'user_id'
+        });
 
-      if (error) {
-        console.error('Error updating theme:', error);
-      }
+      if (settingsError) throw settingsError;
+
+      setSaveMessage(t.tutorSettings?.changesSaved || 'Settings saved successfully!');
+      
+      setTimeout(() => {
+        setSaveMessage('');
+      }, 3000);
     } catch (error) {
-      console.error('Error in handleUpdateTheme:', error);
+      console.error('Error saving settings:', error);
+      setSaveMessage(t.tutorSettings?.errorSaving || 'Failed to save settings');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleUpdateNotifications = async (updates: Partial<Pick<UserSettings, 'emailNotifications' | 'pushNotifications'>>) => {
-    if (!session?.user?.id) return;
-
-    try {
-      setSettings(prev => ({ ...prev, ...updates }));
-
-      const { error } = await supabase
-        .from('user_settings')
-        .update({
-          email_notifications: updates.emailNotifications ?? settings.emailNotifications,
-          push_notifications: updates.pushNotifications ?? settings.pushNotifications
-        })
-        .eq('user_id', session.user.id);
-
-      if (error) {
-        console.error('Error updating notifications:', error);
-      } else {
-        showSuccess('Notification settings updated!');
-      }
-    } catch (error) {
-      console.error('Error in handleUpdateNotifications:', error);
-    }
-  };
-
-  const showSuccess = (message: string) => {
-    setSuccessMessage(message);
-    setTimeout(() => setSuccessMessage(''), 3000);
-  };
-
-  // ============================================================================
-  // RENDER
-  // ============================================================================
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">{t.common?.loading || 'Loading...'}</p>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Header */}
-      <div>
+      <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          {t.settings?.title || 'Settings'}
+          {t.tutorSettings?.title || 'Tutor Settings'}
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Manage your profile and preferences
+          {t.tutorSettings?.subtitle || 'Manage your professional profile and teaching preferences'}
         </p>
       </div>
 
-      {/* Success Message */}
-      {successMessage && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-center space-x-2">
-          <Settings className="h-5 w-5 text-green-600 dark:text-green-400" />
-          <p className="text-green-800 dark:text-green-200">{successMessage}</p>
+      {/* Save Button (Top) */}
+      <div className="mb-6 flex justify-end">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+        >
+          {saving ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <span>{t.tutorSettings?.saving || 'Saving...'}</span>
+            </>
+          ) : (
+            <>
+              <Save className="h-5 w-5" />
+              <span>{t.tutorSettings?.saveChanges || 'Save Changes'}</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Success/Error Message */}
+      {saveMessage && (
+        <div className={`mb-6 p-4 rounded-lg ${
+          saveMessage.includes('success') || saveMessage.includes('saved')
+            ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
+            : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
+        }`}>
+          {saveMessage}
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="flex space-x-8">
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'profile'
-                ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            <div className="flex items-center space-x-2">
-              <User className="h-4 w-4" />
-              <span>{t.settings?.profile || 'Profile'}</span>
-            </div>
-          </button>
+      {/* Sections */}
+      <div className="space-y-6">
+        {/* 1. Profile Section */}
+        <TutorProfileSection
+          formData={{
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            phone: formData.phone,
+            avatarUrl: formData.avatarUrl,
+            bio: formData.bio,
+            teachingExperience: formData.teachingExperience,
+            education: formData.education,
+            hourlyRate: formData.hourlyRate,
+          }}
+          onChange={handleChange}
+        />
 
-          <button
-            onClick={() => setActiveTab('account')}
-            className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'account'
-                ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            <div className="flex items-center space-x-2">
-              <Lock className="h-4 w-4" />
-              <span>{t.settings?.account || 'Account'}</span>
-            </div>
-          </button>
+        {/* 2. Teaching Languages Section */}
+        <TeachingLanguagesSection
+          languages={formData.teachingLanguages}
+          onChange={(languages) => handleChange('teachingLanguages', languages)}
+        />
 
-          <button
-            onClick={() => setActiveTab('notifications')}
-            className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'notifications'
-                ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            <div className="flex items-center space-x-2">
-              <Bell className="h-4 w-4" />
-              <span>{t.settings?.notifications || 'Notifications'}</span>
-            </div>
-          </button>
-        </nav>
+        {/* 3. Teaching Expertise Section */}
+        <TeachingExpertiseSection
+          expertise={formData.expertise}
+          onChange={(expertise) => handleChange('expertise', expertise)}
+        />
+
+        {/* 4. My Students Section */}
+        <MyStudentsSection />
+
+        {/* 5. Account Settings Section */}
+        <TutorAccountSettingsSection
+          settings={{
+            emailNotifications: formData.emailNotifications,
+            pushNotifications: formData.pushNotifications,
+            language: formData.language,
+            theme: formData.theme,
+          }}
+          onChange={handleChange}
+        />
       </div>
 
-      {/* Content */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        {activeTab === 'profile' && (
-          <ProfileSection
-            profile={tutorProfile}
-            onUpdateProfile={handleUpdateProfile}
-            theme={settings.theme}
-            onUpdateTheme={handleUpdateTheme}
-          />
-        )}
-
-        {activeTab === 'account' && (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                Account Information
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={session?.user?.email || ''}
-                    disabled
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'notifications' && (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                Notification Preferences
-              </h3>
-              <div className="space-y-4">
-                {/* Email Notifications */}
-                <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <Mail className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        Email Notifications
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Receive updates via email
-                      </p>
-                    </div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={settings.emailNotifications}
-                    onChange={(e) => handleUpdateNotifications({ emailNotifications: e.target.checked })}
-                    className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 focus:ring-offset-0"
-                  />
-                </label>
-
-                {/* Push Notifications */}
-                <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <Bell className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        Push Notifications
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Receive push notifications
-                      </p>
-                    </div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={settings.pushNotifications}
-                    onChange={(e) => handleUpdateNotifications({ pushNotifications: e.target.checked })}
-                    className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 focus:ring-offset-0"
-                  />
-                </label>
-              </div>
-            </div>
-          </div>
-        )}
+      {/* Bottom Save Button */}
+      <div className="mt-8 flex justify-end">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+        >
+          {saving ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <span>{t.tutorSettings?.saving || 'Saving...'}</span>
+            </>
+          ) : (
+            <>
+              <Save className="h-5 w-5" />
+              <span>{t.tutorSettings?.saveChanges || 'Save Changes'}</span>
+            </>
+          )}
+        </button>
       </div>
     </div>
   );
