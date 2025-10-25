@@ -271,39 +271,30 @@ function AccountSettingsSection({
         {/* Theme Toggle */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-            {translations.themeToggle || 'Tryb Ciemny'}
+            {isDark ? <Moon className="inline h-4 w-4 mr-2" /> : <Sun className="inline h-4 w-4 mr-2" />}
+            {t.studentSettings.accountSettingsSection.theme}
           </label>
-          
-          {/* Toggle Switch */}
           <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="relative inline-flex items-center h-12 w-24 rounded-full transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-purple-500/20"
-            style={{
-              background: theme === 'dark' 
-                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                : '#e5e7eb'
-            }}
+            type="button"
+            onClick={handleThemeToggle}
+            className={`relative inline-flex h-10 w-20 items-center rounded-full transition-colors ${
+              isDark ? 'bg-purple-600' : 'bg-gray-300'
+            }`}
           >
-            {/* Sliding Circle */}
             <span
-              className={`absolute inline-flex items-center justify-center h-10 w-10 rounded-full bg-white shadow-lg transform transition-all duration-300 ${
-                theme === 'dark' ? 'translate-x-[3.25rem]' : 'translate-x-1'
+              className={`inline-block h-8 w-8 transform rounded-full bg-white shadow-lg transition-transform ${
+                isDark ? 'translate-x-11' : 'translate-x-1'
               }`}
             >
-              {/* Icon */}
-              {theme === 'dark' ? (
-                <Moon className="h-5 w-5 text-purple-600" />
+              {isDark ? (
+                <Moon className="h-5 w-5 text-purple-600 m-1.5" />
               ) : (
-                <Sun className="h-5 w-5 text-gray-600" />
+                <Sun className="h-5 w-5 text-gray-600 m-1.5" />
               )}
             </span>
           </button>
-          
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-            {theme === 'dark' 
-              ? (translations.darkModeEnabled || 'Tryb ciemny włączony')
-              : (translations.lightModeEnabled || 'Tryb jasny włączony')
-            }
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            {isDark ? t.studentSettings.accountSettingsSection.darkMode : t.studentSettings.accountSettingsSection.lightMode}
           </p>
         </div>
 
