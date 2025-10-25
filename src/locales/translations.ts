@@ -2189,6 +2189,17 @@ studentSettings: {
       viewProgress: 'Zobacz postęp',
       assignLesson: 'Przypisz lekcję',
       removeStudent: 'Usuń ucznia',
+
+      viewProfile: 'Zobacz profil',
+      studentProfile: 'Profil studenta',
+      errorLoadingProfile: 'Nie udało się załadować profilu studenta',
+      retry: 'Spróbuj ponownie',
+      close: 'Zamknij',
+      lastActive: 'Ostatnia aktywność',
+      avgScore: 'Śr. wynik',
+      lessonHistory: 'Historia lekcji',
+      noLessonHistory: 'Brak historii lekcji',
+      
     },
 
     // Landing Page
