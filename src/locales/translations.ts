@@ -1047,6 +1047,92 @@ export const translations = {
       
       footerCopyright: '© 2025 LectorMe. All rights reserved.',
     },
+
+    // Student Settings (dodaj przed końcem sekcji 'en')
+studentSettings: {
+  title: 'Settings',
+  saveChanges: 'Save Changes',
+  saving: 'Saving...',
+  changesSaved: 'Settings saved successfully!',
+  errorSaving: 'Failed to save settings',
+  
+  // Profile Section
+  profileSection: {
+    title: 'Profile Information',
+    description: 'Update your personal information and profile picture',
+    firstName: 'First Name',
+    lastName: 'Last Name',
+    email: 'Email Address',
+    emailReadonly: 'Email cannot be changed',
+    phone: 'Phone Number (Optional)',
+    phonePlaceholder: '+48 123 456 789',
+    uploadAvatar: 'Upload Photo',
+    changeAvatar: 'Change Photo',
+    removeAvatar: 'Remove Photo',
+  },
+  
+  // Learning Goals Section
+  learningGoalsSection: {
+    title: 'Learning Goals & Interests',
+    description: 'Add your learning goals and interests to help your tutors',
+    addGoal: 'Add Goal',
+    maxGoals: 'Maximum 8 goals',
+    goalPlaceholder: 'e.g., English Matura Preparation',
+    popularGoals: 'Popular Goals',
+    yourGoals: 'Your Goals',
+    noGoals: 'No learning goals yet',
+    removeGoal: 'Remove goal',
+  },
+  
+  // About Section
+  aboutSection: {
+    title: 'About Me',
+    description: 'Tell your tutors about yourself (optional)',
+    placeholder: 'Describe your learning goals, interests, or what you expect from lessons...',
+    charactersLeft: '{count} characters left',
+    maxLength: 'Maximum 500 characters',
+  },
+  
+  // My Tutors Section
+  myTutorsSection: {
+    title: 'My Tutors',
+    description: 'Your active tutors and learning connections',
+    noTutors: "You don't have any tutors yet",
+    noTutorsDescription: 'Ask your teacher to add you as a student',
+    lessonsCompleted: 'lessons completed',
+    active: 'Active',
+    inactive: 'Inactive',
+    message: 'Message',
+    viewProfile: 'View Profile',
+  },
+  
+  // Account Settings Section
+  accountSettingsSection: {
+    title: 'Account & Platform Settings',
+    description: 'Manage your account preferences and platform settings',
+    accountType: 'Account Type',
+    studentAccount: 'Student Account',
+    language: 'Language',
+    selectLanguage: 'Select language',
+    polish: 'Polski (Polish)',
+    english: 'English',
+    theme: 'Theme',
+    lightMode: 'Light Mode',
+    darkMode: 'Dark Mode',
+    notifications: 'Notifications',
+    emailNotifications: 'Email Notifications',
+    emailNotificationsDesc: 'Receive lesson updates and messages via email',
+    pushNotifications: 'Push Notifications',
+    pushNotificationsDesc: 'Get notified about new messages and meetings',
+    timezone: 'Timezone',
+    dangerZone: 'Danger Zone',
+    deleteAccount: 'Delete Account',
+    deleteAccountDesc: 'Permanently delete your account and all data',
+    deleteAccountConfirm: 'Are you sure you want to delete your account? This action cannot be undone.',
+    cancel: 'Cancel',
+    confirmDelete: 'Yes, Delete Account',
+  },
+},
   },
   //--------------------------------------------------PL-------------------------------------------------------------------------------------------------------------------------
   pl: {
