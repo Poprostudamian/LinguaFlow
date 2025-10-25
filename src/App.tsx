@@ -69,6 +69,7 @@ function App() {
                             <Route path="grading" element={<TutorGradingPage />} />
                             <Route path="schedule" element={<TutorSchedulePage />} />
                             <Route path="messages" element={<TutorMessagesPage />} />
+                            <Route path="settings" element={<TutorSettingsPage />} />
                           </Routes>
                         </RouteGuard>
                       } 
