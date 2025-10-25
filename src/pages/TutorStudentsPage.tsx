@@ -254,6 +254,10 @@ export function TutorStudentsPage() {
   const [inviteForm, setInviteForm] = useState({ studentEmail: '', message: '' });
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // NOWE - State dla profilu studenta
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Convert students
   const convertedStudents = useMemo(() => {
@@ -291,6 +295,18 @@ export function TutorStudentsPage() {
     return filtered;
   }, [convertedStudents, searchTerm, activeTab]);
 
+// NOWA - Funkcja do otwierania profilu
+  const handleViewProfile = (studentId: string) => {
+    setSelectedStudentId(studentId);
+    setShowProfileModal(true);
+  };
+
+  // NOWA - Funkcja do zamykania profilu
+  const handleCloseProfile = () => {
+    setShowProfileModal(false);
+    setSelectedStudentId(null);
+  };
+  
   // Handle invite submission
   const handleInviteSubmit = async () => {
     if (!session?.user?.id || !inviteForm.studentEmail.trim()) {
