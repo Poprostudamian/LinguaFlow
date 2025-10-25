@@ -386,271 +386,224 @@ export function TutorStudentsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Toast Notifications */}
-      {toast && (
-        <Toast
-          type={toast.type}
-          message={toast.message}
-          onClose={() => setToast(null)}
-        />
-      )}
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Toast */}
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {t.tutorStudentsPage.title}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {t.tutorStudentsPage.subtitle}
-          </p>
-        </div>
-
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={refreshAll}
-            className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          >
-            <RefreshCw className="h-4 w-4" />
-            <span>{t.tutorStudentsPage.refresh}</span>
-          </button>
-
-          <button
-            onClick={() => setShowInviteModal(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
-          >
-            <UserPlus className="h-5 w-5" />
-            <span>{t.tutorStudentsPage.inviteStudent}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <KPICard
-          title={t.tutorStudentsPage.totalStudents}
-          value={stats.total}
-          icon={Users}
-          color="purple"
-        />
-        <KPICard
-          title={t.tutorStudentsPage.activeStudents}
-          value={stats.active}
-          icon={Activity}
-          color="blue"
-        />
-        <KPICard
-          title={t.tutorStudentsPage.pendingInvitations}
-          value={stats.pending}
-          icon={Mail}
-          color="orange"
-        />
-        <KPICard
-          title={t.tutorStudentsPage.averageProgress}
-          value={`${stats.avgProgress}%`}
-          icon={TrendingUp}
-          color="green"
-        />
-      </div>
-
-      {/* Tabs */}
-      <div className="flex items-center space-x-2 border-b border-gray-200 dark:border-gray-700">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`
-              px-6 py-3 font-medium text-sm border-b-2 transition-colors
-              ${activeTab === tab.id
-                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }
-            `}
-          >
-            {tab.label} ({tab.count})
-          </button>
-        ))}
-      </div>
-
-      {/* Content based on active tab */}
-      {activeTab !== 'invitations' ? (
-        <div className="space-y-6">
-          {/* Search Bar */}
-          <div className="flex items-center space-x-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input
-                type="text"
-                placeholder={t.tutorStudentsPage.searchPlaceholder}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white shadow-sm"
-              />
-            </div>
-          </div>
-
-          {/* Students Grid */}
-          {filteredStudents.length === 0 ? (
-            <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-              <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                {searchTerm ? t.tutorStudentsPage.noStudentsFound : t.tutorStudentsPage.noStudentsYet}
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-6">
-                {searchTerm 
-                  ? t.tutorStudentsPage.tryAdjustingSearch
-                  : t.tutorStudentsPage.inviteFirstStudent
-                }
-              </p>
-              {!searchTerm && (
-                <button
-                  onClick={() => setShowInviteModal(true)}
-                  className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
-                >
-                  <UserPlus className="h-4 w-4" />
-                  <span>{t.tutorStudentsPage.inviteStudent}</span>
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-              {filteredStudents.map(student => (
-                <EnhancedStudentCard
-                  key={student.id}
-                  student={student}
-                  onSendMessage={(id) => console.log('Send message to:', id)}
-                  onViewProfile={handleViewProfile}
-                />
-              ))}
-            </div>
-          
-      {showProfileModal && selectedStudentId && (
-        <StudentProfileModal
-          studentId={selectedStudentId}
-          onClose={handleCloseProfile}
-        />
-          )}
-        </div>
-      ) : (
-        <div className="space-y-4 animate-fade-in">
-          {invitations.length === 0 ? (
-            <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-              <Mail className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                {t.tutorStudentsPage.noPendingInvitations}
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                {t.tutorStudentsPage.noPendingDescription}
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                {t.tutorStudentsPage.title}
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                {t.tutorStudentsPage.subtitle}
               </p>
             </div>
-          ) : (
-            invitations.map(invitation => (
-              <div
-                key={invitation.id}
-                className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <Mail className="h-5 w-5 text-purple-600" />
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
-                        {t.tutorStudentsPage.invitationTo} {invitation.student_email}
-                      </h3>
-                    </div>
-                    <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                      <p>{t.tutorStudentsPage.sentOn}: {new Date(invitation.created_at).toLocaleDateString()}</p>
-                      <p>{t.tutorStudentsPage.expiresOn}: {new Date(invitation.expires_at).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      invitation.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-                        : invitation.status === 'accepted'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
-                    }`}>
-                      {invitation.status === 'pending' && t.tutorStudentsPage.statusPending}
-                      {invitation.status === 'accepted' && t.tutorStudentsPage.statusAccepted}
-                      {invitation.status === 'expired' && t.tutorStudentsPage.statusExpired}
-                      {invitation.status === 'cancelled' && t.tutorStudentsPage.statusCancelled}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* Invite Modal */}
-      {showInviteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {t.tutorStudentsPage.inviteModalTitle}
-              </h2>
+            <div className="flex items-center space-x-3">
               <button
-                onClick={() => setShowInviteModal(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                onClick={refreshAll}
+                className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                <X className="h-6 w-6" />
+                <RefreshCw className="h-4 w-4" />
+                <span>{t.tutorStudentsPage.refresh}</span>
+              </button>
+              <button
+                onClick={() => setShowInviteModal(true)}
+                className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                <UserPlus className="h-4 w-4" />
+                <span>{t.tutorStudentsPage.inviteStudent}</span>
               </button>
             </div>
+          </div>
 
-            <div className="space-y-4">
-              {/* Email Input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t.tutorStudentsPage.studentEmail}
-                </label>
-                <input
-                  type="email"
-                  value={inviteForm.studentEmail}
-                  onChange={(e) => setInviteForm(prev => ({ ...prev, studentEmail: e.target.value }))}
-                  placeholder={t.tutorStudentsPage.studentEmailPlaceholder}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                />
+          {/* KPI Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <KPICard
+              title={t.tutorStudentsPage.totalStudents}
+              value={stats.total}
+              icon={Users}
+              color="purple"
+            />
+            <KPICard
+              title={t.tutorStudentsPage.activeStudents}
+              value={stats.active}
+              icon={Activity}
+              color="blue"
+            />
+            <KPICard
+              title={t.tutorStudentsPage.pendingInvitations}
+              value={stats.pending}
+              icon={Mail}
+              color="green"
+            />
+            <KPICard
+              title={t.tutorStudentsPage.averageProgress}
+              value={`${stats.avgProgress}%`}
+              icon={TrendingUp}
+              color="orange"
+            />
+          </div>
+
+          {/* Tabs */}
+          <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 border border-gray-200 dark:border-gray-700">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-md transition-all duration-200 ${
+                  activeTab === tab.id
+                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+              >
+                <span className="font-medium">{tab.label}</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                  activeTab === tab.id
+                    ? 'bg-white/20 text-white'
+                    : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300'
+                }`}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={t.tutorStudentsPage.searchPlaceholder}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+            />
+          </div>
+        </div>
+
+        {/* Content based on active tab */}
+        {activeTab === 'invitations' ? (
+          <InvitationsList invitations={invitations} onRefresh={refreshAll} />
+        ) : (
+          <>
+            {/* Students Grid */}
+            {filteredStudents.length === 0 ? (
+              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  {searchTerm ? t.tutorStudentsPage.noStudentsFound : t.tutorStudentsPage.noStudentsYet}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  {searchTerm ? t.tutorStudentsPage.tryAdjustingSearch : t.tutorStudentsPage.inviteFirstStudent}
+                </p>
               </div>
-
-              {/* Message Input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t.tutorStudentsPage.personalMessage}
-                </label>
-                <textarea
-                  value={inviteForm.message}
-                  onChange={(e) => setInviteForm(prev => ({ ...prev, message: e.target.value }))}
-                  placeholder={t.tutorStudentsPage.personalMessagePlaceholder}
-                  rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
-                />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredStudents.map(student => (
+                  <StudentCard
+                    key={student.id}
+                    student={student}
+                    onMessage={handleMessage}
+                    onViewProfile={handleViewProfile}
+                  />
+                ))}
               </div>
+            )}
+          </>
+        )}
 
-              {/* Actions */}
-              <div className="flex items-center space-x-3 pt-4">
-                <button
-                  onClick={handleInviteSubmit}
-                  disabled={isSubmitting || !inviteForm.studentEmail.trim()}
-                  className="flex-1 flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
-                >
-                  <Send className="h-4 w-4" />
-                  <span>{isSubmitting ? t.tutorStudentsPage.sending : t.tutorStudentsPage.sendInvitation}</span>
-                </button>
+        {/* Student Profile Modal */}
+        {showProfileModal && selectedStudentId && (
+          <StudentProfileModal
+            studentId={selectedStudentId}
+            onClose={handleCloseProfile}
+          />
+        )}
+
+        {/* Invite Modal */}
+        {showInviteModal && (
+          <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+            <div 
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setShowInviteModal(false)}
+            />
+            
+            <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6 animate-scale-in">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {t.tutorStudentsPage.inviteModalTitle}
+                </h3>
                 <button
                   onClick={() => setShowInviteModal(false)}
-                  disabled={isSubmitting}
-                  className="px-6 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
-                  {t.tutorStudentsPage.cancel}
+                  <X className="h-5 w-5" />
                 </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {t.tutorStudentsPage.studentEmail}
+                  </label>
+                  <input
+                    type="email"
+                    value={inviteForm.studentEmail}
+                    onChange={(e) => setInviteForm(prev => ({ ...prev, studentEmail: e.target.value }))}
+                    placeholder={t.tutorStudentsPage.studentEmailPlaceholder}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {t.tutorStudentsPage.personalMessage}
+                  </label>
+                  <textarea
+                    value={inviteForm.message}
+                    onChange={(e) => setInviteForm(prev => ({ ...prev, message: e.target.value }))}
+                    placeholder={t.tutorStudentsPage.personalMessagePlaceholder}
+                    rows={4}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-3 pt-4">
+                  <button
+                    onClick={handleInviteSubmit}
+                    disabled={isSubmitting || !inviteForm.studentEmail.trim()}
+                    className="flex-1 flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+                  >
+                    <Send className="h-4 w-4" />
+                    <span>{isSubmitting ? t.tutorStudentsPage.sending : t.tutorStudentsPage.sendInvitation}</span>
+                  </button>
+                  <button
+                    onClick={() => setShowInviteModal(false)}
+                    disabled={isSubmitting}
+                    className="px-6 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                  >
+                    {t.tutorStudentsPage.cancel}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+      </div>
     </div>
   );
 }
