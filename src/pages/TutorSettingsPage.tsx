@@ -18,7 +18,7 @@ import {
   FileText,
   Trash2
 } from 'lucide-react';
-import { ProfileSectionTutor } from '../components/settings/ProfileSection';
+import { ProfileSectionTutor } from '../components/settings/ProfileSectionTutor';
 import { supabase } from '../lib/supabase';
 
 // Import or create other sections (they can be similar to student version)
