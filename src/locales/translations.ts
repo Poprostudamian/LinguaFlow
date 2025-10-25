@@ -46,7 +46,7 @@ export const translations = {
     
     // Header
     header: {
-      appName: 'LinguaFlow',
+      appName: 'LectorMe',
       welcomeBack: 'Welcome back',
       toggleTheme: 'Toggle theme',
       toggleLanguage: 'Toggle language',
@@ -54,7 +54,7 @@ export const translations = {
     
     // Login Page
     login: {
-      title: 'Sign in to LinguaFlow',
+      title: 'Sign in to LectorMe',
       subtitle: 'Sign in to continue learning',
       email: 'Email Address',
       password: 'Password',
@@ -1014,7 +1014,7 @@ export const translations = {
       
       testimonial1Name: 'Maria Garcia',
       testimonial1Role: 'Spanish Tutor',
-      testimonial1Text: 'LinguaFlow has transformed how I teach. The interactive lessons keep my students engaged!',
+      testimonial1Text: 'LectorMe has transformed how I teach. The interactive lessons keep my students engaged!',
       
       testimonial2Name: 'John Smith',
       testimonial2Role: 'English Student',
@@ -1026,7 +1026,7 @@ export const translations = {
       
       // CTA Section
       ctaTitle: 'Ready to Get Started?',
-      ctaSubtitle: 'Join thousands of tutors and students already using LinguaFlow',
+      ctaSubtitle: 'Join thousands of tutors and students already using LectorMe',
       createFreeAccount: 'Create Free Account',
       
       // Footer
@@ -1045,7 +1045,7 @@ export const translations = {
       footerTerms: 'Terms',
       footerSecurity: 'Security',
       
-      footerCopyright: '© 2025 LinguaFlow. All rights reserved.',
+      footerCopyright: '© 2025 LectorMe. All rights reserved.',
     },
   },
   //--------------------------------------------------PL-------------------------------------------------------------------------------------------------------------------------
@@ -1119,7 +1119,7 @@ export const translations = {
     
     // Header
     header: {
-      appName: 'LinguaFlow',
+      appName: 'LectorMe',
       welcomeBack: 'Witaj ponownie',
       toggleTheme: 'Przełącz motyw',
       toggleLanguage: 'Zmień język',
@@ -1127,7 +1127,7 @@ export const translations = {
     
     // Login Page
     login: {
-      title: 'Zaloguj się do LinguaFlow',
+      title: 'Zaloguj się do LectorMe',
       subtitle: 'Zaloguj się, aby kontynuować naukę',
       email: 'Adres email',
       password: 'Hasło',
@@ -2064,7 +2064,7 @@ export const translations = {
       
       testimonial1Name: 'Maria Garcia',
       testimonial1Role: 'Korepetytor języka hiszpańskiego',
-      testimonial1Text: 'LinguaFlow całkowicie zmienił sposób w jaki uczę. Interaktywne lekcje angażują moich uczniów!',
+      testimonial1Text: 'LectorMe całkowicie zmienił sposób w jaki uczę. Interaktywne lekcje angażują moich uczniów!',
       
       testimonial2Name: 'John Smith',
       testimonial2Role: 'Uczeń języka angielskiego',
@@ -2076,7 +2076,7 @@ export const translations = {
       
       // CTA Section
       ctaTitle: 'Gotowy aby rozpocząć?',
-      ctaSubtitle: 'Dołącz do tysięcy korepetytorów i uczniów już korzystających z LinguaFlow',
+      ctaSubtitle: 'Dołącz do tysięcy korepetytorów i uczniów już korzystających z LectorMe',
       createFreeAccount: 'Utwórz darmowe konto',
       
       // Footer
@@ -2095,7 +2095,7 @@ export const translations = {
       footerTerms: 'Warunki',
       footerSecurity: 'Bezpieczeństwo',
       
-      footerCopyright: '© 2025 LinguaFlow. Wszelkie prawa zastrzeżone.',
+      footerCopyright: '© 2025 LectorMe. Wszelkie prawa zastrzeżone.',
     },
   },
 } as const;
