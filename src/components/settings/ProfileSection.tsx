@@ -1,4 +1,4 @@
-// src/pages/settings/ProfileSection.tsx
+// src/pages/settings/ProfileSectionTutor.tsx
 import React, { useState, useEffect } from 'react';
 import { User, Briefcase, GraduationCap, Globe, BookOpen, Sun, Moon, X, Mail, Phone } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -13,19 +13,19 @@ interface TutorProfile {
   hourlyRate?: number;
 }
 
-interface ProfileSectionProps {
+interface ProfileSectionTutorProps {
   profile: TutorProfile;
   onUpdateProfile: (updates: Partial<TutorProfile>) => void;
   theme: 'light' | 'dark';
   onUpdateTheme: (theme: 'light' | 'dark') => void;
 }
 
-export function ProfileSection({
+export function ProfileSectionTutor({
   profile,
   onUpdateProfile,
   theme,
   onUpdateTheme
-}: ProfileSectionProps) {
+}: ProfileSectionTutorProps) {
   const { t } = useLanguage();
 
   // Local state
