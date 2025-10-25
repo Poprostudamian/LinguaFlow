@@ -64,7 +64,7 @@ export function Login() {
               <BookOpen className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-              LinguaFlow
+              LectorMe
             </h1>
           </Link>
           <p className="text-gray-600 dark:text-gray-400">
