@@ -18,11 +18,13 @@ import {
   TrendingUp,
   Award,
   Activity,
-  X
+  X,
+  Eye
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTutorStudents } from '../contexts/StudentsContext';
 import { inviteStudent, InviteStudentData } from '../lib/supabase';
+import { StudentProfileModal } from '../components/StudentProfileModal';
 
 // ============================================================================
 // TYPES
@@ -139,111 +141,100 @@ function KPICard({ title, value, icon: Icon, color, subtitle }: KPICardProps) {
 // ============================================================================
 // STUDENT CARD COMPONENT
 // ============================================================================
-interface EnhancedStudentCardProps {
+interface StudentCardProps {
   student: StudentCardData;
-  onSendMessage?: (id: string) => void;
+  onMessage: (studentId: string) => void;
+  onViewProfile: (studentId: string) => void; // <-- DODANE
 }
 
-function EnhancedStudentCard({ student, onSendMessage }: EnhancedStudentCardProps) {
+function StudentCard({ student, onMessage, onViewProfile }: StudentCardProps) { // <-- ZAKTUALIZOWANE
   const { t } = useLanguage();
-  
-  const getProgressColor = (progress: number) => {
-    if (progress >= 80) return 'from-green-500 to-emerald-600';
-    if (progress >= 50) return 'from-blue-500 to-cyan-600';
-    if (progress >= 30) return 'from-yellow-500 to-orange-600';
-    return 'from-red-500 to-pink-600';
+
+  const getLevelColor = (level: string) => {
+    const colors = {
+      'Beginner': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      'Intermediate': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+      'Advanced': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+    };
+    return colors[level as keyof typeof colors] || colors['Beginner'];
   };
 
   const getStatusColor = (status: string) => {
-    return status === 'active'
-      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-      : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
-  };
-
-  // Translate level
-  const translateLevel = (level: string) => {
-    const levelMap: { [key: string]: string } = {
-      'Beginner': t.tutorStudentsPage.beginner,
-      'Intermediate': t.tutorStudentsPage.intermediate,
-      'Advanced': t.tutorStudentsPage.advanced
-    };
-    return levelMap[level] || level;
+    if (status === 'active') return 'bg-green-500';
+    return 'bg-gray-400';
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all duration-300 hover:scale-105">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-            {student.name.charAt(0).toUpperCase()}
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-shadow">
+      {/* Header with Avatar and Name */}
+      <div className="flex items-start space-x-4 mb-4">
+        <div className="relative">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-bold text-xl">
+            {student.name.split(' ').map(n => n[0]).join('')}
           </div>
-          <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
-              {student.name}
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{student.email}</p>
-          </div>
+          <div className={`absolute bottom-0 right-0 w-4 h-4 ${getStatusColor(student.status)} rounded-full border-2 border-white dark:border-gray-800`} />
         </div>
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(student.status)}`}>
-          {student.status === 'active' ? t.tutorStudentsPage.active : t.tutorStudentsPage.inactive}
-        </span>
-      </div>
 
-      {/* Level Badge */}
-      <div className="inline-flex items-center px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300 rounded-full text-sm font-medium mb-4">
-        <Award className="h-4 w-4 mr-1" />
-        {translateLevel(student.level)}
-      </div>
-
-      {/* Progress Bar */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t.tutorStudentsPage.progress}</span>
-          <span className="text-sm font-bold text-gray-900 dark:text-white">{student.progress}%</span>
-        </div>
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-          <div
-            className={`h-2.5 rounded-full bg-gradient-to-r ${getProgressColor(student.progress)} transition-all duration-500`}
-            style={{ width: `${student.progress}%` }}
-          />
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+            {student.name}
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+            {student.email}
+          </p>
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${getLevelColor(student.level)}`}>
+            {student.level}
+          </span>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <BookOpen className="h-5 w-5 text-blue-500" />
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{t.tutorStudentsPage.lessons}</p>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">{student.lessonsCompleted}</p>
-          </div>
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+          <TrendingUp className="h-4 w-4 text-purple-600 dark:text-purple-400 mx-auto mb-1" />
+          <p className="text-xl font-bold text-gray-900 dark:text-white">{student.progress}%</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">{t.tutorStudentsPage.progress}</p>
         </div>
-        <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <Clock className="h-5 w-5 text-green-500" />
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{t.tutorStudentsPage.hours}</p>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">{student.totalHours}h</p>
-          </div>
+
+        <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <BookOpen className="h-4 w-4 text-blue-600 dark:text-blue-400 mx-auto mb-1" />
+          <p className="text-xl font-bold text-gray-900 dark:text-white">{student.lessonsCompleted}</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">{t.tutorStudentsPage.lessons}</p>
+        </div>
+
+        <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+          <Clock className="h-4 w-4 text-green-600 dark:text-green-400 mx-auto mb-1" />
+          <p className="text-xl font-bold text-gray-900 dark:text-white">{student.totalHours}h</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">{t.tutorStudentsPage.hours}</p>
         </div>
       </div>
 
-      {/* Joined Date */}
+      {/* Join Date */}
       {student.joinedDate && (
-        <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400 mb-4">
-          <Calendar className="h-3 w-3" />
-          <span>{t.tutorStudentsPage.joined} {new Date(student.joinedDate).toLocaleDateString()}</span>
+        <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <Calendar className="h-4 w-4" />
+          <span>{t.tutorStudentsPage.joined}: {new Date(student.joinedDate).toLocaleDateString()}</span>
         </div>
       )}
 
-      {/* Actions */}
-      <button
-        onClick={() => onSendMessage?.(student.id)}
-        className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
-      >
-        <Mail className="h-4 w-4" />
-        <span>{t.tutorStudentsPage.sendMessage}</span>
-      </button>
+      {/* Action Buttons - ZAKTUALIZOWANE */}
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={() => onViewProfile(student.id)}
+          className="flex-1 flex items-center justify-center space-x-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+        >
+          <Eye className="h-4 w-4" />
+          <span>{t.tutorStudentsPage.viewProfile}</span>
+        </button>
+        
+        <button
+          onClick={() => onMessage(student.id)}
+          className="flex-1 flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+        >
+          <Mail className="h-4 w-4" />
+          <span>{t.tutorStudentsPage.sendMessage}</span>
+        </button>
+      </div>
     </div>
   );
 }
