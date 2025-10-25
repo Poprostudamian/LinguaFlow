@@ -20,7 +20,7 @@ interface ProfileSectionTutorProps {
   onUpdateTheme: (theme: 'light' | 'dark') => void;
 }
 
-export function ProfileSectionTutor({
+export function TutorSettingsPage({
   profile,
   onUpdateProfile,
   theme,
