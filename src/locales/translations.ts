@@ -2381,7 +2381,7 @@ studentSettings: {
         cancel: 'Anuluj',
         deleteConfirm: 'Tak, usuń moje konto',
         deleting: 'Usuwanie...',
-      },
+
     },
 },
   },
