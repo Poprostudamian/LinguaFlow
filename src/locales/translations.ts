@@ -303,7 +303,7 @@ export const translations = {
 
     studentLessonViewer: {
       // Loading & Errors
-  loading: 'Ładowanie lekcji...',
+    loading: 'Ładowanie lekcji...',
   error: 'Błąd',
   lessonNotFound: 'Nie znaleziono lekcji',
   backToLessons: 'Powrót do lekcji',
@@ -1303,6 +1303,66 @@ studentSettings: {
         deleteConfirm: 'Yes, delete my account',
         deleting: 'Deleting...',
       },
+
+      tutorAnalytics: {
+        title: 'Analytics & Insights',
+        subtitle: 'Comprehensive overview of your students\' progress and performance',
+        
+        // Date Ranges
+        last7Days: 'Last 7 days',
+        last30Days: 'Last 30 days',
+        last3Months: 'Last 3 months',
+        allTime: 'All time',
+        
+        // Overview Metrics
+        totalStudents: 'Total Students',
+        averageProgress: 'Average Progress',
+        completionRate: 'Completion Rate',
+        averageScore: 'Average Score',
+        lessonsCompleted: 'Lessons Completed',
+        activeStudents: 'Active Students',
+        studyHours: 'Study Hours',
+        engagementRate: 'Engagement Rate',
+        
+        // Charts
+        progressOverTime: 'Progress Over Time',
+        performanceDistribution: 'Performance Distribution',
+        topPerformers: 'Top Performers',
+        studentComparison: 'Top 5 vs Avg',
+        recentActivity: 'Recent Activity',
+        weakAreas: 'Areas Needing Attention',
+        
+        // Actions
+        exportReport: 'Export Report',
+        viewDetails: 'View Details',
+        
+        // Activity
+        completed: 'Completed',
+        started: 'Started',
+        score: 'Score',
+        
+        // Weak Areas
+        avgScore: 'Avg Score',
+        completion: 'Completion',
+        students: 'students',
+        
+        // Recommendations
+        recommendations: 'AI-Powered Recommendations',
+        focusArea: 'Focus Area',
+        engagement: 'Engagement',
+        recognition: 'Recognition',
+        
+        // Loading & Errors
+        loading: 'Loading analytics...',
+        error: 'Error Loading Analytics',
+        errorMessage: 'Unable to load analytics data',
+        
+        // Trends
+        increasing: 'Increasing',
+        decreasing: 'Decreasing',
+        stable: 'Stable'
+      },
+      
     },
 },
   },
