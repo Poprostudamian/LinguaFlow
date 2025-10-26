@@ -1,8 +1,11 @@
 // src/components/StudentProfileModal.tsx
+// ✅ UPDATED: Added "Assign Lessons" functionality with lesson selector modal
+
 import React, { useState, useEffect } from 'react';
-import { X, User, Mail, Calendar, BookOpen, Clock, Award, TrendingUp, Activity } from 'lucide-react';
+import { X, User, Mail, Calendar, BookOpen, Clock, Award, TrendingUp, Activity, Plus, CheckCircle, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface StudentProfile {
   id: string;
@@ -24,6 +27,14 @@ interface StudentProfile {
   progress: number;
 }
 
+interface AvailableLesson {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  is_assigned: boolean;
+}
+
 interface StudentProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -32,9 +43,18 @@ interface StudentProfileModalProps {
 
 export function StudentProfileModal({ isOpen, onClose, studentId }: StudentProfileModalProps) {
   const { t } = useLanguage();
+  const { session } = useAuth();
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // ✅ NEW: Lesson assignment state
+  const [showLessonSelector, setShowLessonSelector] = useState(false);
+  const [availableLessons, setAvailableLessons] = useState<AvailableLesson[]>([]);
+  const [selectedLessons, setSelectedLessons] = useState<Set<string>>(new Set());
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [lessonSearchTerm, setLessonSearchTerm] = useState('');
+  const [assignmentSuccess, setAssignmentSuccess] = useState(false);
 
   useEffect(() => {
     if (isOpen && studentId) {
@@ -107,6 +127,122 @@ export function StudentProfileModal({ isOpen, onClose, studentId }: StudentProfi
       setIsLoading(false);
     }
   };
+
+  // ✅ NEW: Fetch available lessons for assignment
+  const fetchAvailableLessons = async () => {
+    if (!session?.user?.id) return;
+
+    try {
+      console.log('📚 [PROFILE MODAL] Fetching available lessons...');
+
+      // Get tutor's published lessons
+      const { data: tutorLessons, error: lessonsError } = await supabase
+        .from('lessons')
+        .select('id, title, description, status')
+        .eq('tutor_id', session.user.id)
+        .eq('status', 'published')
+        .order('created_at', { ascending: false });
+
+      if (lessonsError) throw lessonsError;
+
+      // Get already assigned lessons for this student
+      const { data: assignedLessons, error: assignedError } = await supabase
+        .from('student_lessons')
+        .select('lesson_id')
+        .eq('student_id', studentId);
+
+      if (assignedError) throw assignedError;
+
+      const assignedLessonIds = new Set(assignedLessons?.map(al => al.lesson_id) || []);
+
+      // Mark which lessons are already assigned
+      const lessonsWithAssignmentStatus = (tutorLessons || []).map(lesson => ({
+        ...lesson,
+        is_assigned: assignedLessonIds.has(lesson.id)
+      }));
+
+      setAvailableLessons(lessonsWithAssignmentStatus);
+      console.log('✅ [PROFILE MODAL] Found', lessonsWithAssignmentStatus.length, 'lessons');
+    } catch (err: any) {
+      console.error('❌ [PROFILE MODAL] Error fetching lessons:', err);
+    }
+  };
+
+  // ✅ NEW: Handle opening lesson selector
+  const handleOpenLessonSelector = async () => {
+    setShowLessonSelector(true);
+    setSelectedLessons(new Set());
+    setAssignmentSuccess(false);
+    await fetchAvailableLessons();
+  };
+
+  // ✅ NEW: Toggle lesson selection
+  const toggleLessonSelection = (lessonId: string) => {
+    setSelectedLessons(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(lessonId)) {
+        newSet.delete(lessonId);
+      } else {
+        newSet.add(lessonId);
+      }
+      return newSet;
+    });
+  };
+
+  // ✅ NEW: Assign selected lessons to student
+  const handleAssignLessons = async () => {
+    if (selectedLessons.size === 0) return;
+
+    setIsAssigning(true);
+
+    try {
+      console.log('📝 [PROFILE MODAL] Assigning', selectedLessons.size, 'lessons to student:', studentId);
+
+      // Create student_lessons records
+      const assignments = Array.from(selectedLessons).map(lessonId => ({
+        student_id: studentId,
+        lesson_id: lessonId,
+        status: 'assigned',
+        progress: 0,
+        time_spent: 0
+      }));
+
+      const { error: assignError } = await supabase
+        .from('student_lessons')
+        .insert(assignments);
+
+      if (assignError) throw assignError;
+
+      console.log('✅ [PROFILE MODAL] Lessons assigned successfully!');
+      setAssignmentSuccess(true);
+      setSelectedLessons(new Set());
+      
+      // Refresh profile data
+      await fetchStudentProfile();
+      await fetchAvailableLessons();
+
+      // Auto-close success message after 2 seconds
+      setTimeout(() => {
+        setAssignmentSuccess(false);
+      }, 2000);
+
+    } catch (err: any) {
+      console.error('❌ [PROFILE MODAL] Error assigning lessons:', err);
+      alert(t.tutorStudentsPage?.errorAssigningLessons || 'Failed to assign lessons. Please try again.');
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  // ✅ NEW: Filter lessons by search term
+  const filteredLessons = availableLessons.filter(lesson => {
+    if (!lessonSearchTerm.trim()) return true;
+    const searchLower = lessonSearchTerm.toLowerCase();
+    return (
+      lesson.title.toLowerCase().includes(searchLower) ||
+      (lesson.description && lesson.description.toLowerCase().includes(searchLower))
+    );
+  });
 
   if (!isOpen) return null;
 
@@ -297,8 +433,17 @@ export function StudentProfileModal({ isOpen, onClose, studentId }: StudentProfi
           ) : null}
         </div>
 
-        {/* Footer */}
-        <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-4 flex justify-end">
+        {/* Footer with Action Buttons */}
+        <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-4 flex justify-between items-center space-x-3">
+          {/* ✅ NEW: Assign Lessons Button */}
+          <button
+            onClick={handleOpenLessonSelector}
+            className="flex-1 flex items-center justify-center space-x-2 px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg font-medium"
+          >
+            <Plus className="h-4 w-4" />
+            <span>{t.tutorStudentsPage?.assignLessons || 'Assign Lessons'}</span>
+          </button>
+
           <button
             onClick={onClose}
             className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
@@ -307,6 +452,162 @@ export function StudentProfileModal({ isOpen, onClose, studentId }: StudentProfi
           </button>
         </div>
       </div>
+
+      {/* ✅ NEW: Lesson Selector Modal */}
+      {showLessonSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full max-h-[80vh] overflow-hidden shadow-2xl flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-bold text-white">
+                  {t.tutorStudentsPage?.assignLessonsTitle || 'Assign Lessons'}
+                </h3>
+                <p className="text-blue-100 text-sm mt-1">
+                  {t.tutorStudentsPage?.selectLessonsToAssign || 'Select lessons to assign to'} {profile?.first_name}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowLessonSelector(false)}
+                className="text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Success Message */}
+            {assignmentSuccess && (
+              <div className="bg-green-50 dark:bg-green-900/20 border-b border-green-200 dark:border-green-800 p-4">
+                <div className="flex items-center space-x-2 text-green-800 dark:text-green-200">
+                  <CheckCircle className="h-5 w-5" />
+                  <span className="font-medium">
+                    {t.tutorStudentsPage?.lessonsAssignedSuccess || 'Lessons assigned successfully!'}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Search Bar */}
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={lessonSearchTerm}
+                  onChange={(e) => setLessonSearchTerm(e.target.value)}
+                  placeholder={t.tutorStudentsPage?.searchLessons || 'Search lessons...'}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+            </div>
+
+            {/* Lessons List */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {filteredLessons.length === 0 ? (
+                <div className="text-center py-12">
+                  <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {lessonSearchTerm 
+                      ? t.tutorStudentsPage?.noLessonsFoundSearch || 'No lessons found matching your search'
+                      : t.tutorStudentsPage?.noLessonsAvailable || 'No published lessons available. Create lessons first.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredLessons.map(lesson => (
+                    <div
+                      key={lesson.id}
+                      onClick={() => !lesson.is_assigned && toggleLessonSelection(lesson.id)}
+                      className={`
+                        border rounded-lg p-4 transition-all duration-200 cursor-pointer
+                        ${lesson.is_assigned
+                          ? 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 cursor-not-allowed opacity-60'
+                          : selectedLessons.has(lesson.id)
+                          ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-500 ring-2 ring-purple-500'
+                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600'
+                        }
+                      `}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <h4 className="font-semibold text-gray-900 dark:text-white">
+                              {lesson.title}
+                            </h4>
+                            {lesson.is_assigned && (
+                              <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full font-medium">
+                                {t.tutorStudentsPage?.alreadyAssigned || 'Already Assigned'}
+                              </span>
+                            )}
+                          </div>
+                          {lesson.description && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                              {lesson.description}
+                            </p>
+                          )}
+                        </div>
+                        {!lesson.is_assigned && (
+                          <div className={`
+                            w-6 h-6 rounded border-2 flex items-center justify-center transition-colors
+                            ${selectedLessons.has(lesson.id)
+                              ? 'bg-purple-600 border-purple-600'
+                              : 'border-gray-300 dark:border-gray-600'
+                            }
+                          `}>
+                            {selectedLessons.has(lesson.id) && (
+                              <CheckCircle className="h-4 w-4 text-white" />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {selectedLessons.size > 0 ? (
+                  <span className="font-medium">
+                    {selectedLessons.size} {selectedLessons.size === 1 
+                      ? t.tutorStudentsPage?.lessonSelected || 'lesson selected'
+                      : t.tutorStudentsPage?.lessonsSelected || 'lessons selected'}
+                  </span>
+                ) : (
+                  <span>{t.tutorStudentsPage?.selectLessonsHint || 'Select lessons to assign'}</span>
+                )}
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowLessonSelector(false)}
+                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+                >
+                  {t.tutorStudentsPage?.cancel || 'Cancel'}
+                </button>
+                <button
+                  onClick={handleAssignLessons}
+                  disabled={selectedLessons.size === 0 || isAssigning}
+                  className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                >
+                  {isAssigning ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                      <span>{t.tutorStudentsPage?.assigning || 'Assigning...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4" />
+                      <span>{t.tutorStudentsPage?.assignSelected || 'Assign Selected'}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
