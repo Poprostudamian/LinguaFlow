@@ -526,12 +526,11 @@ export function TutorStudentsPage() {
             </div>
           )
         {showProfileModal && selectedStudentId && (
-          <StudentProfileModal
-            studentId={selectedStudentId}
-            onClose={handleCloseProfile}
-          />
-        )}
-        </div>
+  <StudentProfileModal
+    studentId={selectedStudentId}
+    onClose={handleCloseProfile}
+  />
+)}
         
       ) : (
         <div className="space-y-4 animate-fade-in">
