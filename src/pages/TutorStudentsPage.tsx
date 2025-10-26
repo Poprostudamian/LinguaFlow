@@ -319,11 +319,6 @@ export function TutorStudentsPage() {
     setSelectedStudentId(null);
   };
 
-const handleSendMessage = (studentId: string) => {
-  navigate('/tutor/messages', { 
-    state: { startConversationWith: studentId } 
-  });
-};
   
   // Handle invite submission
   const handleInviteSubmit = async () => {
