@@ -547,7 +547,7 @@ const handleSendMessage = (studentId: string) => {
                   key={student.id}
                   student={student}
                   onSendMessage={(id) => console.log('Send message to:', id)}
-                  onViewProfile={handleViewProfile} // ✅ NEW: Pass handler
+                  onViewProfile={handleViewProfile}
                 />
               ))}
             </div>
