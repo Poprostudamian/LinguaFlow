@@ -87,10 +87,29 @@ export const getAnalyticsOverview = async (tutorId: string): Promise<AnalyticsOv
       .select('student_id, is_active')
       .eq('tutor_id', tutorId);
 
-    if (studentsError) throw studentsError;
+    if (studentsError) {
+      console.error('❌ Error fetching students:', studentsError);
+      throw studentsError;
+    }
 
     const totalStudents = students?.length || 0;
     const activeStudents = students?.filter(s => s.is_active).length || 0;
+
+    console.log('👥 Found', totalStudents, 'students,', activeStudents, 'active');
+
+    if (totalStudents === 0) {
+      console.log('⚠️ No students found, returning zero metrics');
+      return {
+        totalStudents: 0,
+        activeStudents: 0,
+        averageProgress: 0,
+        completionRate: 0,
+        totalLessonsAssigned: 0,
+        totalLessonsCompleted: 0,
+        averageScore: 0,
+        totalStudyHours: 0
+      };
+    }
 
     // Get lesson statistics
     const studentIds = students?.map(s => s.student_id) || [];
@@ -100,7 +119,12 @@ export const getAnalyticsOverview = async (tutorId: string): Promise<AnalyticsOv
       .select('status, progress, score, time_spent')
       .in('student_id', studentIds);
 
-    if (lessonsError) throw lessonsError;
+    if (lessonsError) {
+      console.error('❌ Error fetching lesson stats:', lessonsError);
+      throw lessonsError;
+    }
+
+    console.log('📚 Found', lessonStats?.length || 0, 'lesson assignments');
 
     const totalLessonsAssigned = lessonStats?.length || 0;
     const totalLessonsCompleted = lessonStats?.filter(l => l.status === 'completed').length || 0;
@@ -122,7 +146,7 @@ export const getAnalyticsOverview = async (tutorId: string): Promise<AnalyticsOv
       (lessonStats?.reduce((sum, l) => sum + (l.time_spent || 0), 0) || 0) / 60
     );
 
-    return {
+    const result = {
       totalStudents,
       activeStudents,
       averageProgress,
@@ -133,8 +157,11 @@ export const getAnalyticsOverview = async (tutorId: string): Promise<AnalyticsOv
       totalStudyHours
     };
 
+    console.log('✅ Overview calculated:', result);
+    return result;
+
   } catch (error) {
-    console.error('Error fetching analytics overview:', error);
+    console.error('❌ Error fetching analytics overview:', error);
     throw error;
   }
 };
@@ -147,52 +174,103 @@ export const getProgressOverTime = async (
   days: number = 30
 ): Promise<ProgressDataPoint[]> => {
   try {
-    console.log('📈 Fetching progress over time for tutor:', tutorId);
+    console.log('📈 Fetching progress over time for tutor:', tutorId, 'days:', days);
 
     // Get student IDs
-    const { data: students } = await supabase
+    const { data: students, error: studentsError } = await supabase
       .from('tutor_students')
       .select('student_id')
       .eq('tutor_id', tutorId);
 
-    if (!students || students.length === 0) return [];
+    if (studentsError) throw studentsError;
+
+    if (!students || students.length === 0) {
+      console.log('⚠️ No students found for tutor');
+      return [];
+    }
 
     const studentIds = students.map(s => s.student_id);
+    
+    // Calculate start date
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
+    startDate.setHours(0, 0, 0, 0); // Start of day
 
-    // Get lesson updates over time
+    console.log('📅 Date range:', startDate.toISOString(), 'to', new Date().toISOString());
+
+    // Get lesson updates over time - using assigned_at, started_at, completed_at, or updated_at
     const { data: lessonUpdates, error } = await supabase
       .from('student_lessons')
-      .select('updated_at, progress, student_id')
+      .select('assigned_at, started_at, completed_at, updated_at, progress, student_id, status')
       .in('student_id', studentIds)
-      .gte('updated_at', startDate.toISOString())
       .order('updated_at', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error fetching lesson updates:', error);
+      throw error;
+    }
+
+    if (!lessonUpdates || lessonUpdates.length === 0) {
+      console.log('⚠️ No lesson data found for students');
+      return [];
+    }
+
+    console.log('📊 Found', lessonUpdates.length, 'lesson updates');
 
     // Group by date and calculate averages
     const dataByDate: { [key: string]: { totalProgress: number; count: number; activeStudents: Set<string> } } = {};
 
-    lessonUpdates?.forEach(update => {
-      const date = new Date(update.updated_at).toISOString().split('T')[0];
+    lessonUpdates.forEach(update => {
+      // Use the most recent relevant date
+      const dateToUse = update.completed_at || update.started_at || update.updated_at || update.assigned_at;
+      
+      if (!dateToUse) return;
+
+      const updateDate = new Date(dateToUse);
+      
+      // Skip if before start date
+      if (updateDate < startDate) return;
+
+      const date = updateDate.toISOString().split('T')[0];
+      
       if (!dataByDate[date]) {
         dataByDate[date] = { totalProgress: 0, count: 0, activeStudents: new Set() };
       }
+      
       dataByDate[date].totalProgress += update.progress || 0;
       dataByDate[date].count += 1;
       dataByDate[date].activeStudents.add(update.student_id);
     });
 
-    // Convert to array format
-    return Object.entries(dataByDate).map(([date, data]) => ({
-      date,
-      averageProgress: Math.round(data.totalProgress / data.count),
-      studentsActive: data.activeStudents.size
-    }));
+    // Convert to array format and sort by date
+    const result = Object.entries(dataByDate)
+      .map(([date, data]) => ({
+        date,
+        averageProgress: Math.round(data.totalProgress / data.count),
+        studentsActive: data.activeStudents.size
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    console.log('✅ Processed', result.length, 'data points');
+    
+    // If we have data but it's empty for the selected range, fill with at least current day
+    if (result.length === 0 && lessonUpdates.length > 0) {
+      // Get latest data
+      const latestProgress = lessonUpdates.reduce((sum, l) => sum + (l.progress || 0), 0) / lessonUpdates.length;
+      const activeStudentsSet = new Set(lessonUpdates.map(l => l.student_id));
+      
+      return [{
+        date: new Date().toISOString().split('T')[0],
+        averageProgress: Math.round(latestProgress),
+        studentsActive: activeStudentsSet.size
+      }];
+    }
+
+    return result;
 
   } catch (error) {
-    console.error('Error fetching progress over time:', error);
+    console.error('❌ Error fetching progress over time:', error);
+    // Return empty array instead of throwing to prevent dashboard crash
     return [];
   }
 };
@@ -556,22 +634,14 @@ export const getStudentComparison = async (tutorId: string): Promise<StudentComp
 };
 
 /**
- * Get all analytics data at once
+ * Get all analytics data at once with improved error handling
  */
 export const getAllAnalytics = async (tutorId: string, dateRangeDays: number = 30) => {
   try {
-    console.log('📊 Fetching all analytics for tutor:', tutorId);
+    console.log('📊 Fetching all analytics for tutor:', tutorId, 'range:', dateRangeDays, 'days');
 
-    const [
-      overview,
-      progressOverTime,
-      performanceDistribution,
-      topPerformers,
-      recentActivity,
-      weakAreas,
-      studentComparison,
-      trends
-    ] = await Promise.all([
+    // Fetch all data with Promise.allSettled to handle individual failures
+    const results = await Promise.allSettled([
       getAnalyticsOverview(tutorId),
       getProgressOverTime(tutorId, dateRangeDays),
       getPerformanceDistribution(tutorId),
@@ -582,19 +652,60 @@ export const getAllAnalytics = async (tutorId: string, dateRangeDays: number = 3
       calculateTrends(tutorId, dateRangeDays)
     ]);
 
+    // Extract results or use defaults
+    const [
+      overviewResult,
+      progressResult,
+      distributionResult,
+      performersResult,
+      activityResult,
+      weakAreasResult,
+      comparisonResult,
+      trendsResult
+    ] = results;
+
+    // Default values for failed fetches
+    const defaultOverview = {
+      totalStudents: 0,
+      activeStudents: 0,
+      averageProgress: 0,
+      completionRate: 0,
+      totalLessonsAssigned: 0,
+      totalLessonsCompleted: 0,
+      averageScore: 0,
+      totalStudyHours: 0
+    };
+
+    const defaultTrends = {
+      progressTrend: 'stable' as const,
+      progressChange: 0,
+      activeTrend: 'stable' as const,
+      activeChange: 0,
+      completionTrend: 'stable' as const,
+      completionChange: 0
+    };
+
+    // Log any failures
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        const names = ['Overview', 'Progress', 'Distribution', 'Performers', 'Activity', 'WeakAreas', 'Comparison', 'Trends'];
+        console.error(`❌ Failed to fetch ${names[index]}:`, result.reason);
+      }
+    });
+
     return {
-      overview,
-      progressOverTime,
-      performanceDistribution,
-      topPerformers,
-      recentActivity,
-      weakAreas,
-      studentComparison,
-      trends
+      overview: overviewResult.status === 'fulfilled' ? overviewResult.value : defaultOverview,
+      progressOverTime: progressResult.status === 'fulfilled' ? progressResult.value : [],
+      performanceDistribution: distributionResult.status === 'fulfilled' ? distributionResult.value : [],
+      topPerformers: performersResult.status === 'fulfilled' ? performersResult.value : [],
+      recentActivity: activityResult.status === 'fulfilled' ? activityResult.value : [],
+      weakAreas: weakAreasResult.status === 'fulfilled' ? weakAreasResult.value : [],
+      studentComparison: comparisonResult.status === 'fulfilled' ? comparisonResult.value : [],
+      trends: trendsResult.status === 'fulfilled' ? trendsResult.value : defaultTrends
     };
 
   } catch (error) {
-    console.error('Error fetching all analytics:', error);
+    console.error('❌ Critical error fetching all analytics:', error);
     throw error;
   }
 };
