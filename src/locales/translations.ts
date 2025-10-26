@@ -1001,7 +1001,20 @@ export const translations = {
       assignSelected: 'Assign Selected',
       lessonsAssignedSuccess: 'Lessons assigned successfully!',
       errorAssigningLessons: 'Failed to assign lessons. Please try again.',
+
+
+      selected: 'selected',
+      clearSelection: 'Clear selection',
+      bulkAssignLessons: 'Assign Lessons',
+      bulkSendMessages: 'Send Messages',
+      bulkArchive: 'Archive',
+      selectMode: 'Select Mode',
+      exitSelection: 'Exit Selection',
+      selectAll: 'Select All',
+      deselectAll: 'Deselect All',
       
+      // ✅ NEW: Export
+      exportCSV: 'Export CSV',
     },
 
     // Landing Page
