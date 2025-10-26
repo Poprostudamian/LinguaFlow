@@ -1,10 +1,11 @@
 // src/pages/TutorAnalyticsPage.tsx
 // 🎯 ANALYTICS & INSIGHTS DASHBOARD for Tutors
-// Complete analytics page with charts, trends, and recommendations
+// ✅ CONNECTED TO REAL SUPABASE DATA
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { getAllAnalytics } from '../lib/supabase-analytics';
 import {
   TrendingUp,
   TrendingDown,
@@ -24,7 +25,8 @@ import {
   Brain,
   Star,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  RefreshCw
 } from 'lucide-react';
 import {
   LineChart,
@@ -112,74 +114,6 @@ interface AnalyticsData {
 type DateRange = '7d' | '30d' | '3m' | 'all';
 
 // ============================================================================
-// MOCK DATA (Replace with real Supabase queries)
-// ============================================================================
-
-const generateMockAnalytics = (): AnalyticsData => {
-  return {
-    overview: {
-      totalStudents: 24,
-      activeStudents: 18,
-      averageProgress: 67,
-      completionRate: 78,
-      totalLessonsAssigned: 156,
-      totalLessonsCompleted: 98,
-      averageScore: 82,
-      totalStudyHours: 342
-    },
-    progressOverTime: [
-      { date: '2025-10-01', averageProgress: 45, studentsActive: 15 },
-      { date: '2025-10-05', averageProgress: 52, studentsActive: 16 },
-      { date: '2025-10-10', averageProgress: 58, studentsActive: 17 },
-      { date: '2025-10-15', averageProgress: 63, studentsActive: 18 },
-      { date: '2025-10-20', averageProgress: 65, studentsActive: 18 },
-      { date: '2025-10-26', averageProgress: 67, studentsActive: 18 }
-    ],
-    performanceDistribution: [
-      { range: '0-20%', count: 2 },
-      { range: '21-40%', count: 3 },
-      { range: '41-60%', count: 5 },
-      { range: '61-80%', count: 8 },
-      { range: '81-100%', count: 6 }
-    ],
-    topPerformers: [
-      { id: '1', name: 'Anna Kowalska', progress: 95, score: 92, lessonsCompleted: 12 },
-      { id: '2', name: 'Jan Nowak', progress: 88, score: 89, lessonsCompleted: 10 },
-      { id: '3', name: 'Maria Wiśniewska', progress: 85, score: 87, lessonsCompleted: 11 },
-      { id: '4', name: 'Piotr Wójcik', progress: 82, score: 85, lessonsCompleted: 9 },
-      { id: '5', name: 'Katarzyna Lewandowska', progress: 80, score: 83, lessonsCompleted: 10 }
-    ],
-    recentActivity: [
-      { id: '1', studentName: 'Anna Kowalska', action: 'Completed', lessonTitle: 'Advanced Grammar', timestamp: '2025-10-26T10:30:00', score: 95 },
-      { id: '2', studentName: 'Jan Nowak', action: 'Started', lessonTitle: 'Business English', timestamp: '2025-10-26T09:15:00' },
-      { id: '3', studentName: 'Maria Wiśniewska', action: 'Completed', lessonTitle: 'Conversational Practice', timestamp: '2025-10-25T16:20:00', score: 88 },
-      { id: '4', studentName: 'Piotr Wójcik', action: 'Completed', lessonTitle: 'Vocabulary Building', timestamp: '2025-10-25T14:10:00', score: 82 },
-      { id: '5', studentName: 'Katarzyna Lewandowska', action: 'Started', lessonTitle: 'Pronunciation Guide', timestamp: '2025-10-25T11:00:00' }
-    ],
-    weakAreas: [
-      { lessonTitle: 'Advanced Tenses', averageScore: 65, completionRate: 45, studentCount: 8 },
-      { lessonTitle: 'Idiomatic Expressions', averageScore: 68, completionRate: 52, studentCount: 10 },
-      { lessonTitle: 'Business Correspondence', averageScore: 70, completionRate: 58, studentCount: 6 }
-    ],
-    studentComparison: [
-      { student: 'Anna K.', progress: 95, lessons: 12, hours: 48, score: 92 },
-      { student: 'Jan N.', progress: 88, lessons: 10, hours: 42, score: 89 },
-      { student: 'Maria W.', progress: 85, lessons: 11, hours: 45, score: 87 },
-      { student: 'Piotr W.', progress: 82, lessons: 9, hours: 38, score: 85 },
-      { student: 'Avg', progress: 67, lessons: 6, hours: 28, score: 82 }
-    ],
-    trends: {
-      progressTrend: 'up',
-      progressChange: 12.5,
-      activeTrend: 'up',
-      activeChange: 8.3,
-      completionTrend: 'down',
-      completionChange: -3.2
-    }
-  };
-};
-
-// ============================================================================
 // COMPONENTS
 // ============================================================================
 
@@ -202,7 +136,7 @@ function MetricCard({ title, value, icon: Icon, color, trend, trendValue }: Metr
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-lg">
       <div className="flex items-center justify-between mb-4">
         <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${colorClasses[color]}`}>
           <Icon className="h-6 w-6" />
@@ -212,7 +146,7 @@ function MetricCard({ title, value, icon: Icon, color, trend, trendValue }: Metr
             trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-gray-600'
           }`}>
             {trend === 'up' ? <ArrowUp className="h-4 w-4" /> : trend === 'down' ? <ArrowDown className="h-4 w-4" /> : null}
-            <span>{Math.abs(trendValue)}%</span>
+            <span>{Math.abs(trendValue).toFixed(1)}%</span>
           </div>
         )}
       </div>
@@ -233,28 +167,62 @@ export function TutorAnalyticsPage() {
   const [dateRange, setDateRange] = useState<DateRange>('30d');
   const [isLoading, setIsLoading] = useState(true);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load analytics data
+  // Load analytics data - ✅ USING REAL DATA
   useEffect(() => {
     const loadAnalytics = async () => {
+      if (!session?.user?.id) return;
+      
       setIsLoading(true);
+      setError(null);
+      
       try {
-        // TODO: Replace with real Supabase query
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-        const data = generateMockAnalytics();
+        console.log('📊 Loading analytics for tutor:', session.user.id);
+        const daysMap = { '7d': 7, '30d': 30, '3m': 90, 'all': 365 };
+        const data = await getAllAnalytics(session.user.id, daysMap[dateRange]);
+        
+        console.log('✅ Analytics loaded:', data);
         setAnalytics(data);
-      } catch (error) {
-        console.error('Error loading analytics:', error);
+      } catch (err) {
+        console.error('❌ Error loading analytics:', err);
+        setError('Failed to load analytics data. Please try again.');
       } finally {
         setIsLoading(false);
       }
     };
 
     loadAnalytics();
-  }, [dateRange]);
+  }, [dateRange, session?.user?.id]);
+
+  // Refresh data
+  const handleRefresh = () => {
+    setAnalytics(null);
+    // Trigger useEffect by clearing and resetting
+    const currentRange = dateRange;
+    setDateRange('7d');
+    setTimeout(() => setDateRange(currentRange), 100);
+  };
 
   // Chart colors
   const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1'];
+
+  // Custom tooltip for charts
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-gray-900 dark:bg-gray-800 p-3 rounded-lg border border-gray-700 shadow-lg">
+          <p className="text-gray-300 text-sm mb-1">{label}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} style={{ color: entry.color }} className="text-sm font-medium">
+              {entry.name}: {entry.value}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
 
   if (isLoading) {
     return (
@@ -267,16 +235,25 @@ export function TutorAnalyticsPage() {
     );
   }
 
-  if (!analytics) {
+  if (error || !analytics) {
     return (
       <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
         <div className="flex items-center space-x-3">
           <AlertCircle className="h-6 w-6 text-red-600" />
           <div>
             <h3 className="text-red-800 dark:text-red-200 font-medium">Error Loading Analytics</h3>
-            <p className="text-red-600 dark:text-red-300 text-sm mt-1">Unable to load analytics data</p>
+            <p className="text-red-600 dark:text-red-300 text-sm mt-1">
+              {error || 'Unable to load analytics data'}
+            </p>
           </div>
         </div>
+        <button
+          onClick={handleRefresh}
+          className="mt-4 flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          <RefreshCw className="h-4 w-4" />
+          <span>Retry</span>
+        </button>
       </div>
     );
   }
@@ -295,6 +272,15 @@ export function TutorAnalyticsPage() {
         </div>
 
         <div className="flex items-center space-x-3">
+          {/* Refresh Button */}
+          <button
+            onClick={handleRefresh}
+            className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <RefreshCw className="h-4 w-4" />
+            <span>Refresh</span>
+          </button>
+
           {/* Date Range Filter */}
           <select
             value={dateRange}
@@ -393,7 +379,9 @@ export function TutorAnalyticsPage() {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Engagement Rate</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {Math.round((analytics.overview.activeStudents / analytics.overview.totalStudents) * 100)}%
+                {analytics.overview.totalStudents > 0 
+                  ? Math.round((analytics.overview.activeStudents / analytics.overview.totalStudents) * 100)
+                  : 0}%
               </p>
             </div>
           </div>
@@ -408,43 +396,45 @@ export function TutorAnalyticsPage() {
             <TrendingUp className="h-5 w-5 text-purple-600" />
             <span>Progress Over Time</span>
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={analytics.progressOverTime}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis 
-                dataKey="date" 
-                stroke="#9ca3af"
-                tick={{ fill: '#9ca3af' }}
-                tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              />
-              <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1f2937', 
-                  border: '1px solid #374151',
-                  borderRadius: '8px'
-                }}
-                labelStyle={{ color: '#f3f4f6' }}
-              />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="averageProgress" 
-                stroke="#8b5cf6" 
-                strokeWidth={3}
-                name="Average Progress (%)"
-                dot={{ fill: '#8b5cf6', r: 4 }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="studentsActive" 
-                stroke="#3b82f6" 
-                strokeWidth={2}
-                name="Active Students"
-                dot={{ fill: '#3b82f6', r: 3 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {analytics.progressOverTime.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={analytics.progressOverTime}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#9ca3af"
+                  tick={{ fill: '#9ca3af' }}
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return `${date.getMonth() + 1}/${date.getDate()}`;
+                  }}
+                />
+                <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="averageProgress" 
+                  stroke="#8b5cf6" 
+                  strokeWidth={3}
+                  name="Average Progress (%)"
+                  dot={{ fill: '#8b5cf6', r: 4 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="studentsActive" 
+                  stroke="#3b82f6" 
+                  strokeWidth={2}
+                  name="Active Students"
+                  dot={{ fill: '#3b82f6', r: 3 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
+              No data available for selected time range
+            </div>
+          )}
         </div>
 
         {/* Performance Distribution Chart */}
@@ -453,21 +443,21 @@ export function TutorAnalyticsPage() {
             <BarChart3 className="h-5 w-5 text-blue-600" />
             <span>Performance Distribution</span>
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={analytics.performanceDistribution}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="range" stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
-              <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1f2937', 
-                  border: '1px solid #374151',
-                  borderRadius: '8px'
-                }}
-              />
-              <Bar dataKey="count" fill="#3b82f6" name="Number of Students" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {analytics.performanceDistribution.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={analytics.performanceDistribution}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="range" stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
+                <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="count" fill="#3b82f6" name="Number of Students" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
+              No performance data available
+            </div>
+          )}
         </div>
       </div>
 
@@ -479,32 +469,38 @@ export function TutorAnalyticsPage() {
             <Star className="h-5 w-5 text-yellow-600" />
             <span>Top Performers</span>
           </h3>
-          <div className="space-y-3">
-            {analytics.topPerformers.map((student, index) => (
-              <div 
-                key={student.id}
-                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
-                    index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-600' : 'bg-purple-600'
-                  }`}>
-                    {index + 1}
+          {analytics.topPerformers.length > 0 ? (
+            <div className="space-y-3">
+              {analytics.topPerformers.map((student, index) => (
+                <div 
+                  key={student.id}
+                  className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
+                      index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-600' : 'bg-purple-600'
+                    }`}>
+                      {index + 1}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">{student.name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {student.lessonsCompleted} lessons completed
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{student.name}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {student.lessonsCompleted} lessons completed
-                    </p>
+                  <div className="text-right">
+                    <p className="font-semibold text-gray-900 dark:text-white">{student.progress}%</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Score: {student.score}%</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-gray-900 dark:text-white">{student.progress}%</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Score: {student.score}%</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
+              No student data available yet
+            </div>
+          )}
         </div>
 
         {/* Student Comparison Radar */}
@@ -513,16 +509,22 @@ export function TutorAnalyticsPage() {
             <Target className="h-5 w-5 text-green-600" />
             <span>Top 5 vs Avg</span>
           </h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <RadarChart data={analytics.studentComparison}>
-              <PolarGrid stroke="#374151" />
-              <PolarAngleAxis dataKey="student" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} />
-              <PolarRadiusAxis stroke="#9ca3af" />
-              <Radar name="Progress" dataKey="progress" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.6} />
-              <Radar name="Score" dataKey="score" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.4} />
-              <Legend />
-            </RadarChart>
-          </ResponsiveContainer>
+          {analytics.studentComparison.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <RadarChart data={analytics.studentComparison}>
+                <PolarGrid stroke="#374151" />
+                <PolarAngleAxis dataKey="student" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} />
+                <PolarRadiusAxis stroke="#9ca3af" />
+                <Radar name="Progress" dataKey="progress" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.6} />
+                <Radar name="Score" dataKey="score" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.4} />
+                <Legend />
+              </RadarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
+              Not enough data
+            </div>
+          )}
         </div>
       </div>
 
@@ -534,32 +536,38 @@ export function TutorAnalyticsPage() {
             <Activity className="h-5 w-5 text-purple-600" />
             <span>Recent Activity</span>
           </h3>
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {analytics.recentActivity.map((activity) => (
-              <div 
-                key={activity.id}
-                className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
-              >
-                <div className={`w-2 h-2 rounded-full mt-2 ${
-                  activity.action === 'Completed' ? 'bg-green-500' : 'bg-blue-500'
-                }`} />
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900 dark:text-white">{activity.studentName}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {activity.action} <span className="font-medium">{activity.lessonTitle}</span>
-                  </p>
-                  {activity.score && (
-                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                      Score: {activity.score}%
+          {analytics.recentActivity.length > 0 ? (
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {analytics.recentActivity.map((activity) => (
+                <div 
+                  key={activity.id}
+                  className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                >
+                  <div className={`w-2 h-2 rounded-full mt-2 ${
+                    activity.action === 'Completed' ? 'bg-green-500' : 'bg-blue-500'
+                  }`} />
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900 dark:text-white">{activity.studentName}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {activity.action} <span className="font-medium">{activity.lessonTitle}</span>
                     </p>
-                  )}
-                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                    {new Date(activity.timestamp).toLocaleString()}
-                  </p>
+                    {activity.score !== undefined && (
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                        Score: {activity.score}%
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                      {new Date(activity.timestamp).toLocaleString()}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
+              No recent activity
+            </div>
+          )}
         </div>
 
         {/* Weak Areas Analysis */}
@@ -568,88 +576,102 @@ export function TutorAnalyticsPage() {
             <Brain className="h-5 w-5 text-orange-600" />
             <span>Areas Needing Attention</span>
           </h3>
-          <div className="space-y-4">
-            {analytics.weakAreas.map((area, index) => (
-              <div 
-                key={index}
-                className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <h4 className="font-medium text-gray-900 dark:text-white">{area.lessonTitle}</h4>
-                  <span className="text-xs px-2 py-1 bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200 rounded-full">
-                    {area.studentCount} students
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">Avg Score</span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{area.averageScore}%</span>
+          {analytics.weakAreas.length > 0 ? (
+            <div className="space-y-4">
+              {analytics.weakAreas.map((area, index) => (
+                <div 
+                  key={index}
+                  className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-medium text-gray-900 dark:text-white">{area.lessonTitle}</h4>
+                    <span className="text-xs px-2 py-1 bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200 rounded-full">
+                      {area.studentCount} students
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Avg Score</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{area.averageScore}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div 
+                          className="h-2 rounded-full bg-orange-500"
+                          style={{ width: `${area.averageScore}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div 
-                        className="h-2 rounded-full bg-orange-500"
-                        style={{ width: `${area.averageScore}%` }}
-                      />
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Completion</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{area.completionRate}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div 
+                          className="h-2 rounded-full bg-blue-500"
+                          style={{ width: `${area.completionRate}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">Completion</span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{area.completionRate}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div 
-                        className="h-2 rounded-full bg-blue-500"
-                        style={{ width: `${area.completionRate}%` }}
-                      />
-                    </div>
-                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
+              No weak areas identified - great job!
+            </div>
+          )}
         </div>
       </div>
 
       {/* Recommendations Section */}
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
-          <Zap className="h-5 w-5 text-yellow-600" />
-          <span>AI-Powered Recommendations</span>
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <BookOpen className="h-5 w-5 text-blue-600" />
-              <h4 className="font-medium text-gray-900 dark:text-white">Focus Area</h4>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Consider creating supplementary materials for "Advanced Tenses" - multiple students struggling here
-            </p>
-          </div>
-          
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <Users className="h-5 w-5 text-green-600" />
-              <h4 className="font-medium text-gray-900 dark:text-white">Engagement</h4>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              6 students haven't been active in 7+ days. Consider sending reminder messages
-            </p>
-          </div>
-          
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <Award className="h-5 w-5 text-purple-600" />
-              <h4 className="font-medium text-gray-900 dark:text-white">Recognition</h4>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Anna Kowalska has completed 12 lessons with 92% avg score - send congratulations!
-            </p>
+      {analytics.weakAreas.length > 0 && (
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
+            <Zap className="h-5 w-5 text-yellow-600" />
+            <span>Recommendations</span>
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {analytics.weakAreas.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <BookOpen className="h-5 w-5 text-blue-600" />
+                  <h4 className="font-medium text-gray-900 dark:text-white">Focus Area</h4>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Consider creating supplementary materials for "{analytics.weakAreas[0].lessonTitle}" - students need extra support
+                </p>
+              </div>
+            )}
+            
+            {analytics.overview.activeStudents < analytics.overview.totalStudents && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Users className="h-5 w-5 text-green-600" />
+                  <h4 className="font-medium text-gray-900 dark:text-white">Engagement</h4>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {analytics.overview.totalStudents - analytics.overview.activeStudents} students haven't been active recently. Consider sending reminder messages
+                </p>
+              </div>
+            )}
+            
+            {analytics.topPerformers.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Award className="h-5 w-5 text-purple-600" />
+                  <h4 className="font-medium text-gray-900 dark:text-white">Recognition</h4>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {analytics.topPerformers[0].name} has completed {analytics.topPerformers[0].lessonsCompleted} lessons with {analytics.topPerformers[0].score}% avg score - send congratulations!
+                </p>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
