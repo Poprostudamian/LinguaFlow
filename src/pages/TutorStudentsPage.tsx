@@ -524,17 +524,15 @@ export function TutorStudentsPage() {
                 />
               ))}
             </div>
-          
-      {showProfileModal && selectedStudentId && (
+          )
+        {showProfileModal && selectedStudentId && (
           <StudentProfileModal
             studentId={selectedStudentId}
             onClose={handleCloseProfile}
           />
         )}
         </div>
-          )}
-      
-        </div>
+        
       ) : (
         <div className="space-y-4 animate-fade-in">
           {invitations.length === 0 ? (
