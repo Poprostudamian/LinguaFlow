@@ -2643,9 +2643,10 @@ studentSettings: {
       increasing: 'Rośnie',
       decreasing: 'Spada',
       stable: 'Stabilny'
-    }  
+    }   
+  },
   },
 } as const;
-
+ 
 export type Language = 'en' | 'pl';
 export type TranslationKeys = typeof translations.en;
