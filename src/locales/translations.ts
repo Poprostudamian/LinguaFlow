@@ -2587,64 +2587,64 @@ studentSettings: {
         deleting: 'Usuwanie...',
     },
     tutorAnalytics: {
-  title: 'Analityka i Wglądy',
-  subtitle: 'Kompleksowy przegląd postępów i wyników Twoich studentów',
-  
-  // Zakresy dat
-  last7Days: 'Ostatnie 7 dni',
-  last30Days: 'Ostatnie 30 dni',
-  last3Months: 'Ostatnie 3 miesiące',
-  allTime: 'Cały czas',
-  
-  // Metryki ogólne
-  totalStudents: 'Liczba Studentów',
-  averageProgress: 'Średni Postęp',
-  completionRate: 'Wskaźnik Ukończenia',
-  averageScore: 'Średni Wynik',
-  lessonsCompleted: 'Ukończone Lekcje',
-  activeStudents: 'Aktywni Studenci',
-  studyHours: 'Godziny Nauki',
-  engagementRate: 'Wskaźnik Zaangażowania',
-  
-  // Wykresy
-  progressOverTime: 'Postęp w Czasie',
-  performanceDistribution: 'Rozkład Wyników',
-  topPerformers: 'Najlepsi Studenci',
-  studentComparison: 'Top 5 vs Średnia',
-  recentActivity: 'Ostatnia Aktywność',
-  weakAreas: 'Obszary Wymagające Uwagi',
-  
-  // Akcje
-  exportReport: 'Eksportuj Raport',
-  viewDetails: 'Zobacz Szczegóły',
-  
-  // Aktywność
-  completed: 'Ukończono',
-  started: 'Rozpoczęto',
-  score: 'Wynik',
-  
-  // Słabe obszary
-  avgScore: 'Śr. Wynik',
-  completion: 'Ukończenie',
-  students: 'studentów',
-  
-  // Rekomendacje
-  recommendations: 'Rekomendacje AI',
-  focusArea: 'Obszar Uwagi',
-  engagement: 'Zaangażowanie',
-  recognition: 'Uznanie',
-  
-  // Ładowanie i błędy
-  loading: 'Ładowanie analityki...',
-  error: 'Błąd Ładowania Analityki',
-  errorMessage: 'Nie można załadować danych analitycznych',
-  
-  // Trendy
-  increasing: 'Rośnie',
-  decreasing: 'Spada',
-  stable: 'Stabilny'
-}
-      
+        title: 'Analityka i Wglądy',
+        subtitle: 'Kompleksowy przegląd postępów i wyników Twoich studentów',
+        
+        // Zakresy dat
+        last7Days: 'Ostatnie 7 dni',
+        last30Days: 'Ostatnie 30 dni',
+        last3Months: 'Ostatnie 3 miesiące',
+        allTime: 'Cały czas',
+        
+        // Metryki ogólne
+        totalStudents: 'Liczba Studentów',
+        averageProgress: 'Średni Postęp',
+        completionRate: 'Wskaźnik Ukończenia',
+        averageScore: 'Średni Wynik',
+        lessonsCompleted: 'Ukończone Lekcje',
+        activeStudents: 'Aktywni Studenci',
+        studyHours: 'Godziny Nauki',
+        engagementRate: 'Wskaźnik Zaangażowania',
+        
+        // Wykresy
+        progressOverTime: 'Postęp w Czasie',
+        performanceDistribution: 'Rozkład Wyników',
+        topPerformers: 'Najlepsi Studenci',
+        studentComparison: 'Top 5 vs Średnia',
+        recentActivity: 'Ostatnia Aktywność',
+        weakAreas: 'Obszary Wymagające Uwagi',
+        
+        // Akcje
+        exportReport: 'Eksportuj Raport',
+        viewDetails: 'Zobacz Szczegóły',
+        
+        // Aktywność
+        completed: 'Ukończono',
+        started: 'Rozpoczęto',
+        score: 'Wynik',
+        
+        // Słabe obszary
+        avgScore: 'Śr. Wynik',
+        completion: 'Ukończenie',
+        students: 'studentów',
+        
+        // Rekomendacje
+        recommendations: 'Rekomendacje AI',
+        focusArea: 'Obszar Uwagi',
+        engagement: 'Zaangażowanie',
+        recognition: 'Uznanie',
+        
+        // Ładowanie i błędy
+        loading: 'Ładowanie analityki...',
+        error: 'Błąd Ładowania Analityki',
+        errorMessage: 'Nie można załadować danych analitycznych',
+        
+        // Trendy
+        increasing: 'Rośnie',
+        decreasing: 'Spada',
+        stable: 'Stabilny'
+      }
+            
 },
   },
 } as const;
