@@ -1,4 +1,4 @@
-// src/pages/TutorStudentsPage.tsx - UPDATED with Student Profile Modal
+// src/pages/TutorStudentsPage.tsx
 
 import React, { useState, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -267,7 +267,7 @@ export function TutorStudentsPage() {
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // ✅ NEW: Profile Modal State
+  
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
 
@@ -305,7 +305,7 @@ export function TutorStudentsPage() {
     return filtered;
   }, [convertedStudents, searchTerm, activeTab]);
 
-  // ✅ NEW: Handle View Profile
+ 
   const handleViewProfile = (studentId: string) => {
     console.log('🔍 [TUTOR STUDENTS PAGE] Opening profile for student:', studentId);
     setSelectedStudentId(studentId);
@@ -318,6 +318,12 @@ export function TutorStudentsPage() {
     setSelectedStudentId(null);
   };
 
+const handleSendMessage = (studentId: string) => {
+  navigate('/tutor/messages', { 
+    state: { startConversationWith: studentId } 
+  });
+};
+  
   // Handle invite submission
   const handleInviteSubmit = async () => {
     if (!session?.user?.id || !inviteForm.studentEmail.trim()) {
