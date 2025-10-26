@@ -524,13 +524,14 @@ export function TutorStudentsPage() {
                 />
               ))}
             </div>
-          )
-        {showProfileModal && selectedStudentId && (
-          <StudentProfileModal
-            studentId={selectedStudentId}
-            onClose={handleCloseProfile}
-          />
-        )}
+          )}
+          
+          {showProfileModal && selectedStudentId && (
+            <StudentProfileModal
+              studentId={selectedStudentId}
+              onClose={handleCloseProfile}
+            />
+          )}
         </div>
         
       ) : (
