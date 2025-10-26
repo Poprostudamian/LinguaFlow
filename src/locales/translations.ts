@@ -2271,7 +2271,31 @@ studentSettings: {
       lessons: 'Lekcje',
       hours: 'Godziny',
 
+      sortBy: 'Sortuj według',
+      sortByName: 'Imię',
+      sortByProgress: 'Postęp',
+      sortByLessons: 'Ukończone lekcje',
+      sortByHours: 'Godziny nauki',
+      sortByJoined: 'Data dołączenia',
+      sortDirection: 'Kierunek',
+      ascending: 'Rosnąco',
+      descending: 'Malejąco',
       
+      // ✅ NEW: Assign Lessons
+      assignLessons: 'Przypisz lekcje',
+      assignLessonsTitle: 'Przypisz lekcje',
+      selectLessonsToAssign: 'Wybierz lekcje do przypisania dla',
+      searchLessons: 'Szukaj lekcji...',
+      noLessonsFoundSearch: 'Nie znaleziono lekcji pasujących do wyszukiwania',
+      noLessonsAvailable: 'Brak opublikowanych lekcji. Najpierw utwórz lekcje.',
+      alreadyAssigned: 'Już przypisano',
+      lessonSelected: 'lekcja wybrana',
+      lessonsSelected: 'lekcje wybrane',
+      selectLessonsHint: 'Wybierz lekcje do przypisania',
+      assigning: 'Przypisuję...',
+      assignSelected: 'Przypisz wybrane',
+      lessonsAssignedSuccess: 'Lekcje przypisane pomyślnie!',
+      errorAssigningLessons: 'Nie udało się przypisać lekcji. Spróbuj ponownie.',
       
     },
 
