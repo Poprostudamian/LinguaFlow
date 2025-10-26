@@ -975,6 +975,33 @@ export const translations = {
       advanced: 'Advanced',
       lessons: 'Lessons',
       hours: 'Hours',
+
+      sortBy: 'Sort by',
+      sortByName: 'Name',
+      sortByProgress: 'Progress',
+      sortByLessons: 'Lessons Completed',
+      sortByHours: 'Study Hours',
+      sortByJoined: 'Date Joined',
+      sortDirection: 'Direction',
+      ascending: 'Ascending',
+      descending: 'Descending',
+      
+      // ✅ NEW: Assign Lessons
+      assignLessons: 'Assign Lessons',
+      assignLessonsTitle: 'Assign Lessons',
+      selectLessonsToAssign: 'Select lessons to assign to',
+      searchLessons: 'Search lessons...',
+      noLessonsFoundSearch: 'No lessons found matching your search',
+      noLessonsAvailable: 'No published lessons available. Create lessons first.',
+      alreadyAssigned: 'Already Assigned',
+      lessonSelected: 'lesson selected',
+      lessonsSelected: 'lessons selected',
+      selectLessonsHint: 'Select lessons to assign',
+      assigning: 'Assigning...',
+      assignSelected: 'Assign Selected',
+      lessonsAssignedSuccess: 'Lessons assigned successfully!',
+      errorAssigningLessons: 'Failed to assign lessons. Please try again.',
+      
     },
 
     // Landing Page
