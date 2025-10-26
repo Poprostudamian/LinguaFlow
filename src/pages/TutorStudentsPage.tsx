@@ -1163,9 +1163,10 @@ export function TutorStudentsPage() {
       {/* Student Profile Modal */}
       {showProfileModal && selectedStudentId && (
         <StudentProfileModal
-          studentId={selectedStudentId}
-          onClose={handleCloseProfileModal}
-        />
+        isOpen={showProfileModal && selectedStudentId !== null}
+        onClose={handleCloseProfileModal}
+        studentId={selectedStudentId || ''}
+      />
       )}
     </div>
   );
