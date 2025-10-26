@@ -516,7 +516,7 @@ export function TutorStudentsPage() {
            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
               {filteredStudents.map(student => (
-                <EnhancedStudentCard
+                <StudentCard
                   key={student.id}
                   student={student}
                   onSendMessage={(id) => console.log('Send message to:', id)}
