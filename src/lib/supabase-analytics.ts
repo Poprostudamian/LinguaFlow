@@ -495,6 +495,67 @@ export const calculateTrends = async (tutorId: string, days: number = 30): Promi
 };
 
 /**
+ * Get student comparison data for radar chart
+ */
+export const getStudentComparison = async (tutorId: string): Promise<StudentComparisonData[]> => {
+  try {
+    console.log('📊 Fetching student comparison for tutor:', tutorId);
+
+    const topPerformers = await getTopPerformers(tutorId, 5);
+    
+    // Get detailed data for top 5
+    const comparisonData = await Promise.all(
+      topPerformers.map(async (performer) => {
+        const { data: lessons } = await supabase
+          .from('student_lessons')
+          .select('time_spent')
+          .eq('student_id', performer.id);
+
+        const totalHours = Math.round(
+          (lessons?.reduce((sum, l) => sum + (l.time_spent || 0), 0) || 0) / 60
+        );
+
+        return {
+          student: performer.name.split(' ')[0], // First name only for chart
+          progress: performer.progress,
+          lessons: performer.lessonsCompleted,
+          hours: totalHours,
+          score: performer.score
+        };
+      })
+    );
+
+    // Calculate average
+    const avgProgress = Math.round(
+      comparisonData.reduce((sum, d) => sum + d.progress, 0) / comparisonData.length
+    );
+    const avgLessons = Math.round(
+      comparisonData.reduce((sum, d) => sum + d.lessons, 0) / comparisonData.length
+    );
+    const avgHours = Math.round(
+      comparisonData.reduce((sum, d) => sum + d.hours, 0) / comparisonData.length
+    );
+    const avgScore = Math.round(
+      comparisonData.reduce((sum, d) => sum + d.score, 0) / comparisonData.length
+    );
+
+    comparisonData.push({
+      student: 'Avg',
+      progress: avgProgress,
+      lessons: avgLessons,
+      hours: avgHours,
+      score: avgScore
+    });
+
+    return comparisonData;
+
+  } catch (error) {
+    console.error('Error fetching student comparison:', error);
+    return [];
+  }
+};
+
+/**
  * Get all analytics data at once
  */
 export const getAllAnalytics = async (tutorId: string, dateRangeDays: number = 30) => {
@@ -508,6 +569,7 @@ export const getAllAnalytics = async (tutorId: string, dateRangeDays: number = 3
       topPerformers,
       recentActivity,
       weakAreas,
+      studentComparison,
       trends
     ] = await Promise.all([
       getAnalyticsOverview(tutorId),
@@ -516,6 +578,7 @@ export const getAllAnalytics = async (tutorId: string, dateRangeDays: number = 3
       getTopPerformers(tutorId, 5),
       getRecentActivity(tutorId, 10),
       getWeakAreas(tutorId, 5),
+      getStudentComparison(tutorId),
       calculateTrends(tutorId, dateRangeDays)
     ]);
 
@@ -526,6 +589,7 @@ export const getAllAnalytics = async (tutorId: string, dateRangeDays: number = 3
       topPerformers,
       recentActivity,
       weakAreas,
+      studentComparison,
       trends
     };
 
