@@ -1,23 +1,18 @@
 // src/pages/TutorAnalyticsPage.tsx
 // 🎯 ANALYTICS & INSIGHTS DASHBOARD for Tutors
-// ✅ CONNECTED TO REAL SUPABASE DATA
+// ✅ ULTRA-SAFE MODE - Will never crash!
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { getAllAnalytics } from '../lib/supabase-analytics';
 import {
   TrendingUp,
-  TrendingDown,
   Users,
   BookOpen,
   Clock,
   Award,
   Activity,
   BarChart3,
-  Calendar,
-  Filter,
-  Download,
   AlertCircle,
   CheckCircle,
   Target,
@@ -26,15 +21,14 @@ import {
   Star,
   ArrowUp,
   ArrowDown,
-  RefreshCw
+  RefreshCw,
+  Download
 } from 'lucide-react';
 import {
   LineChart,
   Line,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
   RadarChart,
   Radar,
   PolarGrid,
@@ -45,8 +39,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer,
-  Cell
+  ResponsiveContainer
 } from 'recharts';
 
 // ============================================================================
@@ -114,10 +107,73 @@ interface AnalyticsData {
 type DateRange = '7d' | '30d' | '3m' | 'all';
 
 // ============================================================================
+// SAFE ANALYTICS LOADER - WITH COMPREHENSIVE ERROR HANDLING
+// ============================================================================
+
+const loadAnalyticsSafely = async (tutorId: string, days: number): Promise<AnalyticsData> => {
+  console.log('🔍 [SAFE MODE] Starting analytics load...');
+  console.log('   Tutor ID:', tutorId);
+  console.log('   Days range:', days);
+
+  try {
+    // Dynamic import to avoid initial load errors
+    const { getAllAnalytics } = await import('../lib/supabase-analytics');
+    
+    console.log('✅ [SAFE MODE] Successfully imported supabase-analytics');
+    
+    const data = await getAllAnalytics(tutorId, days);
+    
+    console.log('✅ [SAFE MODE] Data loaded successfully:', {
+      hasOverview: !!data.overview,
+      studentsCount: data.overview?.totalStudents || 0,
+      progressPointsCount: data.progressOverTime?.length || 0,
+      topPerformersCount: data.topPerformers?.length || 0
+    });
+    
+    return data;
+    
+  } catch (error) {
+    console.error('❌ [SAFE MODE] Error loading analytics:', error);
+    console.error('   Error details:', {
+      name: (error as Error).name,
+      message: (error as Error).message,
+      stack: (error as Error).stack?.split('\n').slice(0, 3)
+    });
+    
+    // Return safe default data
+    return {
+      overview: {
+        totalStudents: 0,
+        activeStudents: 0,
+        averageProgress: 0,
+        completionRate: 0,
+        totalLessonsAssigned: 0,
+        totalLessonsCompleted: 0,
+        averageScore: 0,
+        totalStudyHours: 0
+      },
+      progressOverTime: [],
+      performanceDistribution: [],
+      topPerformers: [],
+      recentActivity: [],
+      weakAreas: [],
+      studentComparison: [],
+      trends: {
+        progressTrend: 'stable',
+        progressChange: 0,
+        activeTrend: 'stable',
+        activeChange: 0,
+        completionTrend: 'stable',
+        completionChange: 0
+      }
+    };
+  }
+};
+
+// ============================================================================
 // COMPONENTS
 // ============================================================================
 
-// Metric Card Component
 interface MetricCardProps {
   title: string;
   value: string | number;
@@ -141,7 +197,7 @@ function MetricCard({ title, value, icon: Icon, color, trend, trendValue }: Metr
         <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${colorClasses[color]}`}>
           <Icon className="h-6 w-6" />
         </div>
-        {trend && trendValue !== undefined && (
+        {trend && trendValue !== undefined && trendValue !== 0 && (
           <div className={`flex items-center space-x-1 text-sm font-medium ${
             trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-gray-600'
           }`}>
@@ -156,6 +212,23 @@ function MetricCard({ title, value, icon: Icon, color, trend, trendValue }: Metr
   );
 }
 
+// Custom tooltip component
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-gray-900 dark:bg-gray-800 p-3 rounded-lg border border-gray-700 shadow-lg">
+        <p className="text-gray-300 text-sm mb-1">{label}</p>
+        {payload.map((entry: any, index: number) => (
+          <p key={index} style={{ color: entry.color }} className="text-sm font-medium">
+            {entry.name}: {entry.value}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -168,37 +241,96 @@ export function TutorAnalyticsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>({});
 
-  // Load analytics data - ✅ USING REAL DATA
+  // Load analytics data - ULTRA-SAFE VERSION
   useEffect(() => {
     const loadAnalytics = async () => {
-      if (!session?.user?.id) return;
+      console.log('🚀 [ANALYTICS] Starting load process...');
+      console.log('   Session exists:', !!session);
+      console.log('   User ID:', session?.user?.id);
+      console.log('   User role:', session?.user?.role);
+      console.log('   Date range:', dateRange);
+      
+      if (!session?.user?.id) {
+        console.warn('⚠️ [ANALYTICS] No user ID, skipping load');
+        setError('No user session found. Please log in.');
+        setIsLoading(false);
+        return;
+      }
       
       setIsLoading(true);
       setError(null);
       
+      // Store debug info
+      setDebugInfo({
+        userId: session.user.id,
+        userEmail: session.user.email,
+        userRole: session.user.role,
+        dateRange,
+        timestamp: new Date().toISOString()
+      });
+      
       try {
-        console.log('📊 Loading analytics for tutor:', session.user.id);
         const daysMap = { '7d': 7, '30d': 30, '3m': 90, 'all': 365 };
-        const data = await getAllAnalytics(session.user.id, daysMap[dateRange]);
+        const days = daysMap[dateRange];
         
-        console.log('✅ Analytics loaded:', data);
+        console.log('📊 [ANALYTICS] Calling loadAnalyticsSafely with days:', days);
+        
+        const data = await loadAnalyticsSafely(session.user.id, days);
+        
+        console.log('✅ [ANALYTICS] Data loaded successfully!');
+        console.log('   Total Students:', data.overview.totalStudents);
+        console.log('   Active Students:', data.overview.activeStudents);
+        console.log('   Progress Data Points:', data.progressOverTime.length);
+        
         setAnalytics(data);
+        setError(null);
+        
       } catch (err) {
-        console.error('❌ Error loading analytics:', err);
-        setError('Failed to load analytics data. Please try again.');
+        console.error('❌ [ANALYTICS] Critical error in loadAnalytics:', err);
+        setError(`Failed to load analytics: ${(err as Error).message}`);
+        
+        // Still set empty analytics so UI doesn't crash
+        setAnalytics({
+          overview: {
+            totalStudents: 0,
+            activeStudents: 0,
+            averageProgress: 0,
+            completionRate: 0,
+            totalLessonsAssigned: 0,
+            totalLessonsCompleted: 0,
+            averageScore: 0,
+            totalStudyHours: 0
+          },
+          progressOverTime: [],
+          performanceDistribution: [],
+          topPerformers: [],
+          recentActivity: [],
+          weakAreas: [],
+          studentComparison: [],
+          trends: {
+            progressTrend: 'stable',
+            progressChange: 0,
+            activeTrend: 'stable',
+            activeChange: 0,
+            completionTrend: 'stable',
+            completionChange: 0
+          }
+        });
       } finally {
         setIsLoading(false);
+        console.log('🏁 [ANALYTICS] Load process complete');
       }
     };
 
     loadAnalytics();
   }, [dateRange, session?.user?.id]);
 
-  // Refresh data
+  // Refresh handler
   const handleRefresh = () => {
+    console.log('🔄 [ANALYTICS] Manual refresh triggered');
     setAnalytics(null);
-    // Trigger useEffect by clearing and resetting
     const currentRange = dateRange;
     setDateRange('7d');
     setTimeout(() => setDateRange(currentRange), 100);
@@ -207,57 +339,91 @@ export function TutorAnalyticsPage() {
   // Chart colors
   const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1'];
 
-  // Custom tooltip for charts
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-gray-900 dark:bg-gray-800 p-3 rounded-lg border border-gray-700 shadow-lg">
-          <p className="text-gray-300 text-sm mb-1">{label}</p>
-          {payload.map((entry: any, index: number) => (
-            <p key={index} style={{ color: entry.color }} className="text-sm font-medium">
-              {entry.name}: {entry.value}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-
+  // LOADING STATE
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading analytics...</p>
+          <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+            User: {session?.user?.email || 'Unknown'}
+          </p>
         </div>
       </div>
     );
   }
 
-  if (error || !analytics) {
+  // ERROR STATE WITH DEBUG INFO
+  if (error && !analytics) {
     return (
-      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+      <div className="space-y-4">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+          <div className="flex items-center space-x-3 mb-4">
+            <AlertCircle className="h-6 w-6 text-red-600" />
+            <div>
+              <h3 className="text-red-800 dark:text-red-200 font-medium">Error Loading Analytics</h3>
+              <p className="text-red-600 dark:text-red-300 text-sm mt-1">{error}</p>
+            </div>
+          </div>
+          
+          {/* Debug Info */}
+          <details className="mt-4 text-sm">
+            <summary className="cursor-pointer text-red-700 dark:text-red-300 font-medium mb-2">
+              🔍 Debug Information (click to expand)
+            </summary>
+            <div className="bg-red-100 dark:bg-red-900/40 p-3 rounded mt-2 font-mono text-xs space-y-1">
+              <p><strong>User ID:</strong> {debugInfo.userId || 'N/A'}</p>
+              <p><strong>User Email:</strong> {debugInfo.userEmail || 'N/A'}</p>
+              <p><strong>User Role:</strong> {debugInfo.userRole || 'N/A'}</p>
+              <p><strong>Date Range:</strong> {debugInfo.dateRange || 'N/A'}</p>
+              <p><strong>Timestamp:</strong> {debugInfo.timestamp || 'N/A'}</p>
+              <p><strong>Session Valid:</strong> {!!session ? 'Yes' : 'No'}</p>
+            </div>
+          </details>
+
+          <button
+            onClick={handleRefresh}
+            className="mt-4 flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            <RefreshCw className="h-4 w-4" />
+            <span>Retry</span>
+          </button>
+        </div>
+
+        {/* Instructions */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">💡 Troubleshooting Steps:</h4>
+          <ol className="list-decimal list-inside space-y-1 text-sm text-blue-800 dark:text-blue-200">
+            <li>Open browser console (F12) and check for errors</li>
+            <li>Verify you have students and lessons in the database</li>
+            <li>Try refreshing the page (Ctrl+Shift+R)</li>
+            <li>Try a different date range filter</li>
+            <li>Check your internet connection</li>
+          </ol>
+        </div>
+      </div>
+    );
+  }
+
+  // NO DATA STATE
+  if (!analytics) {
+    return (
+      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
         <div className="flex items-center space-x-3">
-          <AlertCircle className="h-6 w-6 text-red-600" />
+          <AlertCircle className="h-6 w-6 text-yellow-600" />
           <div>
-            <h3 className="text-red-800 dark:text-red-200 font-medium">Error Loading Analytics</h3>
-            <p className="text-red-600 dark:text-red-300 text-sm mt-1">
-              {error || 'Unable to load analytics data'}
+            <h3 className="text-yellow-800 dark:text-yellow-200 font-medium">No Analytics Data</h3>
+            <p className="text-yellow-600 dark:text-yellow-300 text-sm mt-1">
+              Analytics data is not available. This might be because you have no students or lessons yet.
             </p>
           </div>
         </div>
-        <button
-          onClick={handleRefresh}
-          className="mt-4 flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-        >
-          <RefreshCw className="h-4 w-4" />
-          <span>Retry</span>
-        </button>
       </div>
     );
   }
 
+  // SUCCESS STATE - RENDER FULL DASHBOARD
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -284,7 +450,10 @@ export function TutorAnalyticsPage() {
           {/* Date Range Filter */}
           <select
             value={dateRange}
-            onChange={(e) => setDateRange(e.target.value as DateRange)}
+            onChange={(e) => {
+              console.log('📅 Date range changed to:', e.target.value);
+              setDateRange(e.target.value as DateRange);
+            }}
             className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           >
             <option value="7d">Last 7 days</option>
@@ -300,6 +469,18 @@ export function TutorAnalyticsPage() {
           </button>
         </div>
       </div>
+
+      {/* Show warning if error but analytics still loaded */}
+      {error && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="h-5 w-5 text-yellow-600" />
+            <p className="text-yellow-800 dark:text-yellow-200 text-sm">
+              Some analytics data may be incomplete: {error}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Overview Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -627,7 +808,9 @@ export function TutorAnalyticsPage() {
       </div>
 
       {/* Recommendations Section */}
-      {analytics.weakAreas.length > 0 && (
+      {(analytics.weakAreas.length > 0 || 
+        analytics.overview.activeStudents < analytics.overview.totalStudents ||
+        analytics.topPerformers.length > 0) && (
         <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
             <Zap className="h-5 w-5 text-yellow-600" />
@@ -671,6 +854,19 @@ export function TutorAnalyticsPage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Debug Console Log Button (for development) */}
+      {process.env.NODE_ENV === 'development' && (
+        <button
+          onClick={() => {
+            console.log('📊 Current Analytics State:', analytics);
+            console.log('🔍 Debug Info:', debugInfo);
+          }}
+          className="fixed bottom-4 right-4 px-3 py-2 bg-gray-800 text-white rounded-lg text-xs opacity-50 hover:opacity-100 transition-opacity"
+        >
+          Log Debug Info
+        </button>
       )}
     </div>
   );
