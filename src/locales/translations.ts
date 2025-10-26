@@ -2309,7 +2309,20 @@ studentSettings: {
       assignSelected: 'Przypisz wybrane',
       lessonsAssignedSuccess: 'Lekcje przypisane pomyślnie!',
       errorAssigningLessons: 'Nie udało się przypisać lekcji. Spróbuj ponownie.',
+
+
+      selected: 'zaznaczonych',
+      clearSelection: 'Wyczyść zaznaczenie',
+      bulkAssignLessons: 'Przypisz lekcje',
+      bulkSendMessages: 'Wyślij wiadomości',
+      bulkArchive: 'Archiwizuj',
+      selectMode: 'Tryb zaznaczania',
+      exitSelection: 'Zakończ zaznaczanie',
+      selectAll: 'Zaznacz wszystko',
+      deselectAll: 'Odznacz wszystko',
       
+      // ✅ NEW: Export
+      exportCSV: 'Eksportuj CSV',
     },
 
     // Landing Page
