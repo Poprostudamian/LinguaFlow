@@ -2270,6 +2270,9 @@ studentSettings: {
       advanced: 'Zaawansowany',
       lessons: 'Lekcje',
       hours: 'Godziny',
+
+      
+      
     },
 
     // Landing Page
