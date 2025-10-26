@@ -58,7 +58,7 @@ export function Sidebar() {
   const tutorNavItems = [
     { path: '/tutor', label: 'Dashboard', icon: Home },
     { path: '/tutor/students', label: 'Students', icon: Users },
-    { path: '/tutor/analytics', label: 'Settings', icon: BarChart3 },
+    { path: '/tutor/analytics', label: 'Analytics', icon: BarChart3 },
     { path: '/tutor/lessons', label: 'Create Lesson', icon: PlusCircle },
     { path: '/tutor/grading', label: 'Grading', icon: Award, badge: pendingGradingsCount },
     { path: '/tutor/schedule', label: 'Schedule', icon: Calendar },
