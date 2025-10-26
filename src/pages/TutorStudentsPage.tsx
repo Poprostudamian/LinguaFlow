@@ -740,14 +740,14 @@ export function TutorStudentsPage() {
               ariaLabel: `Active students: ${stats.active}`
             },
             { 
-              label: t.tutorStudentsPage.pendingTab, 
+              label: t.tutorStudentsPage.pendingInvitations, 
               value: stats.pending, 
               icon: Clock, 
               color: 'orange',
               ariaLabel: `Pending invitations: ${stats.pending}`
             },
             { 
-              label: t.tutorStudentsPage.avgProgress, 
+              label: t.tutorStudentsPage.averageProgress, 
               value: `${stats.avgProgress}%`, 
               icon: TrendingUp, 
               color: 'blue',
