@@ -708,4 +708,4 @@ export const getAllAnalytics = async (tutorId: string, dateRangeDays: number = 3
     console.error('❌ Critical error fetching all analytics:', error);
     throw error;
   }
-}; 
+};
