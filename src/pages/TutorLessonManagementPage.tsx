@@ -623,8 +623,41 @@ function ExercisePreviewCard({ exercise, index, onEdit, onDelete, readOnly, t }:
 export function TutorLessonManagementPage() {
   const { t } = useLanguage();
   const { session } = useAuth();
-  const { students } = useTutorStudents();
+  const [students, setStudents] = useState<any[]>([]);
 
+
+  // Load students function
+  const loadStudents = async () => {
+    if (!session?.user?.id) return;
+    
+    try {
+      console.log('📚 Loading students for:', session.user.id);
+      
+      const { data, error } = await supabase
+        .from('user_relationships')
+        .select(`
+          students:users!student_id (
+            id,
+            first_name,
+            last_name,
+            email,
+            avatar_url
+          )
+        `)
+        .eq('tutor_id', session.user.id)
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      const transformed = (data || []).map(rel => rel.students);
+      setStudents(transformed);
+      console.log('✅ Loaded', transformed.length, 'students');
+    } catch (err) {
+      console.error('❌ Error loading students:', err);
+      setStudents([]);
+    }
+  };
+  
   // State
   const [lessons, setLessons] = useState<LessonWithAssignments[]>([]);
   const [isLoading, setIsLoading] = useState(true);
