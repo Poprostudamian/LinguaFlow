@@ -803,6 +803,7 @@ export function TutorLessonManagementPage() {
       attachments: []
     });
     setExercises([]);
+    setAttachments([]);
     setEditingExercise(null);
     setModalTab('info');
     setShowModal(true);
@@ -1531,6 +1532,24 @@ export function TutorLessonManagementPage() {
                         );
                       })}
                     </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Attachments (Optional)
+                        </label>
+                        <LessonFileUploader
+                          lessonId={currentLesson?.id}
+                          tutorId={session.user?.id || ''}
+                          existingAttachments={attachments}
+                          onFilesChange={(files) => {
+                            setAttachments(files);
+                            setLessonForm({ ...lessonForm, attachments: files });
+                          }}
+                          disabled={modalMode === 'view'}
+                          maxFiles={5}
+                        />
+                  </div>
+                    
                   </div>
 
                   {modalMode !== 'view' && (
