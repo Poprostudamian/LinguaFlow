@@ -1652,6 +1652,7 @@ export function TutorLessonManagementPage() {
                   lessonData={lessonForm}
                   exercises={exercises}
                   students={students}
+                  attachments={attachments}
                 />
               )}
             </div>
