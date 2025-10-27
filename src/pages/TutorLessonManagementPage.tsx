@@ -1,9 +1,6 @@
 // src/pages/TutorLessonManagementPage.tsx
-// ✅ PHASE 1: CRITICAL FIXES IMPLEMENTED
-// 1. Rich Text Editor (Tiptap) ✅
-// 2. Preview Tab ✅
-// 3. Increased Text Answer limit (500 → 2000) ✅
-// 4. ABCD Options Validation ✅
+// ✅ PHASE 1: CRITICAL FIXES - COMPLETE VERSION
+// This is the FULL, PRODUCTION-READY file combining Part 1, 2, and 3
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -12,7 +9,6 @@ import {
   PlusCircle,
   BookOpen,
   Users,
-  Calendar,
   RefreshCw,
   AlertCircle,
   AlertTriangle,
@@ -21,10 +17,6 @@ import {
   Trash2,
   X,
   CheckCircle,
-  Clock,
-  TrendingUp,
-  Award,
-  Activity,
   FileText,
   Target,
   Layers,
@@ -36,20 +28,15 @@ import {
   ChevronDown,
   ChevronUp,
   Save,
-  Lock,
-  LockOpen,
-  Shield,
-  Info
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTutorStudents } from '../contexts/StudentsContext';
 import { 
   supabase, 
   getLessonsWithLockStatus,
-  checkLessonLockStatus,
   getLessonEditPermissions,
-  validateLessonOperation,     
-  deleteLesson,                 
+  validateLessonOperation,
   assignStudentsToLesson,       
   unassignStudentsFromLesson
 } from '../lib/supabase';
@@ -78,7 +65,7 @@ interface LessonWithAssignments {
 }
 
 type TabType = 'all' | 'published' | 'draft';
-type ModalTab = 'info' | 'exercises' | 'preview'; // ✅ ADDED: preview tab
+type ModalTab = 'info' | 'exercises' | 'preview';
 type ModalMode = 'create' | 'view' | 'edit';
 type ExerciseType = 'multiple_choice' | 'flashcard' | 'text_answer';
 
@@ -97,10 +84,9 @@ interface Exercise {
 }
 
 // ============================================================================
-// HELPER FUNCTIONS
+// VALIDATION FUNCTIONS
 // ============================================================================
 
-// ✅ NEW: Validate ABCD options
 const validateABCDOptions = (options: string[]): { isValid: boolean; message?: string } => {
   if (!options || options.length !== 4) {
     return { isValid: false, message: 'Must have exactly 4 options (A, B, C, D)' };
@@ -120,7 +106,6 @@ const validateABCDOptions = (options: string[]): { isValid: boolean; message?: s
   return { isValid: true };
 };
 
-// ✅ NEW: Validate all exercises before saving
 const validateExercises = (exercises: Exercise[]): { isValid: boolean; message?: string } => {
   if (exercises.length === 0) {
     return { isValid: false, message: 'At least one exercise is required' };
@@ -130,7 +115,6 @@ const validateExercises = (exercises: Exercise[]): { isValid: boolean; message?:
     const exercise = exercises[i];
     const exerciseNum = i + 1;
 
-    // Validate title and question
     if (!exercise.title?.trim()) {
       return { isValid: false, message: `Exercise #${exerciseNum}: Title is required` };
     }
@@ -138,7 +122,6 @@ const validateExercises = (exercises: Exercise[]): { isValid: boolean; message?:
       return { isValid: false, message: `Exercise #${exerciseNum}: Question is required` };
     }
 
-    // Validate type-specific fields
     if (exercise.type === 'multiple_choice') {
       const validation = validateABCDOptions(exercise.options || []);
       if (!validation.isValid) {
@@ -219,9 +202,9 @@ function ExerciseTypeSelector({ onSelect, t }: ExerciseTypeSelectorProps) {
           key={type}
           onClick={() => onSelect(type)}
           type="button"
-          className={`flex items-center justify-center space-x-2 p-4 border-2 border-gray-300 dark:border-gray-600 hover:border-${color}-500 dark:hover:border-${color}-500 rounded-lg transition-all duration-200 hover:shadow-md group`}
+          className="flex items-center justify-center space-x-2 p-4 border-2 border-gray-300 dark:border-gray-600 hover:border-purple-500 dark:hover:border-purple-500 rounded-lg transition-all duration-200 hover:shadow-md group"
         >
-          <Icon className={`h-5 w-5 text-gray-600 dark:text-gray-400 group-hover:text-${color}-600 dark:group-hover:text-${color}-400`} />
+          <Icon className="h-5 w-5 text-gray-600 dark:text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400" />
           <span className="font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">
             {label}
           </span>
@@ -247,7 +230,6 @@ function ExerciseEditor({ exercise, onChange, onSave, onCancel, readOnly = false
   const [validationError, setValidationError] = useState<string>('');
 
   const handleSave = () => {
-    // Validate before saving
     if (exercise.type === 'multiple_choice') {
       const validation = validateABCDOptions(exercise.options || []);
       if (!validation.isValid) {
@@ -313,7 +295,7 @@ function ExerciseEditor({ exercise, onChange, onSave, onCancel, readOnly = false
                         const newOptions = [...(exercise.options || ['', '', '', ''])];
                         newOptions[idx] = e.target.value;
                         onChange({ ...exercise, options: newOptions });
-                        setValidationError(''); // Clear error on change
+                        setValidationError('');
                       }}
                       disabled={readOnly}
                       className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:text-white disabled:opacity-50"
@@ -425,7 +407,7 @@ function ExerciseEditor({ exercise, onChange, onSave, onCancel, readOnly = false
           </div>
         )}
 
-        {/* Text Answer - ✅ INCREASED LIMIT TO 2000 */}
+        {/* Text Answer */}
         {exercise.type === 'text_answer' && (
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -520,7 +502,7 @@ function ExerciseEditor({ exercise, onChange, onSave, onCancel, readOnly = false
 }
 
 // ============================================================================
-// EXERCISE PREVIEW COMPONENT (for list view)
+// EXERCISE PREVIEW CARD
 // ============================================================================
 interface ExercisePreviewCardProps {
   exercise: Exercise;
@@ -575,7 +557,6 @@ function ExercisePreviewCard({ exercise, index, onEdit, onDelete, readOnly, t }:
             {exercise.question}
           </p>
 
-          {/* Type-specific preview */}
           {isExpanded && (
             <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
               {exercise.type === 'multiple_choice' && exercise.options && (
@@ -793,7 +774,6 @@ export function TutorLessonManagementPage() {
     setModalMode('edit');
     setCurrentLesson(lesson);
     
-    // Load assigned students
     const { data: assignedData } = await supabase
       .from('student_lessons')
       .select('student_id')
@@ -831,7 +811,7 @@ export function TutorLessonManagementPage() {
       options: type === 'multiple_choice' ? ['', '', '', ''] : undefined,
       correctAnswer: type === 'multiple_choice' ? 'A' : '',
       flashcards: type === 'flashcard' ? [] : undefined,
-      maxLength: type === 'text_answer' ? 2000 : undefined, // ✅ INCREASED FROM 500 to 2000
+      maxLength: type === 'text_answer' ? 2000 : undefined,
       wordLimit: type === 'text_answer' ? 2000 : undefined
     };
     setEditingExercise(newExercise);
@@ -866,23 +846,19 @@ export function TutorLessonManagementPage() {
       return;
     }
 
-    // ✅ VALIDATE EXERCISES (including ABCD validation)
     const validation = validateExercises(exercises);
     if (!validation.isValid) {
       setToast({ type: 'error', message: validation.message || 'Invalid exercises' });
-      setModalTab('exercises'); // Switch to exercises tab to show error
+      setModalTab('exercises');
       return;
     }
 
-    // ✅ VALIDATION for edit mode (check lock status)
     if (modalMode === 'edit' && currentLesson?.id) {
-      console.log('💾 Saving lesson changes...');
-      
       const permissions = await getLessonEditPermissions(currentLesson.id, session.user.id);
       if (!permissions.canEdit) {
         setToast({ 
           type: 'error', 
-          message: permissions.reason || 'Cannot edit locked lesson - all students have completed it.'
+          message: permissions.reason || 'Cannot edit locked lesson'
         });
         return;
       }
@@ -891,7 +867,7 @@ export function TutorLessonManagementPage() {
       if (!validationCheck.allowed) {
         setToast({ 
           type: 'error', 
-          message: validationCheck.reason || 'Cannot save changes to this lesson' 
+          message: validationCheck.reason || 'Cannot save changes'
         });
         return;
       }
@@ -901,7 +877,6 @@ export function TutorLessonManagementPage() {
 
     try {
       if (modalMode === 'create') {
-        // Create new lesson
         const { data: lesson, error: lessonError } = await supabase
           .from('lessons')
           .insert({
@@ -917,7 +892,6 @@ export function TutorLessonManagementPage() {
 
         if (lessonError) throw lessonError;
 
-        // Assign students
         if (lessonForm.assignedStudentIds.length > 0) {
           const assignments = lessonForm.assignedStudentIds.map(studentId => ({
             lesson_id: lesson.id,
@@ -935,7 +909,6 @@ export function TutorLessonManagementPage() {
           if (assignError) throw assignError;
         }
 
-        // Create exercises
         const exercisesData = exercises.map((exercise, index) => {
           const baseExercise = {
             lesson_id: lesson.id,
@@ -987,7 +960,6 @@ export function TutorLessonManagementPage() {
         });
 
       } else if (modalMode === 'edit' && currentLesson) {
-        // Update existing lesson
         const { error: updateError } = await supabase
           .from('lessons')
           .update({
@@ -1002,7 +974,6 @@ export function TutorLessonManagementPage() {
 
         if (updateError) throw updateError;
 
-        // Update student assignments (remove old, add new)
         await supabase
           .from('student_lessons')
           .delete()
@@ -1023,7 +994,6 @@ export function TutorLessonManagementPage() {
             .insert(assignments);
         }
 
-        // Update exercises (simple approach: delete all and recreate)
         await supabase
           .from('lesson_exercises')
           .delete()
@@ -1057,7 +1027,7 @@ export function TutorLessonManagementPage() {
               ...baseExercise,
               correct_answer: exercise.correctAnswer || '',
               word_limit: exercise.wordLimit || exercise.maxLength || 2000,
-              options: JSON.stringify({  maxLength: exercise.wordLimit || exercise.maxLength || 2000 })
+              options: JSON.stringify({ maxLength: exercise.wordLimit || exercise.maxLength || 2000 })
             };
           }
 
@@ -1085,4 +1055,585 @@ export function TutorLessonManagementPage() {
     }
   };
 
- 
+  // Delete lesson handler
+  const handleDeleteLesson = async (lessonId: string) => {
+    if (!session?.user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('lessons')
+        .delete()
+        .eq('id', lessonId)
+        .eq('tutor_id', session.user.id);
+
+      if (error) throw error;
+
+      setToast({ type: 'success', message: 'Lesson deleted successfully' });
+      loadLessons();
+    } catch (error: any) {
+      console.error('Error deleting lesson:', error);
+      setToast({ type: 'error', message: error.message || 'Failed to delete lesson' });
+    }
+  };
+
+  // View lesson handler
+  const handleViewLesson = (lessonId: string) => {
+    const lesson = lessons.find(l => l.id === lessonId);
+    if (lesson) {
+      openViewModal(lesson);
+    }
+  };
+
+  // Edit lesson handler
+  const handleEditLesson = (lessonId: string) => {
+    const lesson = lessons.find(l => l.id === lessonId);
+    if (lesson) {
+      openEditModal(lesson);
+    }
+  };
+
+  // Assign students handler
+  const handleAssignStudents = async (lessonId: string, studentIds: string[]) => {
+    if (!session?.user?.id || studentIds.length === 0) return;
+
+    setIsLoading(true);
+    try {
+      await assignStudentsToLesson(lessonId, session.user.id, studentIds);
+      setToast({ 
+        type: 'success', 
+        message: `Successfully assigned ${studentIds.length} student(s)` 
+      });
+      await loadLessons();
+    } catch (error: any) {
+      console.error('Error assigning students:', error);
+      setToast({ 
+        type: 'error', 
+        message: error.message || 'Failed to assign students' 
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Unassign students handler
+  const handleUnassignStudents = async (lessonId: string, studentIds: string[]) => {
+    if (!session?.user?.id || studentIds.length === 0) return;
+
+    setIsLoading(true);
+    try {
+      await unassignStudentsFromLesson(lessonId, session.user.id, studentIds);
+      setToast({ 
+        type: 'success', 
+        message: `Successfully unassigned ${studentIds.length} student(s)` 
+      });
+      await loadLessons();
+    } catch (error: any) {
+      console.error('Error unassigning students:', error);
+      setToast({ 
+        type: 'error', 
+        message: error.message || 'Failed to unassign students' 
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Filter lessons
+  const filteredLessons = useMemo(() => {
+    let filtered = lessons;
+
+    if (searchTerm.trim()) {
+      const query = searchTerm.toLowerCase();
+      filtered = filtered.filter(lesson =>
+        lesson.title.toLowerCase().includes(query) ||
+        (lesson.description?.toLowerCase() || '').includes(query)
+      );
+    }
+
+    if (activeTab !== 'all') {
+      filtered = filtered.filter(l => l.status === activeTab);
+    }
+
+    return filtered;
+  }, [lessons, searchTerm, activeTab]);
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    const total = lessons.length;
+    const published = lessons.filter(l => l.status === 'published').length;
+    const draft = lessons.filter(l => l.status === 'draft').length;
+    const totalAssignments = lessons.reduce((sum, l) => sum + (l.assignedCount || 0), 0);
+    const avgAssignments = total > 0 ? Math.round(totalAssignments / total) : 0;
+
+    return { total, published, draft, avgAssignments };
+  }, [lessons]);
+
+  // Loading state
+  if (isLoading && lessons.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <RefreshCw className="h-8 w-8 animate-spin text-purple-600" />
+        <span className="ml-2 text-gray-600 dark:text-gray-400">{t.tutorLessonManagementPage.loading}</span>
+      </div>
+    );
+  }
+
+  const tPage = t.tutorLessonManagementPage;
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{tPage.title}</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">{tPage.subtitle}</p>
+        </div>
+        <div className="flex space-x-3">
+          <button
+            onClick={loadLessons}
+            disabled={isLoading}
+            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>{tPage.refresh}</span>
+          </button>
+          <button
+            onClick={openCreateModal}
+            className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
+          >
+            <PlusCircle className="h-5 w-5" />
+            <span>{tPage.createLesson}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatsCard 
+          title={tPage.totalLessons} 
+          value={stats.total} 
+          icon={Layers} 
+          color="purple" 
+        />
+        <StatsCard 
+          title={tPage.publishedLessons} 
+          value={stats.published} 
+          icon={CheckCircle} 
+          color="green" 
+        />
+        <StatsCard 
+          title={tPage.draftLessons} 
+          value={stats.draft} 
+          icon={FileText} 
+          color="orange" 
+        />
+        <StatsCard 
+          title={tPage.avgAssignments} 
+          value={stats.avgAssignments} 
+          icon={Users} 
+          color="blue" 
+        />
+      </div>
+
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg border animate-fade-in ${
+          toast.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' :
+          toast.type === 'error' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' :
+          'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+        }`}>
+          <div className="flex items-center space-x-2">
+            {toast.type === 'success' && <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />}
+            {toast.type === 'error' && <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />}
+            {toast.type === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />}
+            <p className={`text-sm font-medium ${
+              toast.type === 'success' ? 'text-green-800 dark:text-green-200' :
+              toast.type === 'error' ? 'text-red-800 dark:text-red-200' :
+              'text-yellow-800 dark:text-yellow-200'
+            }`}>
+              {toast.message}
+            </p>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div className="flex space-x-2">
+        {[
+          { id: 'all' as TabType, label: tPage.allLessons, count: stats.total },
+          { id: 'published' as TabType, label: tPage.published, count: stats.published },
+          { id: 'draft' as TabType, label: tPage.draft, count: stats.draft }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
+              activeTab === tab.id
+                ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+          >
+            {tab.label} ({tab.count})
+          </button>
+        ))}
+      </div>
+
+      {/* Search */}
+      <div className="flex items-center space-x-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+          <input
+            type="text"
+            placeholder={tPage.searchPlaceholder}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white shadow-sm"
+          />
+        </div>
+      </div>
+
+      {/* Locked Lessons Warning */}
+      {filteredLessons.filter(l => l.isLocked).length > 0 && (
+        <div className="mb-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 animate-fade-in">
+          <div className="flex items-start space-x-3">
+            <Lock className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">
+                {filteredLessons.filter(l => l.isLocked).length} Locked Lesson(s)
+              </h3>
+              <p className="text-sm text-amber-700 dark:text-amber-400">
+                These lessons are locked because all assigned students have completed them. 
+                To edit or delete a locked lesson, you must first unassign completed students.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Lessons Grid */}
+      {filteredLessons.length === 0 ? (
+        <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+          <Layers className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            {searchTerm ? tPage.noLessonsFound : tPage.noLessonsYet}
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-6">
+            {searchTerm ? tPage.tryAdjusting : tPage.createFirstLesson}
+          </p>
+          {!searchTerm && (
+            <button
+              onClick={openCreateModal}
+              className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
+            >
+              <PlusCircle className="h-4 w-4" />
+              <span>{tPage.createLesson}</span>
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+          {filteredLessons.map((lesson) => (
+            <TutorLessonCard
+              key={lesson.id}
+              lesson={lesson}
+              onEdit={handleEditLesson}
+              onView={handleViewLesson}
+              onDelete={handleDeleteLesson}
+              onAssignStudents={handleAssignStudents}
+              onUnassignStudents={handleUnassignStudents}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-fade-in">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 z-10">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+                  {modalMode === 'create' && <PlusCircle className="h-5 w-5 text-purple-600" />}
+                  {modalMode === 'view' && <Eye className="h-5 w-5 text-blue-600" />}
+                  {modalMode === 'edit' && <Edit className="h-5 w-5 text-purple-600" />}
+                  <span>
+                    {modalMode === 'create' && tPage.createNewLesson}
+                    {modalMode === 'view' && tPage.viewLesson}
+                    {modalMode === 'edit' && tPage.editLesson}
+                  </span>
+                </h2>
+                <button
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Modal Tabs */}
+              <div className="flex space-x-2">
+                {[
+                  { id: 'info' as ModalTab, label: tPage.lessonInfo, icon: FileText },
+                  { id: 'exercises' as ModalTab, label: tPage.exercisesCount.replace('{count}', exercises.length.toString()), icon: BookOpen },
+                  { id: 'preview' as ModalTab, label: tPage.preview || 'Preview', icon: Eye }
+                ].map(tab => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setModalTab(tab.id)}
+                      type="button"
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                        modalTab === tab.id
+                          ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              {modalTab === 'info' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      {tPage.lessonTitleRequired}
+                    </label>
+                    <input
+                      type="text"
+                      value={lessonForm.title}
+                      onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
+                      disabled={modalMode === 'view'}
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white disabled:opacity-50"
+                      placeholder={tPage.lessonTitlePlaceholder}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      {tPage.description}
+                    </label>
+                    <textarea
+                      value={lessonForm.description}
+                      onChange={(e) => setLessonForm({ ...lessonForm, description: e.target.value })}
+                      disabled={modalMode === 'view'}
+                      placeholder={tPage.descriptionPlaceholder}
+                      rows={2}
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none disabled:opacity-50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      {tPage.lessonContent}
+                    </label>
+                    <RichTextEditor
+                      content={lessonForm.content}
+                      onChange={(html) => setLessonForm({ ...lessonForm, content: html })}
+                      placeholder={tPage.contentPlaceholder}
+                      disabled={modalMode === 'view'}
+                      minHeight="200px"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      {tPage.status}
+                    </label>
+                    <div className="flex space-x-4">
+                      {[
+                        { value: 'published' as const, label: tPage.published, icon: CheckCircle },
+                        { value: 'draft' as const, label: tPage.draft, icon: FileText }
+                      ].map(option => {
+                        const Icon = option.icon;
+                        return (
+                          <button
+                            key={option.value}
+                            onClick={() => modalMode !== 'view' && setLessonForm({ ...lessonForm, status: option.value })}
+                            disabled={modalMode === 'view'}
+                            type="button"
+                            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                              lessonForm.status === option.value
+                                ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                                : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-purple-300'
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            <Icon className="h-4 w-4" />
+                            <span className="font-medium">{option.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {modalMode !== 'view' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {tPage.assignToStudents.replace('{count}', lessonForm.assignedStudentIds.length.toString())}
+                      </label>
+                      <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 max-h-48 overflow-y-auto space-y-2">
+                        {students.length === 0 ? (
+                          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                            {tPage.noStudentsAvailable}
+                          </p>
+                        ) : (
+                          students.map(student => (
+                            <label
+                              key={student.id}
+                              className="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={lessonForm.assignedStudentIds.includes(student.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setLessonForm({
+                                      ...lessonForm,
+                                      assignedStudentIds: [...lessonForm.assignedStudentIds, student.id]
+                                    });
+                                  } else {
+                                    setLessonForm({
+                                      ...lessonForm,
+                                      assignedStudentIds: lessonForm.assignedStudentIds.filter(id => id !== student.id)
+                                    });
+                                  }
+                                }}
+                                className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                              />
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                {student.first_name} {student.last_name}
+                              </span>
+                            </label>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {modalTab === 'exercises' && (
+                <div className="space-y-4">
+                  {editingExercise ? (
+                    <ExerciseEditor
+                      exercise={editingExercise}
+                      onChange={setEditingExercise}
+                      onSave={handleSaveExercise}
+                      onCancel={() => setEditingExercise(null)}
+                      readOnly={modalMode === 'view'}
+                      t={tPage}
+                    />
+                  ) : (
+                    <>
+                      {exercises.length > 0 && (
+                        <div className="space-y-3">
+                          {exercises.map((exercise, index) => (
+                            <ExercisePreviewCard
+                              key={exercise.id}
+                              exercise={exercise}
+                              index={index}
+                              onEdit={modalMode !== 'view' ? () => handleEditExercise(exercise) : undefined}
+                              onDelete={modalMode !== 'view' ? () => handleDeleteExercise(exercise.id) : undefined}
+                              readOnly={modalMode === 'view'}
+                              t={tPage}
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      {modalMode !== 'view' && (
+                        <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                            {tPage.addAnotherExercise || 'Add an exercise'}
+                          </p>
+                          <ExerciseTypeSelector onSelect={handleAddExercise} t={tPage} />
+                        </div>
+                      )}
+
+                      {exercises.length === 0 && (
+                        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                          <Target className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                          <p>{tPage.noExercisesYet || 'No exercises yet'}</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {modalTab === 'preview' && (
+                <LessonPreviewTab
+                  lessonData={lessonForm}
+                  exercises={exercises}
+                  students={students}
+                />
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {exercises.length > 0 && (
+                    <span className="flex items-center space-x-1">
+                      <BookOpen className="h-4 w-4" />
+                      <span>{exercises.length} {tPage.exercisesAdded || 'exercises added'}</span>
+                    </span>
+                  )}
+                  {exercises.length === 0 && modalMode !== 'view' && (
+                    <span className="flex items-center space-x-1 text-yellow-600 dark:text-yellow-400">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>{tPage.atLeastOneRequired || 'At least 1 exercise required'}</span>
+                    </span>
+                  )}
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={closeModal}
+                    type="button"
+                    className="px-6 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+                  >
+                    {modalMode === 'view' ? tPage.close : tPage.cancel}
+                  </button>
+                  {modalMode !== 'view' && (
+                    <button
+                      onClick={handleSubmitLesson}
+                      disabled={isSubmitting || !lessonForm.title.trim() || exercises.length === 0}
+                      type="button"
+                      className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium py-2.5 px-8 rounded-lg transition-all duration-200 flex items-center space-x-2 disabled:cursor-not-allowed shadow-lg"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                          <span>{modalMode === 'create' ? tPage.creating : tPage.saving}</span>
+                        </>
+                      ) : (
+                        <>
+                          {modalMode === 'create' ? <PlusCircle className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+                          <span>{modalMode === 'create' ? tPage.createLesson : tPage.saveChanges}</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
