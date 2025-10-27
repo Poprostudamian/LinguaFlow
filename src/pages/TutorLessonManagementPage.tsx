@@ -1612,7 +1612,8 @@ if (modalMode === 'edit' && currentLesson?.id) {
               <div className="flex space-x-2">
                 {[
                   { id: 'info' as ModalTab, label: tPage.lessonInfo, icon: FileText },
-                  { id: 'exercises' as ModalTab, label: tPage.exercisesCount.replace('{count}', exercises.length.toString()), icon: BookOpen }
+                  { id: 'exercises' as ModalTab, label: tPage.exercisesCount.replace('{count}', exercises.length.toString()), icon: BookOpen },
+                  { id: 'preview' as ModalTab, label: 'Preview', icon: Eye }
                 ].map(tab => {
                   const Icon = tab.icon;
                   return (
