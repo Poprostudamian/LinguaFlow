@@ -704,6 +704,7 @@ export function TutorLessonManagementPage() {
   useEffect(() => {
     if (session?.user?.id) {
       loadStudents();
+      loadLessons();
     }
   }, [session?.user?.id]);
 
