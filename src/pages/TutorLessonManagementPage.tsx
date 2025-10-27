@@ -627,15 +627,21 @@ export function TutorLessonManagementPage() {
   const [loadingStudents, setLoadingStudents] = useState(false);
 
   // Load students function
-  const loadStudents = async () => {
+ const loadStudents = async () => {
     if (!session?.user?.id) return;
     
+    setLoadingStudents(true);
     try {
-      console.log('📚 Loading students for:', session.user.id);
+      console.log('📚 Loading students for tutor:', session.user.id);
       
+      // Pobierz studentów z user_relationships
       const { data, error } = await supabase
         .from('user_relationships')
         .select(`
+          id,
+          student_id,
+          is_active,
+          created_at,
           students:users!student_id (
             id,
             first_name,
@@ -649,12 +655,23 @@ export function TutorLessonManagementPage() {
 
       if (error) throw error;
 
-      const transformed = (data || []).map(rel => rel.students);
-      setStudents(transformed);
-      console.log('✅ Loaded', transformed.length, 'students');
+      console.log('✅ Loaded students:', data);
+
+      // Transform data
+      const transformedStudents = (data || []).map(rel => ({
+        id: rel.students.id,
+        first_name: rel.students.first_name,
+        last_name: rel.students.last_name,
+        email: rel.students.email,
+        avatar_url: rel.students.avatar_url
+      }));
+
+      setStudents(transformedStudents);
+      console.log('✅ Transformed students:', transformedStudents);
     } catch (err) {
       console.error('❌ Error loading students:', err);
-      setStudents([]);
+    } finally {
+      setLoadingStudents(false);
     }
   };
   
