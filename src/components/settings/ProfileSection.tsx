@@ -10,7 +10,6 @@ interface TutorProfile {
   specializations?: string[];
   education?: string;
   languages?: string[];
-  hourlyRate?: number;
 }
 
 interface ProfileSectionTutorProps {
