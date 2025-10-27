@@ -694,7 +694,8 @@ export function TutorLessonManagementPage() {
     description: '',
     content: '',
     assignedStudentIds: [] as string[],
-    status: 'published' as 'draft' | 'published'
+    status: 'published' as 'draft' | 'published',
+    attachments: [] as AttachmentFile[]
   });
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
