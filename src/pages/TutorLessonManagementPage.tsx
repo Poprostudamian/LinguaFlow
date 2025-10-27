@@ -697,6 +697,7 @@ export function TutorLessonManagementPage() {
     status: 'published' as 'draft' | 'published'
   });
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
