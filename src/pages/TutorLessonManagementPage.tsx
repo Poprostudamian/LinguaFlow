@@ -624,7 +624,7 @@ export function TutorLessonManagementPage() {
   const { t } = useLanguage();
   const { session } = useAuth();
   const [students, setStudents] = useState<any[]>([]);
-
+  const [loadingStudents, setLoadingStudents] = useState(false);
 
   // Load students function
   const loadStudents = async () => {
