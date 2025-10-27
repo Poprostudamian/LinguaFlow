@@ -676,7 +676,7 @@ export function TutorLessonManagementPage() {
   
   // State
   const [lessons, setLessons] = useState<LessonWithAssignments[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<TabType>('all');
