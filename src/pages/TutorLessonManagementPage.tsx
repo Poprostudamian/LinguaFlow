@@ -74,7 +74,7 @@ interface LessonWithAssignments {
 }
 
 type TabType = 'all' | 'published' | 'draft';
-type ModalTab = 'info' | 'exercises';
+type ModalTab = 'info' | 'exercises' | 'preview';
 type ModalMode = 'create' | 'view' | 'edit';
 type ExerciseType = 'multiple_choice' | 'flashcard' | 'text_answer';
 
