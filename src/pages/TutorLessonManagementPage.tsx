@@ -702,7 +702,7 @@ export function TutorLessonManagementPage() {
   // Load lessons on mount
   useEffect(() => {
     if (session?.user?.id) {
-      loadLessons();
+      loadStudents();
     }
   }, [session?.user?.id]);
 
