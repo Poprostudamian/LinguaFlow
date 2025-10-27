@@ -354,12 +354,17 @@ function MultipleChoiceBuilder({ exercise, onChange, t }: { exercise: Exercise; 
 
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t.explanation}</label>
-        <textarea
+        {/* <textarea
           value={exercise.explanation || ''}
           onChange={(e) => onChange({ ...exercise, explanation: e.target.value })}
           rows={2}
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white resize-none"
           placeholder={t.explanationPlaceholder}
+        /> */}
+        <RichTextEditor
+          content={lessonForm.content}
+          onChange={(html) => setLessonForm({ ...lessonForm, content: html })}
+          disabled={modalMode === 'view'}
         />
       </div>
 
