@@ -43,6 +43,7 @@ import {
 import { TutorLessonCard } from '../components/TutorLessonCard';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { LessonPreviewTab } from '../components/LessonPreviewTab';
+import { LessonFileUploader, AttachmentFile } from '../components/LessonFileUploader';
  
 // ============================================================================
 // TYPES
