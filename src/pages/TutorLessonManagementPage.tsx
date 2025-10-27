@@ -39,6 +39,8 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 // import { supabase } from '../lib/supabase';
 import { useTutorStudents } from '../contexts/StudentsContext';
+import { RichTextEditor } from '../components/RichTextEditor';
+import { LessonPreviewTab } from '../components/LessonPreviewTab';
 import { 
   supabase, 
   getLessonsWithLockStatus,
