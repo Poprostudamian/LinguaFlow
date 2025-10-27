@@ -1,6 +1,4 @@
 // src/pages/TutorLessonManagementPage.tsx
-// ✅ PHASE 1: CRITICAL FIXES - COMPLETE VERSION
-// This is the FULL, PRODUCTION-READY file combining Part 1, 2, and 3
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
