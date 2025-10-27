@@ -699,6 +699,16 @@ export const translations = {
       lessonDeleted: 'Lesson deleted successfully',
       failedToSave: 'Failed to save lesson',
       failedToDelete: 'Failed to delete lesson',
+
+      // Attachments
+      attachments: 'Attachments',
+      attachmentsOptional: 'Attachments (Optional)',
+      uploadFiles: 'Upload Files',
+      dragDropFiles: 'Drag & Drop files here or click to browse',
+      maxFilesAllowed: 'Maximum {count} files',
+      supportedFormats: 'Supported: JPG, PNG, GIF, WEBP, PDF',
+      fileTooBig: 'File too large. Maximum {size}MB',
+      invalidFileType: 'Invalid file type',
     },
     
      // Tutor Messages Page
