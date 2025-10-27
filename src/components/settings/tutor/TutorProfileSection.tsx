@@ -287,9 +287,8 @@ export function TutorProfileSection({ formData, onChange }: TutorProfileSectionP
         </p>
       </div>
 
-      
       {/* Hourly Rate */}
-      <div>
+      {/* <div>
         <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           <DollarSign className="h-4 w-4" />
           <span>{t.tutorSettings?.profileSection?.hourlyRate || 'Hourly Rate (PLN)'}</span>
@@ -306,7 +305,7 @@ export function TutorProfileSection({ formData, onChange }: TutorProfileSectionP
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
           {t.tutorSettings?.profileSection?.rateHint || 'Your suggested hourly rate for lessons (optional)'}
         </p>
-      </div>
+      </div> */}
     </div>
   );
 }
