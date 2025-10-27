@@ -708,10 +708,10 @@ export function TutorLessonManagementPage() {
 
   // Toast auto-hide
   useEffect(() => {
-    if (session?.user?.id) {
-      loadStudents();
-    }
-  }, [session?.user?.id]);
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 5000);
+      return () => clearTimeout(timer);
+    } 
   }, [toast]);
 
   // Load lessons with lock status
