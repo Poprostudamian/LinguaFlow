@@ -947,6 +947,16 @@ export function TutorLessonManagementPage() {
 
         if (lessonError) throw lessonError;
 
+        if (attachments.length > 0) {
+        const fileUploader = new LessonFileUploader({
+          lessonId: lesson.id,
+          tutorId: session.user.id,
+          existingAttachments: attachments,
+          onFilesChange: setAttachments
+        });
+        await fileUploader.uploadAllFiles();
+      }
+        
         if (lessonForm.assignedStudentIds.length > 0) {
           const assignments = lessonForm.assignedStudentIds.map(studentId => ({
             lesson_id: lesson.id,
