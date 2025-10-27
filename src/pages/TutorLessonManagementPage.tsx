@@ -799,7 +799,8 @@ export function TutorLessonManagementPage() {
       description: '',
       content: '',
       assignedStudentIds: [],
-      status: 'published'
+      status: 'published',
+      attachments: []
     });
     setExercises([]);
     setEditingExercise(null);
