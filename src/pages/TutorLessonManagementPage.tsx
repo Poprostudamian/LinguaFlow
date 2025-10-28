@@ -1671,7 +1671,7 @@ const handleDragEnd = (event: DragEndEvent) => {
                         </div>
                       )} */}
                       {exercises.map((exercise, index) => (
-    <ExerciseCard  {/* Lub jakikolwiek komponent używałeś */}
+    <ExerciseCard
       key={exercise.id}
       exercise={exercise}
       index={index}
