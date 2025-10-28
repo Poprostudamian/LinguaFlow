@@ -1887,16 +1887,76 @@ const handleSubmitLesson = async () => {
     
     {/* Helper text showing count */}
     {students.length > 0 && (
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-        {lessonForm.assignedStudentIds.length === students.length ? (
-          <>✅ All {students.length} students selected</>
-        ) : lessonForm.assignedStudentIds.length > 0 ? (
-          <>{lessonForm.assignedStudentIds.length} of {students.length} students selected</>
-        ) : (
-          <>No students selected</>
-        )}
-      </p>
-    )}
+  <button
+    type="button"
+    onClick={() => {
+      console.log('🔘 [SELECT ALL] Button clicked');
+      console.log('📊 Current state BEFORE:', {
+        totalStudents: students.length,
+        currentlySelected: lessonForm.assignedStudentIds.length,
+        currentAssignments: lessonForm.assignedStudentIds,
+        allStudentIds: students.map(s => s.student_id || s.id)
+      });
+      
+      // Check if all students are already selected
+      const allStudentIds = students.map(s => s.student_id || s.id);
+      const allSelected = allStudentIds.every(id => 
+        lessonForm.assignedStudentIds.includes(id)
+      );
+      
+      console.log('🔍 All selected?', allSelected);
+      
+      if (allSelected) {
+        // Deselect all - clear the array
+        console.log('❌ Deselecting all students');
+        setLessonForm({ ...lessonForm, assignedStudentIds: [] });
+      } else {
+        // Select all - use Set to avoid duplicates
+        const uniqueIds = Array.from(new Set([
+          ...lessonForm.assignedStudentIds,
+          ...allStudentIds
+        ]));
+        
+        console.log('✅ Selecting all students (deduplicated):', uniqueIds);
+        console.log('📊 Stats:', {
+          totalStudents: students.length,
+          previouslySelected: lessonForm.assignedStudentIds.length,
+          nowSelected: uniqueIds.length
+        });
+        
+        setLessonForm({ 
+          ...lessonForm, 
+          assignedStudentIds: uniqueIds
+        });
+      }
+      
+      // Force re-render by logging
+      setTimeout(() => {
+        console.log('📊 State AFTER update:', lessonForm.assignedStudentIds);
+      }, 100);
+    }}
+    className="flex items-center space-x-1.5 px-3 py-1.5 text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors border border-purple-200 dark:border-purple-700"
+  >
+    {(() => {
+      // Check if all students are selected
+      const allStudentIds = students.map(s => s.student_id || s.id);
+      const allSelected = allStudentIds.length > 0 && 
+                          allStudentIds.every(id => lessonForm.assignedStudentIds.includes(id));
+      
+      return allSelected ? (
+        <>
+          <Square className="h-4 w-4" />
+          <span>Deselect All</span>
+        </>
+      ) : (
+        <>
+          <CheckSquare className="h-4 w-4" />
+          <span>Select All</span>
+        </>
+      );
+    })()}
+  </button>
+)}
   </div>
 )}
                 </div>
