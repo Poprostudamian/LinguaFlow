@@ -122,8 +122,9 @@ const validateABCDOptions = (options: string[]): { isValid: boolean; message?: s
 };
 
 const validateExercises = (exercises: Exercise[]): { isValid: boolean; message?: string } => {
+  // ✅ Ćwiczenia są opcjonalne - pozwalamy na pustą tablicę
   if (exercises.length === 0) {
-    return { isValid: false, message: 'At least one exercise is required' };
+    return { isValid: true }; // ✅ ZMIANA: zwracamy true zamiast false
   }
 
   for (let i = 0; i < exercises.length; i++) {
