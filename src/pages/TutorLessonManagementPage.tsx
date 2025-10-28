@@ -1702,11 +1702,13 @@ const handleSubmitLesson = async () => {
                     
                   </div>
 
-                  {modalMode !== 'view' && (
+                  {/* {modalMode !== 'view' && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         {tPage.assignToStudents.replace('{count}', lessonForm.assignedStudentIds.length.toString())}
                       </label>
+
+                      
                       <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 max-h-48 overflow-y-auto space-y-2">
                         {students.length === 0 ? (
                           <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
@@ -1744,7 +1746,110 @@ const handleSubmitLesson = async () => {
                         )}
                       </div>
                     </div>
-                  )}
+                  )} */}
+
+                  {modalMode !== 'view' && (
+  <div>
+    <div className="flex items-center justify-between mb-2">
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        {tPage.assignToStudents.replace('{count}', lessonForm.assignedStudentIds.length.toString())}
+      </label>
+      
+      {/* ✅ NEW: Select All / Deselect All Button */}
+      {students.length > 0 && (
+        <button
+          type="button"
+          onClick={() => {
+            if (lessonForm.assignedStudentIds.length === students.length) {
+              // Deselect all
+              setLessonForm({ ...lessonForm, assignedStudentIds: [] });
+            } else {
+              // Select all
+              setLessonForm({ 
+                ...lessonForm, 
+                assignedStudentIds: students.map(s => s.student_id) 
+              });
+            }
+          }}
+          className="flex items-center space-x-1.5 px-3 py-1.5 text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors border border-purple-200 dark:border-purple-700"
+        >
+          {lessonForm.assignedStudentIds.length === students.length ? (
+            <>
+              <Square className="h-4 w-4" />
+              <span>{tPage.deselectAll || 'Deselect All'}</span>
+            </>
+          ) : (
+            <>
+              <CheckSquare className="h-4 w-4" />
+              <span>{tPage.selectAll || 'Select All'}</span>
+            </>
+          )}
+        </button>
+      )}
+    </div>
+    
+    <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 max-h-48 overflow-y-auto space-y-2">
+      {students.length === 0 ? (
+        <div className="text-center py-8">
+          <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            {tPage.noStudentsAvailable}
+          </p>
+          <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
+            {tPage.addStudentsFirst}
+          </p>
+        </div>
+      ) : (
+        students.map((student) => (
+          <label
+            key={student.student_id}
+            className="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors"
+          >
+            <input
+              type="checkbox"
+              checked={lessonForm.assignedStudentIds.includes(student.student_id)}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setLessonForm({
+                    ...lessonForm,
+                    assignedStudentIds: [...lessonForm.assignedStudentIds, student.student_id]
+                  });
+                } else {
+                  setLessonForm({
+                    ...lessonForm,
+                    assignedStudentIds: lessonForm.assignedStudentIds.filter(id => id !== student.student_id)
+                  });
+                }
+              }}
+              className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 dark:border-gray-600 dark:bg-gray-700"
+            />
+            <div className="flex items-center space-x-2 flex-1">
+              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                {student.first_name?.[0]}{student.last_name?.[0]}
+              </div>
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                {student.first_name} {student.last_name}
+              </span>
+            </div>
+          </label>
+        ))
+      )}
+    </div>
+    
+    {/* Helper text showing count */}
+    {students.length > 0 && (
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+        {lessonForm.assignedStudentIds.length === students.length ? (
+          <>✅ All {students.length} students selected</>
+        ) : lessonForm.assignedStudentIds.length > 0 ? (
+          <>{lessonForm.assignedStudentIds.length} of {students.length} students selected</>
+        ) : (
+          <>No students selected</>
+        )}
+      </p>
+    )}
+  </div>
+)}
                 </div>
               )}
 
