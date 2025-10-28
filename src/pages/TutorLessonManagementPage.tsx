@@ -1882,9 +1882,6 @@ const handleSubmitLesson = async () => {
                   <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
                     {firstName} {lastName}
                   </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 block">
-                    ID: {studentId?.substring(0, 8)}...
-                  </span>
                 </div>
               </div>
             </label>
