@@ -1750,14 +1750,14 @@ const handleSubmitLesson = async () => {
                     </div>
                   )} */} 
 
-                  {modalMode !== 'view' && (
+                 {modalMode !== 'view' && (
   <div>
     <div className="flex items-center justify-between mb-2">
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
         {tPage.assignToStudents.replace('{count}', lessonForm.assignedStudentIds.length.toString())}
       </label>
       
-      {/* ✅ NEW: Select All / Deselect All Button */}
+      {/* ✅ Select All / Deselect All Button */}
       {students.length > 0 && (
         <button
           type="button"
@@ -1827,10 +1827,10 @@ const handleSubmitLesson = async () => {
             />
             <div className="flex items-center space-x-2 flex-1">
               <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                {student.first_name?.[0]}{student.last_name?.[0]}
+                {student.student_first_name?.[0]}{student.student_last_name?.[0]}
               </div>
               <span className="text-sm text-gray-700 dark:text-gray-300">
-                {student.first_name} {student.last_name}
+                {student.student_first_name} {student.student_last_name}
               </span>
             </div>
           </label>
