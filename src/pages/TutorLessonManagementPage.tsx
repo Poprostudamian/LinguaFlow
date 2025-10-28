@@ -1800,12 +1800,7 @@ const handleSubmitLesson = async () => {
         </button>
       )}
     </div>
-    
-    {/* Debug info */}
-    <div className="mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs">
-      <strong>Debug:</strong> {students.length} students loaded
-    </div>
-    
+        
     <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 max-h-48 overflow-y-auto space-y-2">
       {students.length === 0 ? (
         <div className="text-center py-8">
