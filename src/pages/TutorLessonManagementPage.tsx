@@ -1687,7 +1687,7 @@ const handleDragEnd = (event: DragEndEvent) => {
         <p>No exercises yet</p>
       </div>
     )}
-
+</div>
                       {modalMode !== 'view' && (
                         <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
                           <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
