@@ -928,88 +928,161 @@ const handleDragEnd = (event: DragEndEvent) => {
     setExercises(exercises.filter(ex => ex.id !== exerciseId));
   };
 
-  // Create/Update lesson
-  const handleSubmitLesson = async () => {
-    if (!session?.user?.id || !lessonForm.title.trim()) {
-      setToast({ type: 'error', message: t.tutorLessonManagementPage.enterTitle });
-      return;
-    }
+// Create/Update lesson - FIXED VERSION
+const handleSubmitLesson = async () => {
+  console.log('🚀 [CREATE LESSON] Starting handleSubmitLesson...');
+  console.log('📝 [CREATE LESSON] Modal mode:', modalMode);
+  console.log('👤 [CREATE LESSON] User ID:', session?.user?.id);
+  console.log('📋 [CREATE LESSON] Form data:', {
+    title: lessonForm.title,
+    description: lessonForm.description,
+    status: lessonForm.status,
+    assignedStudents: lessonForm.assignedStudentIds.length,
+    exercises: exercises.length
+  });
 
-if (exercises.length > 0) {
+  // Validation: Check user session
+  if (!session?.user?.id) {
+    console.error('❌ [CREATE LESSON] No user session found');
+    setToast({ type: 'error', message: 'You must be logged in to create lessons' });
+    return;
+  }
+
+  // Validation: Check title
+  if (!lessonForm.title.trim()) {
+    console.error('❌ [CREATE LESSON] Title is empty');
+    setToast({ type: 'error', message: t.tutorLessonManagementPage.enterTitle });
+    return;
+  }
+
+  // Validation: Check exercises
   const validation = validateExercises(exercises);
   if (!validation.isValid) {
+    console.error('❌ [CREATE LESSON] Exercise validation failed:', validation.message);
     setToast({ type: 'error', message: validation.message || 'Invalid exercises' });
     setModalTab('exercises');
     return;
   }
-}
 
-    if (modalMode === 'edit' && currentLesson?.id) {
-      const permissions = await getLessonEditPermissions(currentLesson.id, session.user.id);
-      if (!permissions.canEdit) {
-        setToast({ 
-          type: 'error', 
-          message: permissions.reason || 'Cannot edit locked lesson'
-        });
-        return;
-      }
-      
-      const validationCheck = await validateLessonOperation(currentLesson.id, session.user.id, 'edit');
-      if (!validationCheck.allowed) {
-        setToast({ 
-          type: 'error', 
-          message: validationCheck.reason || 'Cannot save changes'
-        });
-        return;
-      }
+  console.log('✅ [CREATE LESSON] All validations passed');
+
+  // Edit mode - check permissions
+  if (modalMode === 'edit' && currentLesson?.id) {
+    console.log('🔍 [EDIT MODE] Checking edit permissions...');
+    
+    const permissions = await getLessonEditPermissions(currentLesson.id, session.user.id);
+    if (!permissions.canEdit) {
+      console.error('❌ [EDIT MODE] No edit permissions:', permissions.reason);
+      setToast({ 
+        type: 'error', 
+        message: permissions.reason || 'Cannot edit locked lesson'
+      });
+      return;
     }
+    
+    const validationCheck = await validateLessonOperation(currentLesson.id, session.user.id, 'edit');
+    if (!validationCheck.allowed) {
+      console.error('❌ [EDIT MODE] Validation check failed:', validationCheck.reason);
+      setToast({ 
+        type: 'error', 
+        message: validationCheck.reason || 'Cannot save changes'
+      });
+      return;
+    }
+
+    console.log('✅ [EDIT MODE] Permissions validated');
+  }
+    
+  setIsSubmitting(true);
+  console.log('⏳ [CREATE LESSON] Setting isSubmitting = true');
+
+  try {
+    if (modalMode === 'create') {
+      console.log('📝 [CREATE MODE] Creating new lesson...');
       
-    setIsSubmitting(true);
+      // Step 1: Create lesson in database
+      const lessonPayload = {
+        tutor_id: session.user.id,
+        title: lessonForm.title.trim(),
+        description: lessonForm.description.trim() || null,
+        content: lessonForm.content.trim() || `<h2>${lessonForm.title}</h2>`,
+        status: lessonForm.status,
+        is_published: lessonForm.status === 'published'
+      };
 
-    try {
-      if (modalMode === 'create') {
-        const { data: lesson, error: lessonError } = await supabase
-          .from('lessons')
-          .insert({
-            tutor_id: session.user.id,
-            title: lessonForm.title.trim(),
-            description: lessonForm.description.trim() || null,
-            content: lessonForm.content.trim() || `<h2>${lessonForm.title}</h2>`,
-            status: lessonForm.status,
-            is_published: lessonForm.status === 'published'
-          })
-          .select()
-          .single();
+      console.log('💾 [CREATE MODE] Inserting lesson with payload:', lessonPayload);
 
-        if (lessonError) throw lessonError;
+      const { data: lesson, error: lessonError } = await supabase
+        .from('lessons')
+        .insert(lessonPayload)
+        .select()
+        .single();
 
-        if (attachments.length > 0) {
-        const fileUploader = new LessonFileUploader({
-          lessonId: lesson.id,
-          tutorId: session.user.id,
-          existingAttachments: attachments,
-          onFilesChange: setAttachments
-        });
-        await fileUploader.uploadAllFiles();
+      if (lessonError) {
+        console.error('❌ [CREATE MODE] Lesson creation failed:', lessonError);
+        throw new Error(`Failed to create lesson: ${lessonError.message}`);
       }
-        
-        if (lessonForm.assignedStudentIds.length > 0) {
-          const assignments = lessonForm.assignedStudentIds.map(studentId => ({
-            lesson_id: lesson.id,
-            student_id: studentId,
-            status: 'assigned' as const,
-            progress: 0,
-            score: null,
-            time_spent: 0
-          }));
 
-          const { error: assignError } = await supabase
-            .from('student_lessons')
-            .insert(assignments);
+      if (!lesson || !lesson.id) {
+        console.error('❌ [CREATE MODE] No lesson returned from database');
+        throw new Error('Failed to create lesson - no data returned');
+      }
 
-          if (assignError) throw assignError;
+      console.log('✅ [CREATE MODE] Lesson created successfully! ID:', lesson.id);
+
+      // Step 2: Upload attachments if any
+      if (attachments.length > 0) {
+        console.log(`📎 [CREATE MODE] Uploading ${attachments.length} attachments...`);
+        try {
+          const fileUploader = new LessonFileUploader({
+            lessonId: lesson.id,
+            tutorId: session.user.id,
+            existingAttachments: attachments,
+            onFilesChange: setAttachments
+          });
+          await fileUploader.uploadAllFiles();
+          console.log('✅ [CREATE MODE] Attachments uploaded successfully');
+        } catch (attachmentError) {
+          console.error('⚠️ [CREATE MODE] Attachment upload failed:', attachmentError);
+          // Continue anyway - lesson is created
         }
+      }
 
+      // Step 3: Assign students if any selected
+      if (lessonForm.assignedStudentIds.length > 0) {
+        console.log(`👥 [CREATE MODE] Assigning ${lessonForm.assignedStudentIds.length} students...`);
+        
+        const assignments = lessonForm.assignedStudentIds.map(studentId => ({
+          lesson_id: lesson.id,
+          student_id: studentId,
+          status: 'assigned' as const,
+          progress: 0,
+          score: null,
+          time_spent: 0,
+          assigned_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }));
+
+        const { error: assignError } = await supabase
+          .from('student_lessons')
+          .insert(assignments);
+
+        if (assignError) {
+          console.error('⚠️ [CREATE MODE] Student assignment failed:', assignError);
+          // Continue anyway - lesson is created
+          setToast({ 
+            type: 'warning', 
+            message: `Lesson created, but failed to assign students: ${assignError.message}` 
+          });
+        } else {
+          console.log('✅ [CREATE MODE] Students assigned successfully');
+        }
+      }
+
+      // Step 4: Create exercises
+      if (exercises.length > 0) {
+        console.log(`🎯 [CREATE MODE] Creating ${exercises.length} exercises...`);
+        
         const exercisesData = exercises.map((exercise, index) => {
           const baseExercise = {
             lesson_id: lesson.id,
@@ -1018,14 +1091,16 @@ if (exercises.length > 0) {
             question: exercise.question,
             order_number: index + 1,
             points: exercise.points || 1,
-            explanation: exercise.explanation || null
+            explanation: exercise.explanation || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           };
 
           if (exercise.type === 'multiple_choice') {
             return {
               ...baseExercise,
               correct_answer: exercise.correctAnswer || 'A',
-              options: JSON.stringify(exercise.options || [])
+              options: JSON.stringify(exercise.options || ['', '', '', ''])
             };
           } else if (exercise.type === 'flashcard') {
             return {
@@ -1052,109 +1127,138 @@ if (exercises.length > 0) {
           .insert(exercisesData);
 
         if (exercisesError && exercisesError.code !== '42P01') {
-          console.error('Error creating exercises:', exercisesError);
+          console.error('⚠️ [CREATE MODE] Exercises creation failed:', exercisesError);
+          // Continue anyway - lesson is created
+        } else {
+          console.log('✅ [CREATE MODE] Exercises created successfully');
         }
+      }
 
-        setToast({ 
-          type: 'success', 
-          message: `✅ Lesson "${lessonForm.title}" created with ${exercises.length} exercises!`
-        });
+      console.log('🎉 [CREATE MODE] Lesson creation complete!');
+      setToast({ 
+        type: 'success', 
+        message: `✅ Lesson "${lessonForm.title}" created with ${exercises.length} exercises!`
+      });
 
-      } else if (modalMode === 'edit' && currentLesson) {
-        const { error: updateError } = await supabase
-          .from('lessons')
-          .update({
-            title: lessonForm.title.trim(),
-            description: lessonForm.description.trim() || null,
-            content: lessonForm.content.trim() || null,
-            status: lessonForm.status,
-            is_published: lessonForm.status === 'published',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', currentLesson.id);
+    } else if (modalMode === 'edit' && currentLesson) {
+      console.log('✏️ [EDIT MODE] Updating existing lesson...');
+      
+      // Step 1: Update lesson
+      const { error: updateError } = await supabase
+        .from('lessons')
+        .update({
+          title: lessonForm.title.trim(),
+          description: lessonForm.description.trim() || null,
+          content: lessonForm.content.trim() || null,
+          status: lessonForm.status,
+          is_published: lessonForm.status === 'published',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentLesson.id)
+        .eq('tutor_id', session.user.id);
 
-        if (updateError) throw updateError;
+      if (updateError) {
+        console.error('❌ [EDIT MODE] Lesson update failed:', updateError);
+        throw updateError;
+      }
+
+      console.log('✅ [EDIT MODE] Lesson updated successfully');
+
+      // Step 2: Update student assignments
+      await supabase
+        .from('student_lessons')
+        .delete()
+        .eq('lesson_id', currentLesson.id);
+
+      if (lessonForm.assignedStudentIds.length > 0) {
+        const assignments = lessonForm.assignedStudentIds.map(studentId => ({
+          lesson_id: currentLesson.id,
+          student_id: studentId,
+          status: 'assigned' as const,
+          progress: 0,
+          score: null,
+          time_spent: 0
+        }));
 
         await supabase
           .from('student_lessons')
-          .delete()
-          .eq('lesson_id', currentLesson.id);
-
-        if (lessonForm.assignedStudentIds.length > 0) {
-          const assignments = lessonForm.assignedStudentIds.map(studentId => ({
-            lesson_id: currentLesson.id,
-            student_id: studentId,
-            status: 'assigned' as const,
-            progress: 0,
-            score: null,
-            time_spent: 0
-          }));
-
-          await supabase
-            .from('student_lessons')
-            .insert(assignments);
-        }
-
-        await supabase
-          .from('lesson_exercises')
-          .delete()
-          .eq('lesson_id', currentLesson.id);
-
-        const exercisesData = exercises.map((exercise, index) => {
-          const baseExercise = {
-            lesson_id: currentLesson.id,
-            exercise_type: exercise.type,
-            title: exercise.title || exercise.question,
-            question: exercise.question,
-            order_number: index + 1,
-            points: exercise.points || 1,
-            explanation: exercise.explanation || null
-          };
-
-          if (exercise.type === 'multiple_choice') {
-            return {
-              ...baseExercise,
-              correct_answer: exercise.correctAnswer || 'A',
-              options: JSON.stringify(exercise.options || [])
-            };
-          } else if (exercise.type === 'flashcard') {
-            return {
-              ...baseExercise,
-              correct_answer: exercise.flashcards?.[0]?.back || '',
-              options: JSON.stringify(exercise.flashcards || [])
-            };
-          } else if (exercise.type === 'text_answer') {
-            return {
-              ...baseExercise,
-              correct_answer: exercise.correctAnswer || '',
-              word_limit: exercise.wordLimit || exercise.maxLength || 2000,
-              options: JSON.stringify({ maxLength: exercise.wordLimit || exercise.maxLength || 2000 })
-            };
-          }
-
-          return baseExercise;
-        });
-
-        await supabase
-          .from('lesson_exercises')
-          .insert(exercisesData);
-
-        setToast({ 
-          type: 'success', 
-          message: `✅ Lesson "${lessonForm.title}" updated successfully!`
-        });
+          .insert(assignments);
       }
 
-      closeModal();
-      loadLessons();
+      // Step 3: Update exercises
+      await supabase
+        .from('lesson_exercises')
+        .delete()
+        .eq('lesson_id', currentLesson.id);
 
-    } catch (err: any) {
-      console.error('Error saving lesson:', err);
-      setToast({ type: 'error', message: err.message || 'Failed to save lesson' });
-    } finally {
-      setIsSubmitting(false);
+      const exercisesData = exercises.map((exercise, index) => {
+        const baseExercise = {
+          lesson_id: currentLesson.id,
+          exercise_type: exercise.type,
+          title: exercise.title || exercise.question,
+          question: exercise.question,
+          order_number: index + 1,
+          points: exercise.points || 1,
+          explanation: exercise.explanation || null
+        };
+
+        if (exercise.type === 'multiple_choice') {
+          return {
+            ...baseExercise,
+            correct_answer: exercise.correctAnswer || 'A',
+            options: JSON.stringify(exercise.options || [])
+          };
+        } else if (exercise.type === 'flashcard') {
+          return {
+            ...baseExercise,
+            correct_answer: exercise.flashcards?.[0]?.back || '',
+            options: JSON.stringify(exercise.flashcards || [])
+          };
+        } else if (exercise.type === 'text_answer') {
+          return {
+            ...baseExercise,
+            correct_answer: exercise.correctAnswer || '',
+            word_limit: exercise.wordLimit || exercise.maxLength || 2000,
+            options: JSON.stringify({ maxLength: exercise.wordLimit || exercise.maxLength || 2000 })
+          };
+        }
+
+        return baseExercise;
+      });
+
+      await supabase
+        .from('lesson_exercises')
+        .insert(exercisesData);
+
+      console.log('✅ [EDIT MODE] Lesson update complete!');
+      setToast({ 
+        type: 'success', 
+        message: `✅ Lesson "${lessonForm.title}" updated successfully!`
+      });
     }
-  };
+
+    console.log('✅ [SUCCESS] Closing modal and reloading lessons...');
+    closeModal();
+    await loadLessons();
+
+  } catch (err: any) {
+    console.error('❌ [ERROR] handleSubmitLesson failed:', err);
+    console.error('❌ [ERROR] Error details:', {
+      message: err.message,
+      code: err.code,
+      details: err.details,
+      hint: err.hint
+    });
+    
+    setToast({ 
+      type: 'error', 
+      message: err.message || 'Failed to save lesson. Check console for details.' 
+    });
+  } finally {
+    console.log('🏁 [FINALLY] Setting isSubmitting = false');
+    setIsSubmitting(false);
+  }
+};
 
   // Delete lesson handler
   const handleDeleteLesson = async (lessonId: string) => {
