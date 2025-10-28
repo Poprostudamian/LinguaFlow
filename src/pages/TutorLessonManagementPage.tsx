@@ -935,12 +935,14 @@ const handleDragEnd = (event: DragEndEvent) => {
       return;
     }
 
-    const validation = validateExercises(exercises);
-    if (!validation.isValid) {
-      setToast({ type: 'error', message: validation.message || 'Invalid exercises' });
-      setModalTab('exercises');
-      return;
-    }
+if (exercises.length > 0) {
+  const validation = validateExercises(exercises);
+  if (!validation.isValid) {
+    setToast({ type: 'error', message: validation.message || 'Invalid exercises' });
+    setModalTab('exercises');
+    return;
+  }
+}
 
     if (modalMode === 'edit' && currentLesson?.id) {
       const permissions = await getLessonEditPermissions(currentLesson.id, session.user.id);
