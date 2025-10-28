@@ -1678,7 +1678,7 @@ const handleDragEnd = (event: DragEndEvent) => {
       onEdit={() => handleEditExercise(exercise)}
       onDelete={() => handleDeleteExercise(exercise.id)}
     />
-  ))}
+  )}
       </div>
     ) : (
       // Pusty stan
