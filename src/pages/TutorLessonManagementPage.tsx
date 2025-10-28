@@ -1668,23 +1668,6 @@ const handleDragEnd = (event: DragEndEvent) => {
         />
       ))}
     </div>
-                      {/* {exercises.map((exercise, index) => (
-    <ExerciseCard
-      key={exercise.id}
-      exercise={exercise}
-      index={index}
-      onEdit={() => handleEditExercise(exercise)}
-      onDelete={() => handleDeleteExercise(exercise.id)}
-    />
-  ))}
-      </div>
-    ) : (
-      <div className="text-center py-8 text-gray-500">
-        <Target className="h-12 w-12 mx-auto mb-2 opacity-30" />
-        <p>No exercises yet</p>
-      </div> */}
-    {/* )}
-</div> */}
                            </div>
 )}
                       {modalMode !== 'view' && (
