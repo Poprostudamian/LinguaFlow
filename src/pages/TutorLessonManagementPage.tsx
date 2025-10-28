@@ -1732,7 +1732,7 @@ if (exercises.length > 0) {
                   {modalMode !== 'view' && (
                     <button
                       onClick={handleSubmitLesson}
-                      disabled={isSubmitting || !lessonForm.title.trim() || exercises.length === 0}
+                      disabled={isSubmitting || !lessonForm.title.trim()}
                       type="button"
                       className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium py-2.5 px-8 rounded-lg transition-all duration-200 flex items-center space-x-2 disabled:cursor-not-allowed shadow-lg"
                     >
