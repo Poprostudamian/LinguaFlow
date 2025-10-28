@@ -1679,7 +1679,6 @@ const handleDragEnd = (event: DragEndEvent) => {
       onDelete={() => handleDeleteExercise(exercise.id)}
     />
   ))} 
-      </div>
     ) : (
       // Pusty stan
       <div className="text-center py-8 text-gray-500">
