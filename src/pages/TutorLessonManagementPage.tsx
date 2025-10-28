@@ -1671,7 +1671,6 @@ const handleDragEnd = (event: DragEndEvent) => {
                         </div>
                       )} */}
                       {exercises.length > 0 && modalMode !== 'view' ? (
-      // Drag-and-drop dla edycji
     ) : exercises.length > 0 ? (
       // Zwykła lista dla trybu "view"
       <div className="space-y-3">
