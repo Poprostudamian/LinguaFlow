@@ -1,6 +1,6 @@
 // src/pages/TutorLessonManagementPage.tsx
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Search, 
@@ -28,7 +28,13 @@ import {
   ChevronDown,
   ChevronUp,
   Save,
-  Lock
+  Lock,
+  Copy,
+  Clock,
+  TrendingUp,
+  Award,
+  Activity,
+  Download
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTutorStudents } from '../contexts/StudentsContext';
@@ -99,6 +105,230 @@ interface Exercise {
   wordLimit?: number;
   explanation?: string;
 }
+
+
+// ============================================================================
+// PHASE 3: AUTOSAVE & DUPLICATE FEATURES
+// ============================================================================
+
+const AUTOSAVE_KEY = 'tutor_lesson_draft';
+const AUTOSAVE_INTERVAL = 30000; // 30 seconds
+
+interface LessonDraft {
+  lessonForm: {
+    title: string;
+    description: string;
+    content: string;
+    assignedStudentIds: string[];
+    status: 'draft' | 'published';
+    attachments: AttachmentFile[];
+  };
+  exercises: Exercise[];
+  timestamp: number;
+  lessonId?: string;
+}
+
+const saveDraftToLocalStorage = (draft: LessonDraft) => {
+  try {
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(draft));
+    return true;
+  } catch (error) {
+    console.error('Failed to save draft to localStorage:', error);
+    return false;
+  }
+};
+
+const loadDraftFromLocalStorage = (): LessonDraft | null => {
+  try {
+    const saved = localStorage.getItem(AUTOSAVE_KEY);
+    if (!saved) return null;
+
+    const draft = JSON.parse(saved) as LessonDraft;
+
+    // Check if draft is less than 24 hours old
+    const age = Date.now() - draft.timestamp;
+    if (age > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem(AUTOSAVE_KEY);
+      return null;
+    }
+
+    return draft;
+  } catch (error) {
+    console.error('Failed to load draft from localStorage:', error);
+    return null;
+  }
+};
+
+const clearDraftFromLocalStorage = () => {
+  try {
+    localStorage.removeItem(AUTOSAVE_KEY);
+  } catch (error) {
+    console.error('Failed to clear draft from localStorage:', error);
+  }
+};
+
+// ============================================================================
+// LESSON STATISTICS COMPONENT
+// ============================================================================
+
+interface LessonStatistics {
+  assignedCount: number;
+  completedCount: number;
+  inProgressCount: number;
+  averageScore: number;
+  averageTimeSpent: number;
+  lastActivity: string | null;
+}
+
+interface LessonStatisticsPanelProps {
+  lessonId: string;
+  t: any;
+}
+
+function LessonStatisticsPanel({ lessonId, t }: LessonStatisticsPanelProps) {
+  const [stats, setStats] = useState<LessonStatistics | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadStatistics();
+  }, [lessonId]);
+
+  const loadStatistics = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('student_lessons')
+        .select('status, score, time_spent, updated_at')
+        .eq('lesson_id', lessonId);
+
+      if (error) throw error;
+
+      const assignedCount = data?.length || 0;
+      const completedCount = data?.filter(sl => sl.status === 'completed').length || 0;
+      const inProgressCount = data?.filter(sl => sl.status === 'in_progress').length || 0;
+
+      const scoresWithValues = data?.filter(sl => sl.score !== null && sl.score !== undefined) || [];
+      const averageScore = scoresWithValues.length > 0
+        ? Math.round(scoresWithValues.reduce((sum, sl) => sum + (sl.score || 0), 0) / scoresWithValues.length)
+        : 0;
+
+      const timesWithValues = data?.filter(sl => sl.time_spent !== null && sl.time_spent !== undefined) || [];
+      const averageTimeSpent = timesWithValues.length > 0
+        ? Math.round(timesWithValues.reduce((sum, sl) => sum + (sl.time_spent || 0), 0) / timesWithValues.length)
+        : 0;
+
+      const lastActivity = data && data.length > 0
+        ? data.reduce((latest, sl) => {
+            const slDate = new Date(sl.updated_at);
+            return slDate > new Date(latest) ? sl.updated_at : latest;
+          }, data[0].updated_at)
+        : null;
+
+      setStats({
+        assignedCount,
+        completedCount,
+        inProgressCount,
+        averageScore,
+        averageTimeSpent,
+        lastActivity
+      });
+    } catch (error) {
+      console.error('Error loading lesson statistics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg p-6 mb-6">
+        <div className="flex items-center justify-center space-x-2">
+          <RefreshCw className="h-5 w-5 animate-spin text-purple-600" />
+          <span className="text-sm text-gray-600 dark:text-gray-400">Loading statistics...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats) return null;
+
+  return (
+    <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg p-6 mb-6 border border-purple-200 dark:border-purple-800">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
+          <Activity className="h-5 w-5 text-purple-600" />
+          <span>Lesson Statistics</span>
+        </h3>
+        <button
+          onClick={loadStatistics}
+          className="text-sm text-purple-600 hover:text-purple-700 dark:text-purple-400 flex items-center space-x-1"
+        >
+          <RefreshCw className="h-4 w-4" />
+          <span>Refresh</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-2 mb-2">
+            <Users className="h-4 w-4 text-blue-600" />
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Assigned</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.assignedCount}</p>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-2 mb-2">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Completed</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.completedCount}</p>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-2 mb-2">
+            <Activity className="h-4 w-4 text-orange-600" />
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">In Progress</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.inProgressCount}</p>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-2 mb-2">
+            <Award className="h-4 w-4 text-purple-600" />
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Avg Score</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+            {stats.averageScore > 0 ? `${stats.averageScore}%` : 'N/A'}
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-2 mb-2">
+            <Clock className="h-4 w-4 text-indigo-600" />
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Avg Time</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+            {stats.averageTimeSpent > 0 ? `${Math.round(stats.averageTimeSpent / 60)}m` : 'N/A'}
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-2 mb-2">
+            <TrendingUp className="h-4 w-4 text-teal-600" />
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Last Activity</span>
+          </div>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">
+            {stats.lastActivity 
+              ? new Date(stats.lastActivity).toLocaleDateString()
+              : 'No activity'}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 // ============================================================================
 // VALIDATION FUNCTIONS
@@ -737,6 +967,10 @@ const handleDragEnd = (event: DragEndEvent) => {
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // PHASE 3: Autosave state
+  const [hasDraft, setHasDraft] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
   // Load lessons on mount
   useEffect(() => {
     if (session?.user?.id) {
@@ -752,6 +986,42 @@ const handleDragEnd = (event: DragEndEvent) => {
       return () => clearTimeout(timer);
     } 
   }, [toast]);
+
+  // PHASE 3: Autosave effect
+  useEffect(() => {
+    if (!showModal || modalMode === 'view') return;
+
+    const timer = setInterval(() => {
+      if (lessonForm.title.trim()) {
+        const draft: LessonDraft = {
+          lessonForm,
+          exercises,
+          timestamp: Date.now(),
+          lessonId: currentLesson?.id
+        };
+
+        const saved = saveDraftToLocalStorage(draft);
+        if (saved) {
+          setLastSaved(new Date());
+          setToast({ 
+            type: 'success', 
+            message: '💾 Draft auto-saved' 
+          });
+        }
+      }
+    }, AUTOSAVE_INTERVAL);
+
+    return () => clearInterval(timer);
+  }, [showModal, modalMode, lessonForm, exercises, currentLesson]);
+
+  // PHASE 3: Check for existing draft on mount
+  useEffect(() => {
+    const draft = loadDraftFromLocalStorage();
+    if (draft) {
+      setHasDraft(true);
+    }
+  }, []);
+
 
   // Load lessons with lock status
   const loadLessons = async () => {
@@ -1345,6 +1615,153 @@ const handleSubmitLesson = async () => {
     }
   };
 
+
+  // PHASE 3: Duplicate lesson function
+  const handleDuplicateLesson = async (lessonId: string) => {
+    if (!session?.user?.id) return;
+
+    setIsLoading(true);
+    try {
+      console.log('📋 Duplicating lesson:', lessonId);
+
+      // 1. Fetch original lesson
+      const { data: originalLesson, error: lessonError } = await supabase
+        .from('lessons')
+        .select('*')
+        .eq('id', lessonId)
+        .single();
+
+      if (lessonError) throw lessonError;
+
+      // 2. Fetch exercises
+      const { data: originalExercises, error: exercisesError } = await supabase
+        .from('lesson_exercises')
+        .select('*')
+        .eq('lesson_id', lessonId)
+        .order('order_number');
+
+      if (exercisesError) throw exercisesError;
+
+      // 3. Fetch attachments
+      const { data: originalAttachments, error: attachmentsError } = await supabase
+        .from('lesson_attachments')
+        .select('*')
+        .eq('lesson_id', lessonId);
+
+      if (attachmentsError) throw attachmentsError;
+
+      // 4. Create new lesson
+      const { data: newLesson, error: createError } = await supabase
+        .from('lessons')
+        .insert({
+          tutor_id: session.user.id,
+          title: `${originalLesson.title} (Copy)`,
+          description: originalLesson.description,
+          content: originalLesson.content,
+          status: 'draft', // Always create as draft
+          is_published: false
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+
+      console.log('✅ Created duplicate lesson:', newLesson.id);
+
+      // 5. Duplicate exercises
+      if (originalExercises && originalExercises.length > 0) {
+        const exercisesToInsert = originalExercises.map(ex => ({
+          lesson_id: newLesson.id,
+          exercise_type: ex.exercise_type,
+          title: ex.title,
+          question: ex.question,
+          correct_answer: ex.correct_answer,
+          options: ex.options,
+          explanation: ex.explanation,
+          order_number: ex.order_number,
+          points: ex.points,
+          word_limit: ex.word_limit,
+          difficulty_level: ex.difficulty_level,
+          estimated_duration_minutes: ex.estimated_duration_minutes
+        }));
+
+        const { error: exercisesInsertError } = await supabase
+          .from('lesson_exercises')
+          .insert(exercisesToInsert);
+
+        if (exercisesInsertError) throw exercisesInsertError;
+        console.log(`✅ Duplicated ${exercisesToInsert.length} exercises`);
+      }
+
+      // 6. Duplicate attachments (reference same files)
+      if (originalAttachments && originalAttachments.length > 0) {
+        const attachmentsToInsert = originalAttachments.map(att => ({
+          lesson_id: newLesson.id,
+          tutor_id: session.user.id,
+          file_name: att.file_name,
+          file_type: att.file_type,
+          file_size: att.file_size,
+          mime_type: att.mime_type,
+          storage_path: att.storage_path, // Reuse same file
+          display_order: att.display_order,
+          description: att.description
+        }));
+
+        const { error: attachmentsInsertError } = await supabase
+          .from('lesson_attachments')
+          .insert(attachmentsToInsert);
+
+        if (attachmentsInsertError) throw attachmentsInsertError;
+        console.log(`✅ Duplicated ${attachmentsToInsert.length} attachments`);
+      }
+
+      setToast({ 
+        type: 'success', 
+        message: `✅ Lesson duplicated successfully! "${newLesson.title}"` 
+      });
+
+      await loadLessons();
+    } catch (error: any) {
+      console.error('❌ Error duplicating lesson:', error);
+      setToast({ 
+        type: 'error', 
+        message: error.message || 'Failed to duplicate lesson' 
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+  // PHASE 3: Restore draft from localStorage
+  const handleRestoreDraft = () => {
+    const draft = loadDraftFromLocalStorage();
+    if (!draft) {
+      setToast({ type: 'error', message: 'No draft found' });
+      return;
+    }
+
+    setLessonForm(draft.lessonForm);
+    setExercises(draft.exercises);
+    setAttachments(draft.lessonForm.attachments || []);
+    setHasDraft(false);
+
+    setToast({ 
+      type: 'success', 
+      message: '✅ Draft restored successfully' 
+    });
+  };
+
+  // PHASE 3: Clear draft
+  const handleClearDraft = () => {
+    clearDraftFromLocalStorage();
+    setHasDraft(false);
+    setToast({ 
+      type: 'success', 
+      message: 'Draft cleared' 
+    });
+  };
+
   // Filter lessons
   const filteredLessons = useMemo(() => {
     let filtered = lessons;
@@ -1554,6 +1971,7 @@ const handleSubmitLesson = async () => {
               onDelete={handleDeleteLesson}
               onAssignStudents={handleAssignStudents}
               onUnassignStudents={handleUnassignStudents}
+              onDuplicate={handleDuplicateLesson}
             />
           ))}
         </div>
@@ -1565,6 +1983,47 @@ const handleSubmitLesson = async () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-fade-in">
             {/* Modal Header */}
             <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 z-10">
+              {/* PHASE 3: Draft Restore Banner */}
+              {hasDraft && modalMode === 'create' && (
+                <div className="mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 animate-fade-in">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-3 flex-1">
+                      <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">
+                          Draft Found
+                        </h3>
+                        <p className="text-sm text-blue-700 dark:text-blue-400">
+                          You have an unsaved draft. Would you like to restore it?
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 ml-4">
+                      <button
+                        onClick={handleRestoreDraft}
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        Restore
+                      </button>
+                      <button
+                        onClick={handleClearDraft}
+                        className="px-3 py-1.5 border border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 text-sm font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                      >
+                        Discard
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* PHASE 3: Autosave Indicator */}
+              {lastSaved && modalMode !== 'view' && (
+                <div className="mb-3 flex items-center justify-end space-x-2 text-xs text-gray-500 dark:text-gray-400">
+                  <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                  <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
+                </div>
+              )}
+
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
                   {modalMode === 'create' && <PlusCircle className="h-5 w-5 text-purple-600" />}
@@ -1615,6 +2074,11 @@ const handleSubmitLesson = async () => {
             <div className="p-6">
               {modalTab === 'info' && (
                 <div className="space-y-4">
+                  {/* PHASE 3: Statistics Panel for Edit Mode */}
+                  {modalMode === 'edit' && currentLesson && (
+                    <LessonStatisticsPanel lessonId={currentLesson.id} t={tPage} />
+                  )}
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       {tPage.lessonTitleRequired}
