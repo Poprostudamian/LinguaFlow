@@ -1759,46 +1759,63 @@ const handleSubmitLesson = async () => {
       </label>
       
       {/* ✅ Select All / Deselect All Button */}
-      {students.length > 0 && (
-        <button
-          type="button"
-          onClick={() => {
-            console.log('🔘 [SELECT ALL] Button clicked');
-            console.log('📊 Current state:', {
-              totalStudents: students.length,
-              currentlySelected: lessonForm.assignedStudentIds.length,
-              allStudentIds: students.map(s => s.student_id)
-            });
-            
-            if (lessonForm.assignedStudentIds.length === students.length) {
-              // Deselect all
-              console.log('❌ Deselecting all students');
-              setLessonForm({ ...lessonForm, assignedStudentIds: [] });
-            } else {
-              // Select all
-              const allIds = students.map(s => s.student_id);
-              console.log('✅ Selecting all students:', allIds);
-              setLessonForm({ 
-                ...lessonForm, 
-                assignedStudentIds: allIds
-              });
-            }
-          }}
-          className="flex items-center space-x-1.5 px-3 py-1.5 text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors border border-purple-200 dark:border-purple-700"
-        >
-          {lessonForm.assignedStudentIds.length === students.length ? (
-            <>
-              <Square className="h-4 w-4" />
-              <span>Deselect All</span>
-            </>
-          ) : (
-            <>
-              <CheckSquare className="h-4 w-4" />
-              <span>Select All</span>
-            </>
-          )}
-        </button>
-      )}
+      {/* ✅ BEST VERSION: Select All / Deselect All Button */}
+{students.length > 0 && (
+  <button
+    type="button"
+    onClick={() => {
+      const allStudentIds = students.map(s => s.student_id || s.id).filter(Boolean);
+      
+      console.log('🔘 [SELECT ALL] Clicked');
+      console.log('📊 Students:', {
+        total: students.length,
+        allIds: allStudentIds,
+        currentlyAssigned: lessonForm.assignedStudentIds
+      });
+      
+      // Simple check: are all students in the assigned list?
+      const allAreAssigned = allStudentIds.every(id => 
+        lessonForm.assignedStudentIds.includes(id)
+      );
+      
+      if (allAreAssigned && lessonForm.assignedStudentIds.length === allStudentIds.length) {
+        // All are selected -> DESELECT ALL
+        console.log('❌ Deselecting all');
+        setLessonForm({ 
+          ...lessonForm, 
+          assignedStudentIds: [] 
+        });
+      } else {
+        // Not all selected -> SELECT ALL (replace entire array)
+        console.log('✅ Selecting all:', allStudentIds);
+        setLessonForm({ 
+          ...lessonForm, 
+          assignedStudentIds: allStudentIds
+        });
+      }
+    }}
+    className="flex items-center space-x-1.5 px-3 py-1.5 text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors border border-purple-200 dark:border-purple-700"
+  >
+    {(() => {
+      const allStudentIds = students.map(s => s.student_id || s.id).filter(Boolean);
+      const allAreAssigned = allStudentIds.length > 0 && 
+                             allStudentIds.every(id => lessonForm.assignedStudentIds.includes(id)) &&
+                             lessonForm.assignedStudentIds.length === allStudentIds.length;
+      
+      return allAreAssigned ? (
+        <>
+          <Square className="h-4 w-4" />
+          <span>Deselect All</span>
+        </>
+      ) : (
+        <>
+          <CheckSquare className="h-4 w-4" />
+          <span>Select All</span>
+        </>
+      );
+    })()}
+  </button>
+)}
     </div>
         
     <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 max-h-48 overflow-y-auto space-y-2">
@@ -1887,76 +1904,16 @@ const handleSubmitLesson = async () => {
     
     {/* Helper text showing count */}
     {students.length > 0 && (
-  <button
-    type="button"
-    onClick={() => {
-      console.log('🔘 [SELECT ALL] Button clicked');
-      console.log('📊 Current state BEFORE:', {
-        totalStudents: students.length,
-        currentlySelected: lessonForm.assignedStudentIds.length,
-        currentAssignments: lessonForm.assignedStudentIds,
-        allStudentIds: students.map(s => s.student_id || s.id)
-      });
-      
-      // Check if all students are already selected
-      const allStudentIds = students.map(s => s.student_id || s.id);
-      const allSelected = allStudentIds.every(id => 
-        lessonForm.assignedStudentIds.includes(id)
-      );
-      
-      console.log('🔍 All selected?', allSelected);
-      
-      if (allSelected) {
-        // Deselect all - clear the array
-        console.log('❌ Deselecting all students');
-        setLessonForm({ ...lessonForm, assignedStudentIds: [] });
-      } else {
-        // Select all - use Set to avoid duplicates
-        const uniqueIds = Array.from(new Set([
-          ...lessonForm.assignedStudentIds,
-          ...allStudentIds
-        ]));
-        
-        console.log('✅ Selecting all students (deduplicated):', uniqueIds);
-        console.log('📊 Stats:', {
-          totalStudents: students.length,
-          previouslySelected: lessonForm.assignedStudentIds.length,
-          nowSelected: uniqueIds.length
-        });
-        
-        setLessonForm({ 
-          ...lessonForm, 
-          assignedStudentIds: uniqueIds
-        });
-      }
-      
-      // Force re-render by logging
-      setTimeout(() => {
-        console.log('📊 State AFTER update:', lessonForm.assignedStudentIds);
-      }, 100);
-    }}
-    className="flex items-center space-x-1.5 px-3 py-1.5 text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors border border-purple-200 dark:border-purple-700"
-  >
-    {(() => {
-      // Check if all students are selected
-      const allStudentIds = students.map(s => s.student_id || s.id);
-      const allSelected = allStudentIds.length > 0 && 
-                          allStudentIds.every(id => lessonForm.assignedStudentIds.includes(id));
-      
-      return allSelected ? (
-        <>
-          <Square className="h-4 w-4" />
-          <span>Deselect All</span>
-        </>
-      ) : (
-        <>
-          <CheckSquare className="h-4 w-4" />
-          <span>Select All</span>
-        </>
-      );
-    })()}
-  </button>
-)}
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+        {lessonForm.assignedStudentIds.length === students.length ? (
+          <>✅ All {students.length} students selected</>
+        ) : lessonForm.assignedStudentIds.length > 0 ? (
+          <>{lessonForm.assignedStudentIds.length} of {students.length} students selected</>
+        ) : (
+          <>No students selected</>
+        )}
+      </p>
+    )}
   </div>
 )}
                 </div>
