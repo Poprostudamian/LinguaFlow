@@ -167,26 +167,6 @@ const validateExercises = (exercises: Exercise[]): { isValid: boolean; message?:
 // ============================================================================
 // STATS CARD COMPONENT
 // ============================================================================
-
-const sensors = useSensors(
-  useSensor(PointerSensor),
-  useSensor(KeyboardSensor, {
-    coordinateGetter: sortableKeyboardCoordinates
-  })
-);
-
-const handleDragEnd = (event: DragEndEvent) => {
-  const { active, over } = event;
-
-  if (over && active.id !== over.id) {
-    const oldIndex = exercises.findIndex((ex) => ex.id === active.id);
-    const newIndex = exercises.findIndex((ex) => ex.id === over.id);
-
-    const reordered = arrayMove(exercises, oldIndex, newIndex);
-    setExercises(reordered);
-  }
-};
-
 interface StatsCardProps {
   title: string;
   value: string | number;
@@ -661,30 +641,24 @@ export function TutorLessonManagementPage() {
   const [students, setStudents] = useState<any[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
 
+  const sensors = useSensors(
+  useSensor(PointerSensor),
+  useSensor(KeyboardSensor, {
+    coordinateGetter: sortableKeyboardCoordinates
+  })
+);
 
-<DndContext
-  sensors={sensors}
-  collisionDetection={closestCenter}
-  onDragEnd={handleDragEnd}
->
-  <SortableContext
-    items={exercises.map(ex => ex.id)}
-    strategy={verticalListSortingStrategy}
-  >
-    <div className="space-y-3">
-      {exercises.map((exercise, index) => (
-        <DraggableExerciseCard
-          key={exercise.id}
-          exercise={exercise}
-          index={index}
-          onEdit={() => handleEditExercise(exercise)}
-          onDelete={() => handleDeleteExercise(exercise.id)}
-          readOnly={modalMode === 'view'}
-        />
-      ))}
-    </div>
-  </SortableContext>
-</DndContext>
+const handleDragEnd = (event: DragEndEvent) => {
+  const { active, over } = event;
+
+  if (over && active.id !== over.id) {
+    const oldIndex = exercises.findIndex((ex) => ex.id === active.id);
+    const newIndex = exercises.findIndex((ex) => ex.id === over.id);
+
+    const reordered = arrayMove(exercises, oldIndex, newIndex);
+    setExercises(reordered);
+  }
+};
   
   // Load students function
  const loadStudents = async () => {
@@ -1681,21 +1655,67 @@ export function TutorLessonManagementPage() {
                     />
                   ) : (
                     <>
-                      {exercises.length > 0 && (
-                        <div className="space-y-3">
-                          {exercises.map((exercise, index) => (
-                            <ExercisePreviewCard
-                              key={exercise.id}
-                              exercise={exercise}
-                              index={index}
-                              onEdit={modalMode !== 'view' ? () => handleEditExercise(exercise) : undefined}
-                              onDelete={modalMode !== 'view' ? () => handleDeleteExercise(exercise.id) : undefined}
-                              readOnly={modalMode === 'view'}
-                              t={tPage}
-                            />
-                          ))}
-                        </div>
-                      )}
+                      /* {exercises.length > 0 && ( }*/
+                        // <div className="space-y-3">
+                        //   {exercises.map((exercise, index) => (
+                        //     <ExercisePreviewCard
+                        //       key={exercise.id}
+                        //       exercise={exercise}
+                        //       index={index}
+                        //       onEdit={modalMode !== 'view' ? () => handleEditExercise(exercise) : undefined}
+                        //       onDelete={modalMode !== 'view' ? () => handleDeleteExercise(exercise.id) : undefined}
+                        //       readOnly={modalMode === 'view'}
+                        //       t={tPage}
+                        //     />
+                        //   ))}
+                        // </div>
+                      {exercises.length > 0 && modalMode !== 'view' ? (
+      // Drag-and-drop dla edycji
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={exercises.map(ex => ex.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-3">
+            {exercises.map((exercise, index) => (
+              <DraggableExerciseCard
+                key={exercise.id}
+                exercise={exercise}
+                index={index}
+                onEdit={() => handleEditExercise(exercise)}
+                onDelete={() => handleDeleteExercise(exercise.id)}
+                readOnly={false}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+    ) : exercises.length > 0 ? (
+      // Zwykła lista dla trybu "view"
+      <div className="space-y-3">
+        {exercises.map((exercise, index) => (
+          <DraggableExerciseCard
+            key={exercise.id}
+            exercise={exercise}
+            index={index}
+            onEdit={() => handleEditExercise(exercise)}
+            onDelete={() => handleDeleteExercise(exercise.id)}
+            readOnly={true}
+          />
+        ))}
+      </div>
+    ) : (
+      // Pusty stan
+      <div className="text-center py-8 text-gray-500">
+        <Target className="h-12 w-12 mx-auto mb-2 opacity-30" />
+        <p>No exercises yet</p>
+      </div>
+    )}
+                      {/* )} */}
 
                       {modalMode !== 'view' && (
                         <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
