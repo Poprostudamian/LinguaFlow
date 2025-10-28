@@ -1661,10 +1661,12 @@ const handleDragEnd = (event: DragEndEvent) => {
       {exercises.map((exercise, index) => (
         <ExercisePreviewCard
           key={exercise.id}
-          exercise={exercise}
-          index={index}
-          onEdit={() => handleEditExercise(exercise)}
-          onDelete={() => handleDeleteExercise(exercise.id)}
+        exercise={exercise}
+        index={index}
+        onEdit={modalMode !== 'view' ? () => handleEditExercise(exercise) : undefined}
+        onDelete={modalMode !== 'view' ? () => handleDeleteExercise(exercise.id) : undefined}
+        readOnly={modalMode === 'view'}
+        t={tPage}
         />
       ))}
     </div>
