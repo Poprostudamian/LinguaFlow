@@ -15,6 +15,8 @@ import {
   Trash2,
   X,
   CheckCircle,
+  CheckSquare,
+  Square,
   FileText,
   Target,
   Layers,
