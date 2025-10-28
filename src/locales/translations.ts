@@ -581,6 +581,9 @@ export const translations = {
       subtitle: 'Create and manage your lessons',
       createLesson: 'Create Lesson',
       refresh: 'Refresh',
+
+      selectAll: 'Select All',
+      deselectAll: 'Deselect All',
       
       // Loading & Errors
       loading: 'Loading lessons...',
@@ -1961,6 +1964,9 @@ studentSettings: {
       subtitle: 'Twórz i zarządzaj swoimi lekcjami',
       createLesson: 'Utwórz lekcję',
       refresh: 'Odśwież',
+
+      selectAll: 'Zaznacz wszystkich',
+      deselectAll: 'Odznacz wszystkich',
       
       // Loading & Errors
       loading: 'Ładowanie lekcji...',
