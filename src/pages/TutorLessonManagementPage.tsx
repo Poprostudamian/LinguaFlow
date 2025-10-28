@@ -1672,29 +1672,6 @@ const handleDragEnd = (event: DragEndEvent) => {
                       )} */}
                       {exercises.length > 0 && modalMode !== 'view' ? (
       // Drag-and-drop dla edycji
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={exercises.map(ex => ex.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="space-y-3">
-            {exercises.map((exercise, index) => (
-              <DraggableExerciseCard
-                key={exercise.id}
-                exercise={exercise}
-                index={index}
-                onEdit={() => handleEditExercise(exercise)}
-                onDelete={() => handleDeleteExercise(exercise.id)}
-                readOnly={false}
-              />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
     ) : exercises.length > 0 ? (
       // Zwykła lista dla trybu "view"
       <div className="space-y-3">
