@@ -1655,20 +1655,21 @@ const handleDragEnd = (event: DragEndEvent) => {
                     />
                   ) : (
                     <>
-                      /* {exercises.length > 0 && ( }*/
-                        // <div className="space-y-3">
-                        //   {exercises.map((exercise, index) => (
-                        //     <ExercisePreviewCard
-                        //       key={exercise.id}
-                        //       exercise={exercise}
-                        //       index={index}
-                        //       onEdit={modalMode !== 'view' ? () => handleEditExercise(exercise) : undefined}
-                        //       onDelete={modalMode !== 'view' ? () => handleDeleteExercise(exercise.id) : undefined}
-                        //       readOnly={modalMode === 'view'}
-                        //       t={tPage}
-                        //     />
-                        //   ))}
-                        // </div>
+                      {/* {exercises.length > 0 && (
+                        <div className="space-y-3">
+                          {exercises.map((exercise, index) => (
+                            <ExercisePreviewCard
+                              key={exercise.id}
+                              exercise={exercise}
+                              index={index}
+                              onEdit={modalMode !== 'view' ? () => handleEditExercise(exercise) : undefined}
+                              onDelete={modalMode !== 'view' ? () => handleDeleteExercise(exercise.id) : undefined}
+                              readOnly={modalMode === 'view'}
+                              t={tPage}
+                            />
+                          ))}
+                        </div>
+                      )} */}
                       {exercises.length > 0 && modalMode !== 'view' ? (
       // Drag-and-drop dla edycji
       <DndContext
@@ -1715,7 +1716,6 @@ const handleDragEnd = (event: DragEndEvent) => {
         <p>No exercises yet</p>
       </div>
     )}
-                      {/* )} */}
 
                       {modalMode !== 'view' && (
                         <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
