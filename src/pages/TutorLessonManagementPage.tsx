@@ -2485,7 +2485,7 @@ const handleSubmitLesson = async () => {
                           {modalMode === 'create' ? <PlusCircle className="h-4 w-4" /> : <Save className="h-4 w-4" />}
                           <span>{modalMode === 'create' ? tPage.createLesson : tPage.saveChanges}</span>
                         </>
-                      )}
+                      )} 
                     </button>
                   )}
                 </div>
