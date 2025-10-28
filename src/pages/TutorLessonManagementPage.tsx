@@ -1750,11 +1750,12 @@ const handleSubmitLesson = async () => {
                     </div>
                   )} */} 
 
-                 {modalMode !== 'view' && (
+               {modalMode !== 'view' && (
   <div>
     <div className="flex items-center justify-between mb-2">
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        {tPage.assignToStudents.replace('{count}', lessonForm.assignedStudentIds.length.toString())}
+        {tPage.assignToStudents?.replace('{count}', lessonForm.assignedStudentIds.length.toString()) || 
+         `Assign to Students (${lessonForm.assignedStudentIds.length} selected)`}
       </label>
       
       {/* ✅ Select All / Deselect All Button */}
@@ -1762,14 +1763,24 @@ const handleSubmitLesson = async () => {
         <button
           type="button"
           onClick={() => {
+            console.log('🔘 [SELECT ALL] Button clicked');
+            console.log('📊 Current state:', {
+              totalStudents: students.length,
+              currentlySelected: lessonForm.assignedStudentIds.length,
+              allStudentIds: students.map(s => s.student_id)
+            });
+            
             if (lessonForm.assignedStudentIds.length === students.length) {
               // Deselect all
+              console.log('❌ Deselecting all students');
               setLessonForm({ ...lessonForm, assignedStudentIds: [] });
             } else {
               // Select all
+              const allIds = students.map(s => s.student_id);
+              console.log('✅ Selecting all students:', allIds);
               setLessonForm({ 
                 ...lessonForm, 
-                assignedStudentIds: students.map(s => s.student_id) 
+                assignedStudentIds: allIds
               });
             }
           }}
@@ -1778,16 +1789,21 @@ const handleSubmitLesson = async () => {
           {lessonForm.assignedStudentIds.length === students.length ? (
             <>
               <Square className="h-4 w-4" />
-              <span>{tPage.deselectAll || 'Deselect All'}</span>
+              <span>Deselect All</span>
             </>
           ) : (
             <>
               <CheckSquare className="h-4 w-4" />
-              <span>{tPage.selectAll || 'Select All'}</span>
+              <span>Select All</span>
             </>
           )}
         </button>
       )}
+    </div>
+    
+    {/* Debug info */}
+    <div className="mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs">
+      <strong>Debug:</strong> {students.length} students loaded
     </div>
     
     <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 max-h-48 overflow-y-auto space-y-2">
@@ -1795,46 +1811,85 @@ const handleSubmitLesson = async () => {
         <div className="text-center py-8">
           <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
           <p className="text-gray-500 dark:text-gray-400 text-sm">
-            {tPage.noStudentsAvailable}
+            No students available
           </p>
           <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
-            {tPage.addStudentsFirst}
+            Add students in the Students tab first
           </p>
         </div>
       ) : (
-        students.map((student) => (
-          <label
-            key={student.student_id}
-            className="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors"
-          >
-            <input
-              type="checkbox"
-              checked={lessonForm.assignedStudentIds.includes(student.student_id)}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  setLessonForm({
-                    ...lessonForm,
-                    assignedStudentIds: [...lessonForm.assignedStudentIds, student.student_id]
+        students.map((student, index) => {
+          // Debug: Log each student being rendered
+          const studentId = student.student_id || student.id;
+          const firstName = student.student_first_name || student.first_name || 'Unknown';
+          const lastName = student.student_last_name || student.last_name || 'Student';
+          const isChecked = lessonForm.assignedStudentIds.includes(studentId);
+          
+          // One-time debug log
+          if (index === 0) {
+            console.log('🎨 [RENDER] First student render:', {
+              studentId,
+              firstName,
+              lastName,
+              isChecked,
+              allAssignedIds: lessonForm.assignedStudentIds
+            });
+          }
+          
+          return (
+            <label
+              key={studentId}
+              className="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors"
+            >
+              <input
+                type="checkbox"
+                checked={isChecked}
+                onChange={(e) => {
+                  console.log('📝 [CHECKBOX] Changed:', {
+                    studentId,
+                    studentName: `${firstName} ${lastName}`,
+                    newCheckedState: e.target.checked,
+                    currentAssignments: lessonForm.assignedStudentIds
                   });
-                } else {
-                  setLessonForm({
-                    ...lessonForm,
-                    assignedStudentIds: lessonForm.assignedStudentIds.filter(id => id !== student.student_id)
-                  });
-                }
-              }}
-              className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 dark:border-gray-600 dark:bg-gray-700"
-            />
-            <div className="flex items-center space-x-2 flex-1">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                {student.student_first_name?.[0]}{student.student_last_name?.[0]}
+                  
+                  if (e.target.checked) {
+                    // Add student
+                    const newAssignments = [...lessonForm.assignedStudentIds, studentId];
+                    console.log('➕ Adding student. New assignments:', newAssignments);
+                    setLessonForm({
+                      ...lessonForm,
+                      assignedStudentIds: newAssignments
+                    });
+                  } else {
+                    // Remove student
+                    const newAssignments = lessonForm.assignedStudentIds.filter(
+                      id => id !== studentId
+                    );
+                    console.log('➖ Removing student. New assignments:', newAssignments);
+                    setLessonForm({
+                      ...lessonForm,
+                      assignedStudentIds: newAssignments
+                    });
+                  }
+                }}
+                className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 dark:border-gray-600 dark:bg-gray-700"
+              />
+              <div className="flex items-center space-x-2 flex-1">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                  {firstName?.[0]}{lastName?.[0]}
+                </div>
+                <div className="flex-1">
+                  <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                    {firstName} {lastName}
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 block">
+                    ID: {studentId?.substring(0, 8)}...
+                  </span>
+                </div>
               </div>
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                {student.student_first_name} {student.student_last_name}
-              </span>
-            </div>
-          </label>
-        ))
+            </label>
+          );
+        })
       )}
     </div>
     
