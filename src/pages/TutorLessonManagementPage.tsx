@@ -1659,7 +1659,7 @@ const handleDragEnd = (event: DragEndEvent) => {
                         <div className="space-y-3">
                           <div className="space-y-3">
       {exercises.map((exercise, index) => (
-        <ExerciseCard
+        <ExercisePreviewCard
           key={exercise.id}
           exercise={exercise}
           index={index}
