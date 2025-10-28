@@ -1670,20 +1670,15 @@ const handleDragEnd = (event: DragEndEvent) => {
                           ))}
                         </div>
                       )} */}
-                      {exercises.length > 0 && modalMode !== 'view' ? (
-    ) : exercises.length > 0 ? (
-      // Zwykła lista dla trybu "view"
-      <div className="space-y-3">
-        {exercises.map((exercise, index) => (
-          <DraggableExerciseCard
-            key={exercise.id}
-            exercise={exercise}
-            index={index}
-            onEdit={() => handleEditExercise(exercise)}
-            onDelete={() => handleDeleteExercise(exercise.id)}
-            readOnly={true}
-          />
-        ))}
+                      {exercises.map((exercise, index) => (
+    <ExerciseCard  {/* Lub jakikolwiek komponent używałeś */}
+      key={exercise.id}
+      exercise={exercise}
+      index={index}
+      onEdit={() => handleEditExercise(exercise)}
+      onDelete={() => handleDeleteExercise(exercise.id)}
+    />
+  ))}
       </div>
     ) : (
       // Pusty stan
