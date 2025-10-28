@@ -42,7 +42,23 @@ import { TutorLessonCard } from '../components/TutorLessonCard';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { LessonPreviewTab } from '../components/LessonPreviewTab';
 import { LessonFileUploader, AttachmentFile } from '../components/LessonFileUploader';
- 
+
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable';
+
 // ============================================================================
 // TYPES
 // ============================================================================
