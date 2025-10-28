@@ -661,6 +661,31 @@ export function TutorLessonManagementPage() {
   const [students, setStudents] = useState<any[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
 
+
+<DndContext
+  sensors={sensors}
+  collisionDetection={closestCenter}
+  onDragEnd={handleDragEnd}
+>
+  <SortableContext
+    items={exercises.map(ex => ex.id)}
+    strategy={verticalListSortingStrategy}
+  >
+    <div className="space-y-3">
+      {exercises.map((exercise, index) => (
+        <DraggableExerciseCard
+          key={exercise.id}
+          exercise={exercise}
+          index={index}
+          onEdit={() => handleEditExercise(exercise)}
+          onDelete={() => handleDeleteExercise(exercise.id)}
+          readOnly={modalMode === 'view'}
+        />
+      ))}
+    </div>
+  </SortableContext>
+</DndContext>
+  
   // Load students function
  const loadStudents = async () => {
     if (!session?.user?.id) return;
