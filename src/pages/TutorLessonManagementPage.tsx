@@ -167,6 +167,26 @@ const validateExercises = (exercises: Exercise[]): { isValid: boolean; message?:
 // ============================================================================
 // STATS CARD COMPONENT
 // ============================================================================
+
+const sensors = useSensors(
+  useSensor(PointerSensor),
+  useSensor(KeyboardSensor, {
+    coordinateGetter: sortableKeyboardCoordinates
+  })
+);
+
+const handleDragEnd = (event: DragEndEvent) => {
+  const { active, over } = event;
+
+  if (over && active.id !== over.id) {
+    const oldIndex = exercises.findIndex((ex) => ex.id === active.id);
+    const newIndex = exercises.findIndex((ex) => ex.id === over.id);
+
+    const reordered = arrayMove(exercises, oldIndex, newIndex);
+    setExercises(reordered);
+  }
+};
+
 interface StatsCardProps {
   title: string;
   value: string | number;
