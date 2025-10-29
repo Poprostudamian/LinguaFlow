@@ -108,11 +108,12 @@ interface Exercise {
 
 
 // ============================================================================
-// PHASE 3: AUTOSAVE & DUPLICATE FEATURES
+// PHASE 3 ENHANCED: DATABASE AUTOSAVE (Saves to Draft tab automatically)
 // ============================================================================
 
 const AUTOSAVE_KEY = 'tutor_lesson_draft';
 const AUTOSAVE_INTERVAL = 30000; // 30 seconds
+const AUTOSAVE_DEBOUNCE = 3000; // 3 seconds - wait for user to stop typing
 
 interface LessonDraft {
   lessonForm: {
@@ -128,6 +129,7 @@ interface LessonDraft {
   lessonId?: string;
 }
 
+// Keep localStorage functions as backup/fallback
 const saveDraftToLocalStorage = (draft: LessonDraft) => {
   try {
     localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(draft));
@@ -142,16 +144,12 @@ const loadDraftFromLocalStorage = (): LessonDraft | null => {
   try {
     const saved = localStorage.getItem(AUTOSAVE_KEY);
     if (!saved) return null;
-
     const draft = JSON.parse(saved) as LessonDraft;
-
-    // Check if draft is less than 24 hours old
     const age = Date.now() - draft.timestamp;
     if (age > 24 * 60 * 60 * 1000) {
       localStorage.removeItem(AUTOSAVE_KEY);
       return null;
     }
-
     return draft;
   } catch (error) {
     console.error('Failed to load draft from localStorage:', error);
