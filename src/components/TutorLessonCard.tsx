@@ -322,20 +322,15 @@ const handleAssignStudents = async () => {
               <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
                 Assigned Students ({lesson.assignedCount})
               </h4>
-              {/* Assign button - disabled if locked */}
-              <button
-                onClick={() => !lesson.isLocked && setShowStudentManagement(!showStudentManagement)}
-                disabled={lesson.isLocked}
-                className={`flex items-center space-x-1 text-xs px-2 py-1 rounded-lg font-medium transition-colors ${
-                  lesson.isLocked
-                    ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
-                    : 'text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
-                }`}
-                title={lesson.isLocked ? '🔒 Cannot assign to locked lesson' : 'Manage students'}
-              >
-                <UserPlus className="h-3 w-3" />
-                <span>Manage</span>
-              </button>
+              {/* Assign button */}
+                <button
+                  onClick={() => setShowStudentManagement(!showStudentManagement)}
+                  className="flex items-center space-x-1 text-xs px-2 py-1 rounded-lg font-medium transition-colors text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                  title="Manage students"
+                >
+                  <UserPlus className="h-3 w-3" />
+                  <span>Manage</span>
+                </button>
             </div>
             
             {assignedStudentDetails.length === 0 ? (
