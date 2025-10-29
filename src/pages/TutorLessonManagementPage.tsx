@@ -165,10 +165,6 @@ const clearDraftFromLocalStorage = () => {
   }
 };
 
-const [autosaveDraftId, setAutosaveDraftId] = useState<string | null>(null);
-const [isSavingDraft, setIsSavingDraft] = useState(false);
-const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
 // PHASE 3 ENHANCED: Save draft to database
 const saveDraftToDatabase = async () => {
   if (!session?.user?.id) return;
@@ -1004,6 +1000,10 @@ export function TutorLessonManagementPage() {
   const [students, setStudents] = useState<any[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
 
+const [autosaveDraftId, setAutosaveDraftId] = useState<string | null>(null);
+const [isSavingDraft, setIsSavingDraft] = useState(false);
+const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   const sensors = useSensors(
   useSensor(PointerSensor),
   useSensor(KeyboardSensor, {
