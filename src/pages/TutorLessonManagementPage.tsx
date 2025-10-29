@@ -1282,7 +1282,8 @@ useEffect(() => {
   }, AUTOSAVE_INTERVAL);
 
   return () => clearInterval(interval);
-}, [showModal, modalMode, lessonForm, exercises]);
+// }, [showModal, modalMode, lessonForm, exercises]);
+  }, [showModal, modalMode, lessonForm, exercises, saveDraftToDatabase]);
 
   // PHASE 3: Check for existing draft on mount
   useEffect(() => {
