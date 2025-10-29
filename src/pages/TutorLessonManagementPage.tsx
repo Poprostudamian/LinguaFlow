@@ -1665,6 +1665,9 @@ const handleSubmitLesson = async () => {
         type: 'success', 
         message: `✅ Lesson "${lessonForm.title}" updated successfully!`
       });
+
+      setAutosaveDraftId(null);
+      clearDraftFromLocalStorage();
     }
 
     console.log('✅ [SUCCESS] Closing modal and reloading lessons...');
