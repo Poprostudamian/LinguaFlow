@@ -171,7 +171,7 @@ const saveDraftToDatabase = async () => {
   if (!lessonForm.title.trim()) return; // Need at least a title
   if (modalMode === 'view') return; // Don't autosave in view mode
   
-  // setIsSavingDraft(true);
+  setIsSavingDraft(true); 
   
   try {
     console.log('💾 Auto-saving draft to database...');
