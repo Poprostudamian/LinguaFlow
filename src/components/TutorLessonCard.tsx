@@ -152,13 +152,6 @@ const handleAssignStudents = async () => {
     (lesson.assignedStudents || []).includes(student.student_id)
   );
 
-  // ✅ Format lock status message
-  const getLockStatusMessage = () => {
-    if (!lesson.isLocked) return null;
-    
-    return `All ${lesson.assignedCount} assigned student(s) have completed this lesson. To edit or delete, first unassign completed students.`;
-  };
-
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border transition-all duration-200 ${
       lesson.isLocked 
