@@ -2213,25 +2213,7 @@ const handleSubmitLesson = async () => {
           />
         </div>
       </div>
-
-      {/* Locked Lessons Warning */}
-      {filteredLessons.filter(l => l.isLocked).length > 0 && (
-        <div className="mb-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 animate-fade-in">
-          <div className="flex items-start space-x-3">
-            <Lock className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">
-                {filteredLessons.filter(l => l.isLocked).length} Locked Lesson(s)
-              </h3>
-              <p className="text-sm text-amber-700 dark:text-amber-400">
-                These lessons are locked because all assigned students have completed them. 
-                To edit or delete a locked lesson, you must first unassign completed students.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-      
+     
       {/* Lessons Grid */}
       {filteredLessons.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
