@@ -166,133 +166,133 @@ const clearDraftFromLocalStorage = () => {
 };
 
 // PHASE 3 ENHANCED: Save draft to database
-const saveDraftToDatabase = async () => {
-  if (!session?.user?.id) return;
-  if (!lessonForm.title.trim()) return; // Need at least a title
-  if (modalMode === 'view') return; // Don't autosave in view mode
+// const saveDraftToDatabase = async () => {
+//   if (!session?.user?.id) return;
+//   if (!lessonForm.title.trim()) return; // Need at least a title
+//   if (modalMode === 'view') return; // Don't autosave in view mode
   
-  setIsSavingDraft(true); 
+//    setIsSavingDraft(true);
   
-  try {
-    console.log('💾 Auto-saving draft to database...');
+//   try {
+//     console.log('💾 Auto-saving draft to database...');
     
-    const draftData = {
-      tutor_id: session.user.id,
-      title: lessonForm.title.trim() || 'Untitled Draft',
-      description: lessonForm.description.trim() || null,
-      content: lessonForm.content.trim() || null,
-      status: 'draft' as const,
-      is_published: false
-    };
+//     const draftData = {
+//       tutor_id: session.user.id,
+//       title: lessonForm.title.trim() || 'Untitled Draft',
+//       description: lessonForm.description.trim() || null,
+//       content: lessonForm.content.trim() || null,
+//       status: 'draft' as const,
+//       is_published: false
+//     };
 
-    let draftId = autosaveDraftId || currentLesson?.id;
+//     let draftId = autosaveDraftId || currentLesson?.id;
 
-    if (modalMode === 'create' && !draftId) {
-      // Create new draft lesson
-      const { data: newDraft, error: createError } = await supabase
-        .from('lessons')
-        .insert(draftData)
-        .select()
-        .single();
+//     if (modalMode === 'create' && !draftId) {
+//       // Create new draft lesson
+//       const { data: newDraft, error: createError } = await supabase
+//         .from('lessons')
+//         .insert(draftData)
+//         .select()
+//         .single();
 
-      if (createError) throw createError;
+//       if (createError) throw createError;
       
-      draftId = newDraft.id;
-      setAutosaveDraftId(draftId);
-      console.log('✅ Created new draft:', draftId);
+//       draftId = newDraft.id;
+//       setAutosaveDraftId(draftId);
+//       console.log('✅ Created new draft:', draftId);
       
-    } else if (draftId) {
-      // Update existing draft
-      const { error: updateError } = await supabase
-        .from('lessons')
-        .update(draftData)
-        .eq('id', draftId)
-        .eq('tutor_id', session.user.id);
+//     } else if (draftId) {
+//       // Update existing draft
+//       const { error: updateError } = await supabase
+//         .from('lessons')
+//         .update(draftData)
+//         .eq('id', draftId)
+//         .eq('tutor_id', session.user.id);
 
-      if (updateError) throw updateError;
-      console.log('✅ Updated existing draft:', draftId);
-    }
+//       if (updateError) throw updateError;
+//       console.log('✅ Updated existing draft:', draftId);
+//     }
 
-    // Save exercises if draft exists
-    if (draftId && exercises.length > 0) {
-      // Delete old exercises
-      await supabase
-        .from('lesson_exercises')
-        .delete()
-        .eq('lesson_id', draftId);
+//     // Save exercises if draft exists
+//     if (draftId && exercises.length > 0) {
+//       // Delete old exercises
+//       await supabase
+//         .from('lesson_exercises')
+//         .delete()
+//         .eq('lesson_id', draftId);
 
-      // Insert new exercises
-      const exercisesData = exercises.map((exercise, index) => {
-        const baseExercise = {
-          lesson_id: draftId,
-          exercise_type: exercise.type,
-          title: exercise.title || exercise.question,
-          question: exercise.question,
-          order_number: index + 1,
-          points: exercise.points || 1,
-          explanation: exercise.explanation || null,
-        };
+//       // Insert new exercises
+//       const exercisesData = exercises.map((exercise, index) => {
+//         const baseExercise = {
+//           lesson_id: draftId,
+//           exercise_type: exercise.type,
+//           title: exercise.title || exercise.question,
+//           question: exercise.question,
+//           order_number: index + 1,
+//           points: exercise.points || 1,
+//           explanation: exercise.explanation || null,
+//         };
 
-        if (exercise.type === 'multiple_choice') {
-          return {
-            ...baseExercise,
-            correct_answer: exercise.correctAnswer || 'A',
-            options: JSON.stringify(exercise.options || ['', '', '', ''])
-          };
-        } else if (exercise.type === 'flashcard') {
-          return {
-            ...baseExercise,
-            correct_answer: exercise.flashcards?.[0]?.back || '',
-            options: JSON.stringify(exercise.flashcards || [])
-          };
-        } else {
-          return {
-            ...baseExercise,
-            correct_answer: exercise.correctAnswer || '',
-            word_limit: exercise.wordLimit || 2000,
-            options: JSON.stringify({ maxLength: exercise.wordLimit || 2000 })
-          };
-        }
-      });
+//         if (exercise.type === 'multiple_choice') {
+//           return {
+//             ...baseExercise,
+//             correct_answer: exercise.correctAnswer || 'A',
+//             options: JSON.stringify(exercise.options || ['', '', '', ''])
+//           };
+//         } else if (exercise.type === 'flashcard') {
+//           return {
+//             ...baseExercise,
+//             correct_answer: exercise.flashcards?.[0]?.back || '',
+//             options: JSON.stringify(exercise.flashcards || [])
+//           };
+//         } else {
+//           return {
+//             ...baseExercise,
+//             correct_answer: exercise.correctAnswer || '',
+//             word_limit: exercise.wordLimit || 2000,
+//             options: JSON.stringify({ maxLength: exercise.wordLimit || 2000 })
+//           };
+//         }
+//       });
 
-      await supabase
-        .from('lesson_exercises')
-        .insert(exercisesData);
+//       await supabase
+//         .from('lesson_exercises')
+//         .insert(exercisesData);
       
-      console.log(`✅ Saved ${exercises.length} exercises to draft`);
-    }
+//       console.log(`✅ Saved ${exercises.length} exercises to draft`);
+//     }
 
-    setLastSaved(new Date());
+//     setLastSaved(new Date());
     
-    // Also save to localStorage as backup
-    saveDraftToLocalStorage({
-      lessonForm,
-      exercises,
-      timestamp: Date.now(),
-      lessonId: draftId
-    });
+//     // Also save to localStorage as backup
+//     saveDraftToLocalStorage({
+//       lessonForm,
+//       exercises,
+//       timestamp: Date.now(),
+//       lessonId: draftId
+//     });
 
-    // Reload lessons to show the draft in the list
-    await loadLessons();
+//     // Reload lessons to show the draft in the list
+//     await loadLessons();
     
-    setToast({ 
-      type: 'success', 
-      message: '💾 Draft auto-saved to Drafts tab' 
-    });
+//     setToast({ 
+//       type: 'success', 
+//       message: '💾 Draft auto-saved to Drafts tab' 
+//     });
 
-  } catch (error: any) {
-    console.error('❌ Error saving draft:', error);
-    // Fallback to localStorage only
-    saveDraftToLocalStorage({
-      lessonForm,
-      exercises,
-      timestamp: Date.now(),
-      lessonId: autosaveDraftId || currentLesson?.id
-    });
-  } finally {
-    setIsSavingDraft(false);
-  }
-};
+//   } catch (error: any) {
+//     console.error('❌ Error saving draft:', error);
+//     // Fallback to localStorage only
+//     saveDraftToLocalStorage({
+//       lessonForm,
+//       exercises,
+//       timestamp: Date.now(),
+//       lessonId: autosaveDraftId || currentLesson?.id
+//     });
+//   } finally {
+//     setIsSavingDraft(false);
+//   }
+// };
 
 // ============================================================================
 // LESSON STATISTICS COMPONENT
@@ -1102,6 +1102,134 @@ const handleDragEnd = (event: DragEndEvent) => {
   const [hasDraft, setHasDraft] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
+  // PHASE 3: Autosave function with useCallback
+  const saveDraftToDatabase = useCallback(async () => {
+    if (!session?.user?.id) return;
+    if (!lessonForm.title.trim()) return; // Need at least a title
+    if (modalMode === 'view') return; // Don't autosave in view mode
+    
+    setIsSavingDraft(true);
+    
+    try {
+      console.log('💾 Auto-saving draft to database...');
+      
+      const draftData = {
+        tutor_id: session.user.id,
+        title: lessonForm.title.trim() || 'Untitled Draft',
+        description: lessonForm.description.trim() || null,
+        content: lessonForm.content.trim() || null,
+        status: 'draft' as const,
+        is_published: false
+      };
+
+      let draftId = autosaveDraftId || currentLesson?.id;
+
+      if (modalMode === 'create' && !draftId) {
+        // Create new draft lesson
+        const { data: newDraft, error: createError } = await supabase
+          .from('lessons')
+          .insert(draftData)
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        
+        draftId = newDraft.id;
+        setAutosaveDraftId(draftId);
+        console.log('✅ Created new draft:', draftId);
+        
+      } else if (draftId) {
+        // Update existing draft
+        const { error: updateError } = await supabase
+          .from('lessons')
+          .update(draftData)
+          .eq('id', draftId)
+          .eq('tutor_id', session.user.id);
+
+        if (updateError) throw updateError;
+        console.log('✅ Updated existing draft:', draftId);
+      }
+
+      // Save exercises if draft exists
+      if (draftId && exercises.length > 0) {
+        // Delete old exercises
+        await supabase
+          .from('lesson_exercises')
+          .delete()
+          .eq('lesson_id', draftId);
+
+        // Insert new exercises
+        const exercisesData = exercises.map((exercise, index) => {
+          const baseExercise = {
+            lesson_id: draftId,
+            exercise_type: exercise.type,
+            title: exercise.title || exercise.question,
+            question: exercise.question,
+            order_number: index + 1,
+            points: exercise.points || 1,
+            explanation: exercise.explanation || null,
+          };
+
+          if (exercise.type === 'multiple_choice') {
+            return {
+              ...baseExercise,
+              correct_answer: exercise.correctAnswer || 'A',
+              options: JSON.stringify(exercise.options || ['', '', '', ''])
+            };
+          } else if (exercise.type === 'flashcard') {
+            return {
+              ...baseExercise,
+              correct_answer: exercise.flashcards?.[0]?.back || '',
+              options: JSON.stringify(exercise.flashcards || [])
+            };
+          } else {
+            return {
+              ...baseExercise,
+              correct_answer: exercise.correctAnswer || '',
+              word_limit: exercise.wordLimit || 2000,
+              options: JSON.stringify({ maxLength: exercise.wordLimit || 2000 })
+            };
+          }
+        });
+
+        await supabase
+          .from('lesson_exercises')
+          .insert(exercisesData);
+        
+        console.log(`✅ Saved ${exercises.length} exercises to draft`);
+      }
+
+      setLastSaved(new Date());
+      
+      // Also save to localStorage as backup
+      saveDraftToLocalStorage({
+        lessonForm,
+        exercises,
+        timestamp: Date.now(),
+        lessonId: draftId
+      });
+
+      // Reload lessons to show the draft in the list
+      await loadLessons();
+      
+      setToast({ 
+        type: 'success', 
+        message: '💾 Draft auto-saved to Drafts tab' 
+      });
+
+    } catch (error: any) {
+      console.error('❌ Error saving draft:', error);
+      // Fallback to localStorage only
+      saveDraftToLocalStorage({
+        lessonForm,
+        exercises,
+        timestamp: Date.now(),
+        lessonId: autosaveDraftId || currentLesson?.id
+      });
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }, [session?.user?.id, lessonForm, exercises, modalMode, autosaveDraftId, currentLesson]);
   
   // Load lessons on mount
   useEffect(() => {
