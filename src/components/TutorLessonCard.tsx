@@ -153,11 +153,7 @@ const handleAssignStudents = async () => {
   );
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border transition-all duration-200 ${
-      lesson.isLocked 
-        ? 'border-red-300 dark:border-red-700 ring-2 ring-red-100 dark:ring-red-900/30' 
-        : 'border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700'
-    }`}>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all duration-200">
       
       {/* HEADER */}
       <div className="p-4">
