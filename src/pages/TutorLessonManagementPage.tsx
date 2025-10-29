@@ -2179,11 +2179,23 @@ const handleSubmitLesson = async () => {
 
               {/* PHASE 3: Autosave Indicator */}
               {lastSaved && modalMode !== 'view' && (
-                <div className="mb-3 flex items-center justify-end space-x-2 text-xs text-gray-500 dark:text-gray-400">
-                  <CheckCircle className="h-3.5 w-3.5 text-green-600" />
-                  <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
-                </div>
-              )}
+  <div className="mb-3 flex items-center justify-end space-x-2 text-xs">
+    {isSavingDraft ? (
+      <>
+        <RefreshCw className="h-3.5 w-3.5 text-blue-600 animate-spin" />
+        <span className="text-blue-600">Saving to Drafts...</span>
+      </>
+    ) : (
+      <>
+        <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+        <span className="text-gray-500 dark:text-gray-400">
+          Last saved: {lastSaved.toLocaleTimeString()} 
+          {autosaveDraftId && ' (in Drafts tab)'}
+        </span>
+      </>
+    )}
+  </div>
+)}
 
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
