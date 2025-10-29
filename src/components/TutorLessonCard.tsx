@@ -246,7 +246,21 @@ const handleAssignStudents = async () => {
               >
                 <Eye className="h-4 w-4" />
               </button>
-                            
+              
+              {/* Edit */}
+              <button
+                onClick={() => setIsEditing(true)}
+                disabled={lesson.canEdit === false}
+                className={`p-2 rounded-lg transition-colors ${
+                  lesson.canEdit !== false
+                    ? 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' 
+                    : 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
+                }`}
+                title="Edit lesson"
+              >
+                <Edit3 className="h-4 w-4" />
+              </button>
+              
               {/* Delete - disabled if locked */}
               <button
                 onClick={lesson.canDelete !== false ? handleDelete : undefined}
