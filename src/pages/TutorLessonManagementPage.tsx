@@ -1268,7 +1268,8 @@ const handleDragEnd = (event: DragEndEvent) => {
       clearTimeout(autosaveTimeoutRef.current);
     }
   };
-}, [showModal, modalMode, lessonForm.title, lessonForm.description, lessonForm.content, exercises]);
+// }, [showModal, modalMode, lessonForm.title, lessonForm.description, lessonForm.content, exercises]);
+    }, [showModal, modalMode, lessonForm, exercises, saveDraftToDatabase]);
 
 // Additional interval-based autosave (every 30 seconds)
 useEffect(() => {
