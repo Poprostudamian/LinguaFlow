@@ -159,46 +159,6 @@ const handleAssignStudents = async () => {
         : 'border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700'
     }`}>
       
-      {/* ✅ LOCK STATUS BANNER */}
-      {lesson.isLocked && (
-        <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border-b border-red-200 dark:border-red-800 px-4 py-3">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-3">
-              <div className="bg-red-100 dark:bg-red-900/50 p-1.5 rounded-lg">
-                <Lock className="h-4 w-4 text-red-600 dark:text-red-400" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-1">
-                  <h4 className="text-sm font-semibold text-red-800 dark:text-red-300">
-                    🔒 Lesson Locked
-                  </h4>
-                </div>
-                {showLockInfo ? (
-                  <div className="text-xs text-red-700 dark:text-red-300 space-y-1">
-                    <p>{getLockStatusMessage()}</p>
-                    <p className="flex items-center space-x-1 mt-2 font-medium">
-                      <UserMinus className="h-3 w-3" />
-                      <span>Click the minus icon below to unassign students and unlock</span>
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-xs text-red-600 dark:text-red-400">
-                    Click info button to learn more
-                  </p>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={() => setShowLockInfo(!showLockInfo)}
-              className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 transition-colors"
-              title="Show lock details"
-            >
-              <Info className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* HEADER */}
       <div className="p-4">
         {isEditing && !lesson.isLocked ? (
