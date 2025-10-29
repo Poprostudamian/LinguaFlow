@@ -1,6 +1,6 @@
 // src/pages/TutorLessonManagementPage.tsx
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Search, 
