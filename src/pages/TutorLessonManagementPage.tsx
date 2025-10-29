@@ -1120,30 +1120,39 @@ const handleDragEnd = (event: DragEndEvent) => {
 
   // PHASE 3: Autosave effect
   useEffect(() => {
-    if (!showModal || modalMode === 'view') return;
+  if (!showModal || modalMode === 'view') return;
+  if (!lessonForm.title.trim()) return; // Need at least a title
 
-    const timer = setInterval(() => {
-      if (lessonForm.title.trim()) {
-        const draft: LessonDraft = {
-          lessonForm,
-          exercises,
-          timestamp: Date.now(),
-          lessonId: currentLesson?.id
-        };
+  // Clear existing timeout
+  if (autosaveTimeoutRef.current) {
+    clearTimeout(autosaveTimeoutRef.current);
+  }
 
-        const saved = saveDraftToLocalStorage(draft);
-        if (saved) {
-          setLastSaved(new Date());
-          setToast({ 
-            type: 'success', 
-            message: '💾 Draft auto-saved' 
-          });
-        }
-      }
-    }, AUTOSAVE_INTERVAL);
+  // Set new timeout (debounce)
+  autosaveTimeoutRef.current = setTimeout(() => {
+    saveDraftToDatabase();
+  }, AUTOSAVE_DEBOUNCE);
 
-    return () => clearInterval(timer);
-  }, [showModal, modalMode, lessonForm, exercises, currentLesson]);
+  // Cleanup
+  return () => {
+    if (autosaveTimeoutRef.current) {
+      clearTimeout(autosaveTimeoutRef.current);
+    }
+  };
+}, [showModal, modalMode, lessonForm.title, lessonForm.description, lessonForm.content, exercises]);
+
+// Additional interval-based autosave (every 30 seconds)
+useEffect(() => {
+  if (!showModal || modalMode === 'view') return;
+  
+  const interval = setInterval(() => {
+    if (lessonForm.title.trim()) {
+      saveDraftToDatabase();
+    }
+  }, AUTOSAVE_INTERVAL);
+
+  return () => clearInterval(interval);
+}, [showModal, modalMode, lessonForm, exercises]);
 
   // PHASE 3: Check for existing draft on mount
   useEffect(() => {
