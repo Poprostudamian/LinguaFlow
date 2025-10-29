@@ -157,7 +157,7 @@ const handleAssignStudents = async () => {
       
       {/* HEADER */}
       <div className="p-4">
-        {isEditing && !lesson.isLocked ? (
+        {isEditing ? (
           // Edit Mode
           <div className="space-y-3">
             <input
