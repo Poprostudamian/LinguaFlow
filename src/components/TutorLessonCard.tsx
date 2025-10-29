@@ -14,8 +14,6 @@ import {
   X,
   ChevronDown,
   ChevronUp,
-  Lock,
-  LockOpen,
   Shield,
   AlertTriangle,
   CheckCircle2,
@@ -72,7 +70,6 @@ export function TutorLessonCard({
   const [showStudentManagement, setShowStudentManagement] = useState(false);
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [showLockInfo, setShowLockInfo] = useState(false);
 
   const { session } = useAuth();
   const { students } = useTutorStudents();
@@ -101,82 +98,41 @@ export function TutorLessonCard({
     }
   };
 
-  // ✅ Handle delete (blocked if locked)
-  const handleDelete = async () => {
-    if (!onDelete) return;
-    
-    if (lesson.isLocked) {
-      alert(
-        `🔒 Cannot delete locked lesson\n\n` +
-        `This lesson is locked because all ${lesson.assignedCount} students have completed it.\n\n` +
-        `To delete this lesson, first unassign completed students.`
-      );
-      return;
-    }
-    
-    const confirmMessage = lesson.assignedCount > 0
-      ? `Delete "${lesson.title}"?\n\n⚠️ Warning: ${lesson.assignedCount} student(s) are assigned. All progress will be lost.\n\nThis cannot be undone.`
-      : `Delete "${lesson.title}"?\n\nThis cannot be undone.`;
-    
-    if (!confirm(confirmMessage)) return;
+const handleDelete = async () => {
+  if (!onDelete) return;
+  
+  const confirmMessage = lesson.assignedCount > 0
+    ? `Delete "${lesson.title}"?\n\n⚠️ Warning: ${lesson.assignedCount} student(s) are assigned. All progress will be lost.\n\nThis cannot be undone.`
+    : `Delete "${lesson.title}"?\n\nThis cannot be undone.`;
+  
+  if (!confirm(confirmMessage)) return;
 
-    setIsLoading(true);
-    try {
-      await onDelete(lesson.id);
-    } catch (error) {
-      console.error('Error deleting lesson:', error);
-      alert('Failed to delete lesson. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // ✅ Handle assign students (blocked if locked)
-  const handleAssignStudents = async () => {
-    if (!onAssignStudents || selectedStudents.length === 0) return;
-    
-    if (lesson.isLocked) {
-      alert(
-        `🔒 Cannot assign students to locked lesson\n\n` +
-        `This lesson is locked because all assigned students have completed it.\n\n` +
-        `To assign new students, first unassign some completed students.`
-      );
-      return;
-    }
-    
-    setIsLoading(true);
-    try {
-      await onAssignStudents(lesson.id, selectedStudents);
-      setSelectedStudents([]);
-      setShowStudentManagement(false);
-    } catch (error) {
-      console.error('Error assigning students:', error);
-      alert('Failed to assign students. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // ✅ Handle unassign student (ALWAYS allowed - to unlock lesson)
-  const handleUnassignStudent = async (studentId: string) => {
-    if (!onUnassignStudents) return;
-    
-    const confirmMessage = lesson.isLocked
-      ? `Unassign this student?\n\n💡 This will unlock the lesson for editing.`
-      : `Unassign this student?\n\n⚠️ Their progress will be lost.`;
-    
-    if (!confirm(confirmMessage)) return;
-    
-    setIsLoading(true);
-    try {
-      await onUnassignStudents(lesson.id, [studentId]);
-    } catch (error) {
-      console.error('Error unassigning student:', error);
-      alert('Failed to unassign student. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  setIsLoading(true);
+  try {
+    await onDelete(lesson.id);
+  } catch (error) {
+    console.error('Error deleting lesson:', error);
+    alert('Failed to delete lesson. Please try again.');
+  } finally {
+    setIsLoading(false);
+  }
+};
+ 
+const handleAssignStudents = async () => {
+  if (!onAssignStudents || selectedStudents.length === 0) return;
+  
+  setIsLoading(true);
+  try {
+    await onAssignStudents(lesson.id, selectedStudents);
+    setSelectedStudents([]);
+    setShowStudentManagement(false);
+  } catch (error) {
+    console.error('Error assigning students:', error);
+    alert('Failed to assign students. Please try again.');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Toggle student selection
   const toggleStudentSelection = (studentId: string) => {
