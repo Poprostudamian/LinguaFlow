@@ -1295,10 +1295,12 @@ useEffect(() => {
   };
 
   const closeModal = () => {
+    setAutosaveDraftId(null);
     setShowModal(false);
     setCurrentLesson(null);
     setEditingExercise(null);
     setModalTab('info');
+    clearDraftFromLocalStorage();
   };
 
   // Exercise handlers
