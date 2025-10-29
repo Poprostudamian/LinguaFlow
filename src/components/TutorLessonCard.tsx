@@ -359,7 +359,7 @@ const handleAssignStudents = async () => {
                           </span>
                         )}
                       </div>
-                      {/* ✅ Unassign button - ALWAYS enabled (to unlock) */}
+                      {/* ✅ Unassign button */}
                       <button
                           onClick={() => handleUnassignStudent(student.student_id)}
                           disabled={isLoading}
