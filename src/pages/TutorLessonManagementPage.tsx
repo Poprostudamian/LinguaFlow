@@ -1102,7 +1102,6 @@ const handleDragEnd = (event: DragEndEvent) => {
   const [hasDraft, setHasDraft] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  setIsSavingDraft(true);
   
   // Load lessons on mount
   useEffect(() => {
