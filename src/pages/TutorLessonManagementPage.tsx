@@ -171,7 +171,7 @@ const saveDraftToDatabase = async () => {
   if (!lessonForm.title.trim()) return; // Need at least a title
   if (modalMode === 'view') return; // Don't autosave in view mode
   
-  setIsSavingDraft(true);
+  // setIsSavingDraft(true);
   
   try {
     console.log('💾 Auto-saving draft to database...');
@@ -1102,6 +1102,8 @@ const handleDragEnd = (event: DragEndEvent) => {
   const [hasDraft, setHasDraft] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
+  setIsSavingDraft(true);
+  
   // Load lessons on mount
   useEffect(() => {
     if (session?.user?.id) {
