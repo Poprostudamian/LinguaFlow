@@ -361,12 +361,12 @@ const handleAssignStudents = async () => {
                       </div>
                       {/* ✅ Unassign button - ALWAYS enabled (to unlock) */}
                       <button
-                        onClick={() => handleUnassignStudent(student.student_id)}
-                        disabled={isLoading}
-                        className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
-                        title={lesson.isLocked ? '💡 Unassign to unlock lesson' : 'Remove student'}
-                      >
-                        <UserMinus className="h-3.5 w-3.5" />
+                          onClick={() => handleUnassignStudent(student.student_id)}
+                          disabled={isLoading}
+                          className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
+                          title="Remove student"
+                        >
+                          <UserMinus className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   );
