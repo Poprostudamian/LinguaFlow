@@ -1412,29 +1412,45 @@ const handleSubmitLesson = async () => {
 
   try {
     if (modalMode === 'create') {
-      console.log('📝 [CREATE MODE] Creating new lesson...');
+      // Use the autosaved draft if it exists
+      let lessonId = autosaveDraftId;
       
-      // Step 1: Create lesson in database
-      const lessonPayload = {
-        tutor_id: session.user.id,
-        title: lessonForm.title.trim(),
-        description: lessonForm.description.trim() || null,
-        content: lessonForm.content.trim() || `<h2>${lessonForm.title}</h2>`,
-        status: lessonForm.status,
-        is_published: lessonForm.status === 'published'
-      };
+      if (lessonId) {
+        // Update the existing draft to published
+        const { error: updateError } = await supabase
+          .from('lessons')
+          .update({
+            title: lessonForm.title.trim(),
+            description: lessonForm.description.trim() || null,
+            content: lessonForm.content.trim() || `<h2>${lessonForm.title}</h2>`,
+            status: lessonForm.status,
+            is_published: lessonForm.status === 'published'
+          })
+          .eq('id', lessonId)
+          .eq('tutor_id', session.user.id);
 
-      console.log('💾 [CREATE MODE] Inserting lesson with payload:', lessonPayload);
+        if (updateError) throw updateError;
+        
+        console.log('✅ Converted draft to lesson:', lessonId);
+      } else {
+        // Create new lesson (old flow)
+        const lessonPayload = {
+          tutor_id: session.user.id,
+          title: lessonForm.title.trim(),
+          description: lessonForm.description.trim() || null,
+          content: lessonForm.content.trim() || `<h2>${lessonForm.title}</h2>`,
+          status: lessonForm.status,
+          is_published: lessonForm.status === 'published'
+        };
 
-      const { data: lesson, error: lessonError } = await supabase
-        .from('lessons')
-        .insert(lessonPayload)
-        .select()
-        .single();
+        const { data: lesson, error: lessonError } = await supabase
+          .from('lessons')
+          .insert(lessonPayload)
+          .select()
+          .single();
 
-      if (lessonError) {
-        console.error('❌ [CREATE MODE] Lesson creation failed:', lessonError);
-        throw new Error(`Failed to create lesson: ${lessonError.message}`);
+        if (lessonError) throw lessonError;
+        lessonId = lesson.id;
       }
 
       if (!lesson || !lesson.id) {
