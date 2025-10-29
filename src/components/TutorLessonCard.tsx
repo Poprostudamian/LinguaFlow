@@ -261,16 +261,16 @@ const handleAssignStudents = async () => {
                 <Edit3 className="h-4 w-4" />
               </button>
               
-              {/* Delete - disabled if locked */}
+              {/* Delete */}
               <button
-                onClick={lesson.canDelete !== false ? handleDelete : undefined}
+                onClick={handleDelete}
                 disabled={isLoading || lesson.canDelete === false}
                 className={`p-2 rounded-lg transition-colors ${
                   lesson.canDelete !== false
                     ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20' 
                     : 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
                 }`}
-                title={lesson.canDelete !== false ? 'Delete lesson' : '🔒 Cannot delete locked lesson'}
+                title="Delete lesson"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
