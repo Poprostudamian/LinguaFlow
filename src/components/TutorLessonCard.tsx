@@ -380,7 +380,7 @@ const handleAssignStudents = async () => {
           </div>
 
           {/* Student Management Panel */}
-          {showStudentManagement && !lesson.isLocked && (
+          {showStudentManagement && (
             <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
               <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                 Assign New Students
