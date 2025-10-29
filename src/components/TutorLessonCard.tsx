@@ -84,7 +84,7 @@ export function TutorLessonCard({
 
   // ✅ Handle save edit (only if unlocked)
   const handleSaveEdit = async () => {
-    if (!onEdit || !editData.title.trim() || lesson.isLocked) return;
+    if (!onEdit || !editData.title.trim()) return;
     
     setIsLoading(true);
     try {
